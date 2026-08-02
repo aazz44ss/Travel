@@ -1,0 +1,376 @@
+---
+import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
+
+const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
+const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
+
+const viewStyle: Record<string, string> = {
+  grand: 'bg-brand text-white',
+  park: 'bg-brand-soft text-brand-deep',
+  none: 'bg-paper-deep text-ink-faint',
+};
+
+const categoryStyle: Record<string, string> = {
+  standard: 'border-line text-ink-soft',
+  character: 'border-berry/30 text-berry',
+  concierge: 'border-gold/40 text-gold',
+  suite: 'border-brand/30 text-brand',
+};
+
+const capacityOptions = [
+  { value: '0', label: '不限' },
+  { value: '2', label: '2 人以上' },
+  { value: '3', label: '3 人以上' },
+  { value: '4', label: '4 人以上' },
+  { value: '5', label: '5 人' },
+];
+
+const sortOptions = [
+  { value: 'price-asc', label: '參考價：低到高' },
+  { value: 'price-desc', label: '參考價：高到低' },
+  { value: 'size-desc', label: '坪數：大到小' },
+  { value: 'capacity-desc', label: '人數：多到少' },
+];
+
+function features(room: Room): string[] {
+  const list: string[] = [];
+  if (room.alcove) list.push('凹室床');
+  if (room.balcony) list.push('陽台');
+  if (room.lounge) list.push('貴賓室');
+  if (room.breakfast) list.push('含早餐');
+  if (room.accessible) list.push('無障礙');
+  return list;
+}
+---
+
+<section id="room-explorer" class="not-prose scroll-mt-24" data-room-explorer>
+  <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
+        <p class="mt-1.5 text-sm text-ink-soft">
+          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。參考價為 2026 年的每室每晚起價。
+        </p>
+      </div>
+      <p
+        class="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-medium text-brand-deep"
+        data-result-count
+        aria-live="polite"
+      >
+        {ROOMS.length} 種房型
+      </p>
+    </div>
+
+    <div class="mt-6 space-y-5 border-t border-line-soft pt-6">
+      <fieldset>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">分類</legend>
+        <div class="mt-2.5 flex flex-wrap gap-2">
+          {
+            [{ key: 'all', label: '全部' }, ...CATEGORIES.map((c) => ({ key: c.key, label: c.label }))].map(
+              (option, index) => (
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filter-category"
+                    value={option.key}
+                    checked={index === 0}
+                    class="peer sr-only"
+                  />
+                  <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                    {option.label}
+                  </span>
+                </label>
+              ),
+            )
+          }
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
+        <div class="mt-2.5 flex flex-wrap gap-2">
+          {
+            [{ key: 'all', label: '全部' }, ...VIEWS.map((v) => ({ key: v.key, label: v.label }))].map(
+              (option, index) => (
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filter-view"
+                    value={option.key}
+                    checked={index === 0}
+                    class="peer sr-only"
+                  />
+                  <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                    {option.label}
+                  </span>
+                </label>
+              ),
+            )
+          }
+        </div>
+      </fieldset>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <fieldset>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
+            入住人數
+          </legend>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            {
+              capacityOptions.map((option, index) => (
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filter-capacity"
+                    value={option.value}
+                    checked={index === 0}
+                    class="peer sr-only"
+                  />
+                  <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                    {option.label}
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
+            必要條件
+          </legend>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            {
+              [
+                { key: 'alcove', label: '凹室床' },
+                { key: 'balcony', label: '陽台' },
+                { key: 'breakfast', label: '含早餐' },
+              ].map((option) => (
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="filter-flag" value={option.key} class="peer sr-only" />
+                  <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-gold peer-checked:bg-gold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold hover:bg-paper-deep">
+                    {option.label}
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-5">
+        <label class="flex items-center gap-2 text-sm text-ink-soft">
+          排序
+          <select
+            data-sort
+            class="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            {sortOptions.map((option) => <option value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        <button
+          type="button"
+          data-reset
+          class="ml-auto rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+        >
+          清除條件
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="mt-6 grid gap-4 md:grid-cols-2" data-room-list>
+    {
+      ROOMS.map((room) => (
+        <li
+          class="group flex h-full flex-col rounded-xl border border-line bg-card p-5 transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5"
+          data-room
+          data-category={room.category}
+          data-view={room.view}
+          data-capacity={room.capacity}
+          data-price={room.priceFrom}
+          data-size={room.sizeValue}
+          data-alcove={String(room.alcove)}
+          data-balcony={String(room.balcony)}
+          data-breakfast={String(room.breakfast)}
+        >
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span
+              class:list={[
+                'rounded-full px-2.5 py-1 text-2xs font-bold',
+                viewStyle[room.view],
+              ]}
+            >
+              {viewLabel[room.view]}
+            </span>
+            <span
+              class:list={[
+                'rounded-full border px-2.5 py-1 text-2xs font-medium',
+                categoryStyle[room.category],
+              ]}
+            >
+              {categoryLabel[room.category]}
+            </span>
+            {features(room).map((feature) => (
+              <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
+                {feature}
+              </span>
+            ))}
+          </div>
+
+          <h3 class="mt-3 font-serif text-[1.0625rem] leading-snug font-bold text-ink">
+            {room.name}
+          </h3>
+          <p class="mt-1 text-xs text-ink-faint">{room.nameJa}</p>
+
+          <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
+            <div>
+              <dt class="text-2xs text-ink-faint">面積</dt>
+              <dd class="mt-0.5 text-sm font-bold text-ink">
+                {room.size}
+                <span class="text-xs font-normal"> m²</span>
+              </dd>
+            </div>
+            <div class="border-x border-line-soft">
+              <dt class="text-2xs text-ink-faint">人數上限</dt>
+              <dd class="mt-0.5 text-sm font-bold text-ink">
+                {room.capacity}
+                <span class="text-xs font-normal"> 位</span>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-2xs text-ink-faint">參考起價</dt>
+              <dd class="mt-0.5 text-sm font-bold text-brand">{formatYen(room.priceFrom)}</dd>
+            </div>
+          </dl>
+
+          <p class="mt-3 text-[0.8125rem] leading-relaxed text-ink-soft">
+            <span class="font-medium text-ink">床型：</span>
+            {room.beds}
+          </p>
+          {room.floors && (
+            <p class="mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
+              <span class="font-medium text-ink">分佈樓層：</span>
+              {room.floors}
+              <span class="text-ink-faint">（2026 年 4 月起不可指定）</span>
+            </p>
+          )}
+
+          <p class="mt-3 border-l-2 border-gold pl-3 text-[0.8125rem] leading-relaxed text-ink">
+            {room.verdict}
+          </p>
+
+          {room.note && (
+            <p class="mt-3 rounded-lg bg-paper-deep/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+              {room.note}
+            </p>
+          )}
+
+          <p class="mt-auto pt-4 text-2xs text-ink-faint">
+            約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元起／每室每晚
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p
+    class="hidden rounded-xl border border-dashed border-line bg-paper-deep/40 px-5 py-10 text-center text-sm text-ink-soft"
+    data-empty
+  >
+    沒有符合條件的房型。試著放寬景觀或必要條件。
+  </p>
+</section>
+
+<script>
+  type Flag = 'alcove' | 'balcony' | 'breakfast';
+
+  function initRoomExplorer(root: HTMLElement) {
+    const list = root.querySelector<HTMLElement>('[data-room-list]');
+    const empty = root.querySelector<HTMLElement>('[data-empty]');
+    const count = root.querySelector<HTMLElement>('[data-result-count]');
+    const sortSelect = root.querySelector<HTMLSelectElement>('[data-sort]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    if (!list || !empty || !count || !sortSelect || !resetButton) return;
+
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-room]'));
+
+    function selected(name: string): string {
+      const input = root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+      return input?.value ?? 'all';
+    }
+
+    function activeFlags(): Flag[] {
+      return Array.from(
+        root.querySelectorAll<HTMLInputElement>('input[name="filter-flag"]:checked'),
+      ).map((input) => input.value as Flag);
+    }
+
+    function apply() {
+      const category = selected('filter-category');
+      const view = selected('filter-view');
+      const capacity = Number(selected('filter-capacity')) || 0;
+      const flags = activeFlags();
+
+      let visible = 0;
+      for (const card of cards) {
+        const matches =
+          (category === 'all' || card.dataset.category === category) &&
+          (view === 'all' || card.dataset.view === view) &&
+          Number(card.dataset.capacity) >= capacity &&
+          flags.every((flag) => card.dataset[flag] === 'true');
+
+        card.hidden = !matches;
+        if (matches) visible += 1;
+      }
+
+      count.textContent = `${visible} 種房型`;
+      empty.classList.toggle('hidden', visible > 0);
+      list.classList.toggle('hidden', visible === 0);
+    }
+
+    function sort() {
+      const mode = sortSelect!.value;
+      const ordered = [...cards].sort((a, b) => {
+        const price = (el: HTMLElement) => Number(el.dataset.price);
+        const size = (el: HTMLElement) => Number(el.dataset.size);
+        const seats = (el: HTMLElement) => Number(el.dataset.capacity);
+        switch (mode) {
+          case 'price-desc':
+            return price(b) - price(a);
+          case 'size-desc':
+            return size(b) - size(a) || price(a) - price(b);
+          case 'capacity-desc':
+            return seats(b) - seats(a) || price(a) - price(b);
+          default:
+            return price(a) - price(b);
+        }
+      });
+      for (const card of ordered) list!.append(card);
+    }
+
+    root.addEventListener('change', (event) => {
+      if ((event.target as HTMLElement).closest('[data-sort]')) sort();
+      apply();
+    });
+
+    resetButton.addEventListener('click', () => {
+      root
+        .querySelectorAll<HTMLInputElement>('input[type="radio"][value="all"], input[value="0"]')
+        .forEach((input) => (input.checked = true));
+      root
+        .querySelectorAll<HTMLInputElement>('input[name="filter-flag"]')
+        .forEach((input) => (input.checked = false));
+      sortSelect.value = 'price-asc';
+      sort();
+      apply();
+    });
+
+    sort();
+    apply();
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('[data-room-explorer]')
+    .forEach((root) => initRoomExplorer(root));
+</script>

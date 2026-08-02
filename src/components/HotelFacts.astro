@@ -1,0 +1,28 @@
+---
+import { HOTEL, ROOMS, cheapestRoom, formatYen } from '~/data/tokyo-disneyland-hotel';
+
+const cheapest = cheapestRoom();
+
+const facts = [
+  { label: '客房總數', value: `${HOTEL.totalRooms} 間`, sub: `${ROOMS.length} 種房型` },
+  { label: '到樂園正門', value: '步行 1 分鐘', sub: '四座迪士尼飯店中最近' },
+  { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
+  { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
+  { label: '最低參考價', value: formatYen(cheapest.priceFrom), sub: '每室每晚・2 位大人' },
+  { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚' },
+];
+---
+
+<dl class="not-prose my-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line lg:grid-cols-3">
+  {
+    facts.map((fact) => (
+      <div class="bg-card px-4 py-5 sm:px-5">
+        <dt class="text-2xs font-medium tracking-[0.12em] text-ink-faint uppercase">
+          {fact.label}
+        </dt>
+        <dd class="mt-1.5 font-serif text-lg font-bold text-brand-deep sm:text-xl">{fact.value}</dd>
+        <dd class="mt-1 text-xs leading-relaxed text-ink-faint">{fact.sub}</dd>
+      </div>
+    ))
+  }
+</dl>

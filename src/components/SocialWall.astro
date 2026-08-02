@@ -1,0 +1,35 @@
+---
+import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
+
+const platformStyle: Record<string, string> = {
+  TikTok: 'bg-ink text-white',
+  Instagram: 'bg-berry text-white',
+  YouTube: 'bg-[#a32a2a] text-white',
+  部落格: 'bg-brand text-white',
+};
+---
+
+<div class="not-prose my-10 grid gap-4 sm:grid-cols-2">
+  {
+    SOCIAL_INSIGHTS.map((insight) => (
+      <article class="flex flex-col rounded-xl border border-line bg-card p-5">
+        <span
+          class:list={[
+            'w-fit rounded-full px-2.5 py-1 text-2xs font-bold tracking-wide',
+            platformStyle[insight.platform],
+          ]}
+        >
+          {insight.platform}
+        </span>
+        <h4 class="mt-3 font-serif text-base leading-snug font-bold text-ink">
+          {insight.headline}
+        </h4>
+        <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">{insight.body}</p>
+        <p class="mt-auto flex gap-2 pt-4 text-[0.8125rem] leading-relaxed text-brand-deep">
+          <span class="mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden="true" />
+          <span>{insight.verdict}</span>
+        </p>
+      </article>
+    ))
+  }
+</div>

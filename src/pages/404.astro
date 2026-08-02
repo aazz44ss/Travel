@@ -1,0 +1,28 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { withBase } from '~/consts';
+---
+
+<BaseLayout title="找不到這一頁" description="這個網址沒有對應的內容。">
+  <div class="mx-auto flex max-w-2xl flex-col items-center px-5 py-28 text-center sm:px-8 sm:py-36">
+    <p class="font-serif text-6xl font-bold text-gold sm:text-7xl">404</p>
+    <h1 class="mt-6 font-serif text-2xl font-bold text-ink sm:text-3xl">這條路線沒有規劃過</h1>
+    <p class="mt-4 text-[0.9375rem] leading-[1.9] text-ink-soft">
+      這個網址沒有對應的內容。可能是連結打錯了，也可能是那篇文章還在查資料的階段。
+    </p>
+    <div class="mt-9 flex flex-wrap justify-center gap-3">
+      <a
+        href={withBase('/')}
+        class="rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+      >
+        回到首頁
+      </a>
+      <a
+        href={withBase('/articles')}
+        class="rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
+      >
+        看所有文章
+      </a>
+    </div>
+  </div>
+</BaseLayout>
