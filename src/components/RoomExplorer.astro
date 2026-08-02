@@ -293,7 +293,11 @@ function features(room: Room): string[] {
     const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
     if (!list || !empty || !count || !sortSelect || !resetButton) return;
 
-    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-room]'));
+    const roomList = list;
+    const emptyState = empty;
+    const resultCount = count;
+    const sorter = sortSelect;
+    const cards = Array.from(roomList.querySelectorAll<HTMLElement>('[data-room]'));
 
     function selected(name: string): string {
       const input = root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
@@ -324,13 +328,13 @@ function features(room: Room): string[] {
         if (matches) visible += 1;
       }
 
-      count.textContent = `${visible} 種房型`;
-      empty.classList.toggle('hidden', visible > 0);
-      list.classList.toggle('hidden', visible === 0);
+      resultCount.textContent = `${visible} 種房型`;
+      emptyState.classList.toggle('hidden', visible > 0);
+      roomList.classList.toggle('hidden', visible === 0);
     }
 
     function sort() {
-      const mode = sortSelect!.value;
+      const mode = sorter.value;
       const ordered = [...cards].sort((a, b) => {
         const price = (el: HTMLElement) => Number(el.dataset.price);
         const size = (el: HTMLElement) => Number(el.dataset.size);
@@ -346,7 +350,7 @@ function features(room: Room): string[] {
             return price(a) - price(b);
         }
       });
-      for (const card of ordered) list!.append(card);
+      for (const card of ordered) roomList.append(card);
     }
 
     root.addEventListener('change', (event) => {

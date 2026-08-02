@@ -8,7 +8,10 @@ const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
 );
 
-const tags = [...new Set(articles.flatMap((article) => article.data.tags))].sort();
+const collator = new Intl.Collator('zh-Hant');
+const tags = [...new Set(articles.flatMap((article) => article.data.tags))].sort(collator.compare);
+
+const [latest, ...older] = articles;
 
 const description = `${SITE.name}目前收錄 ${articles.length} 篇深度旅遊指南，每一篇都標明資料來源與查證日期。`;
 ---
@@ -39,15 +42,19 @@ const description = `${SITE.name}目前收錄 ${articles.length} 篇深度旅遊
     </div>
   </section>
 
-  <section class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+  <section class="mx-auto max-w-6xl space-y-6 px-5 py-14 sm:px-8 sm:py-16">
+    {latest ? <ArticleCard article={latest} featured /> : null}
     {
-      articles.length > 0 ? (
+      older.length > 0 && (
         <div class="grid gap-6 md:grid-cols-2">
-          {articles.map((article) => (
+          {older.map((article) => (
             <ArticleCard article={article} />
           ))}
         </div>
-      ) : (
+      )
+    }
+    {
+      articles.length === 0 && (
         <p class="rounded-xl border border-dashed border-line px-6 py-16 text-center text-sm text-ink-soft">
           還沒有文章。
         </p>

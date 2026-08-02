@@ -1,5 +1,6 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
 
 const articles = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: 'src/content/articles' }),
@@ -24,7 +25,7 @@ const articles = defineCollection({
       .array(
         z.object({
           label: z.string(),
-          url: z.string().url(),
+          url: z.url(),
           kind: z.enum(['official', 'blog', 'social', 'media']).default('blog'),
         }),
       )

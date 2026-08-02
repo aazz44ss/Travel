@@ -187,7 +187,10 @@ const schema = [
           <aside class="hidden lg:block">
             <div class="sticky top-24">
               <p class="text-2xs font-bold tracking-[0.18em] text-ink-faint uppercase">本文目錄</p>
-              <ol class="mt-4 space-y-2.5 border-l border-line pl-4" data-toc>
+              <ol
+                class="mt-4 max-h-[min(28rem,calc(100vh-22rem))] space-y-2.5 overflow-y-auto border-l border-line pl-4"
+                data-toc
+              >
                 {toc.map((heading) => (
                   <li>
                     <a
