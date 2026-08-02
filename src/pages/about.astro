@@ -1,0 +1,126 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { SITE, withBase } from '~/consts';
+
+const workflow = [
+  {
+    step: '找一個真的會卡住的問題',
+    body: '不是「東京有什麼好玩」，而是「這間飯店 38 種房型到底差在哪」。題目要具體到有標準答案，才有查證的意義。',
+  },
+  {
+    step: '從官方頁面建立骨架',
+    body: '房型名稱、面積、人數上限、營業時間、制度規則，一律以官方公告為準，包括日文、英文與繁體中文版本互相對照。官方的中文譯名會直接沿用，避免自創詞造成搜尋困難。',
+  },
+  {
+    step: '用在地資料補上官方不會寫的部分',
+    body: '官方不會告訴你哪一層樓的視野會被車站擋住、哪個房型其實比較划算。這些要靠日本在地的旅遊媒體、逐間紀錄的部落格與住客的實際回報。',
+  },
+  {
+    step: '把 TikTok 與 Instagram 當田野調查',
+    body: '短影音有大量官方拍不出來的細節：實際的窗景、備品的樣子、餐廳的餐點。但也有大量倖存者偏差——影片拍的永遠是最好的那間房。所以社群資料只當線索，一定回頭比對。',
+  },
+  {
+    step: '整理成可以篩選的結構',
+    body: '能做成表格與工具的資料就不寫成散文。你打開文章是為了做決定，不是為了讀完一篇文章。',
+  },
+  {
+    step: '標明日期，並且回頭更新',
+    body: '每一篇都寫清楚資料的時間點。制度變動時回頭改，而不是讓一篇三年前的文章繼續在搜尋結果裡誤導人。',
+  },
+];
+---
+
+<BaseLayout
+  title="關於"
+  description={`${SITE.name}的編輯方法：官方資料為地基、在地部落格補洞、社群當田野調查，最後整理成可篩選的工具。`}
+>
+  <section class="border-b border-line bg-paper-deep/40">
+    <div class="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label="麵包屑">
+        <a href={withBase('/')} class="transition-colors hover:text-brand">首頁</a>
+        <span aria-hidden="true">/</span>
+        <span>關於</span>
+      </nav>
+      <h1 class="mt-6 font-serif text-3xl font-bold text-ink sm:text-4xl">關於{SITE.name}</h1>
+      <p class="mt-5 text-base leading-[1.95] text-ink-soft">
+        「做功課」是台灣旅人講了很多年的詞。這個站想做的，就是把那份功課做到底，然後把過程和結論一起攤出來給你看。
+      </p>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-16">
+    <section>
+      <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">為什麼要做這個站</h2>
+      <div class="mt-5 space-y-5 text-[0.9375rem] leading-[1.95] text-ink-soft">
+        <p>
+          旅遊內容從來不缺。缺的是那種你查到第三個小時、還是不知道該按哪個按鈕的時候，能直接給你答案的東西。
+        </p>
+        <p>
+          問題通常出在三個地方。第一，大部分文章的目的是讓你覺得那裡很棒，不是幫你做決定。第二，資訊過期——制度改了、價格調了、分類重編了，文章還停在原地，而且看起來和最新的文章一模一樣。第三，最關鍵的細節散落在日文部落格、社群影片和官方頁面的角落裡，沒有人把它們放在一起。
+        </p>
+        <p>
+          所以這裡的每一篇都會做同一件事：把散落的資料收攏、交叉查證、標明來源與日期，然後整理成你可以直接拿去用的形式。
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">一篇文章怎麼生出來</h2>
+      <ol class="mt-6 space-y-4">
+        {
+          workflow.map((item, index) => (
+            <li class="flex gap-4 rounded-xl border border-line bg-card p-5">
+              <span
+                class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft font-serif text-sm font-bold text-brand-deep"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </span>
+              <div>
+                <h3 class="font-serif text-[0.9375rem] font-bold text-ink">{item.step}</h3>
+                <p class="mt-1.5 text-[0.875rem] leading-[1.9] text-ink-soft">{item.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="mt-16 rounded-2xl border border-line bg-paper-deep/50 p-6 sm:p-8">
+      <h2 class="font-serif text-lg font-bold text-ink">幾件該說清楚的事</h2>
+      <ul class="mt-4 space-y-3 text-[0.875rem] leading-[1.9] text-ink-soft">
+        <li>
+          <strong class="text-ink">沒有業配，也沒有合作關係。</strong>
+          本站與文章中提到的任何飯店、樂園、航空公司或品牌都沒有從屬或合作關係。所有評價都是根據公開資料整理出來的判斷。
+        </li>
+        <li>
+          <strong class="text-ink">價格一律是參考值。</strong>
+          日本的飯店房價依日期浮動幅度很大，本站標示的都是「參考起價」，用來比較房型之間的相對關係，不是報價。
+        </li>
+        <li>
+          <strong class="text-ink">出發前請再確認一次官方公告。</strong>
+          營業時間、制度規則與施工資訊都可能在文章發布後變動。每篇文末都列出使用的資料來源，可以直接點過去查最新版本。
+        </li>
+        <li>
+          <strong class="text-ink">發現錯誤歡迎指正。</strong>
+          寫錯了就改，並在文章上標註更新日期。
+        </li>
+      </ul>
+    </section>
+
+    <div class="mt-12 flex flex-wrap gap-3">
+      <a
+        href={withBase('/articles')}
+        class="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+      >
+        看所有文章 <span aria-hidden="true">→</span>
+      </a>
+      <a
+        href={withBase('/rss.xml')}
+        class="inline-flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
+      >
+        訂閱 RSS
+      </a>
+    </div>
+  </div>
+</BaseLayout>

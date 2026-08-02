@@ -1,0 +1,250 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC',
+    'Microsoft JhengHei', sans-serif;
+  --font-serif: 'Noto Serif TC', 'Songti TC', 'PMingLiU', Georgia, serif;
+
+  --color-paper: #faf7f2;
+  --color-paper-deep: #f2ece1;
+  --color-card: #ffffff;
+
+  --color-ink: #15181d;
+  --color-ink-soft: #545a66;
+  --color-ink-faint: #8b8f99;
+
+  --color-line: #e6dfd3;
+  --color-line-soft: #f0eae0;
+
+  --color-brand: #0f4c5c;
+  --color-brand-deep: #0a353f;
+  --color-brand-soft: #e3eef0;
+
+  --color-gold: #b4832c;
+  --color-gold-soft: #f6efe0;
+
+  --color-berry: #8c2f4a;
+  --color-berry-soft: #f8ebee;
+
+  --text-2xs: 0.6875rem;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'palt' 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+}
+
+@layer components {
+  /*
+   * Long-form article typography, tuned for Traditional Chinese line length and
+   * rhythm. Descendant rules are guarded with `.not-prose` so that interactive
+   * components embedded in MDX keep their own styling.
+   */
+  .prose {
+    color: var(--color-ink);
+    font-size: 1.0625rem;
+    line-height: 2;
+    letter-spacing: 0.015em;
+  }
+
+  .prose > * + * {
+    margin-top: 1.35em;
+  }
+
+  .prose :is(h2, h3, h4):not(:where(.not-prose, .not-prose *)) {
+    scroll-margin-top: 6rem;
+  }
+
+  .prose h2:not(:where(.not-prose, .not-prose *)) {
+    margin-top: 3.25rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem;
+    font-size: 1.6rem;
+    line-height: 1.5;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .prose h3:not(:where(.not-prose, .not-prose *)) {
+    margin-top: 2.5rem;
+    margin-bottom: 0.9rem;
+    font-size: 1.235rem;
+    line-height: 1.6;
+    color: var(--color-brand-deep);
+  }
+
+  .prose h4:not(:where(.not-prose, .not-prose *)) {
+    margin-top: 1.9rem;
+    margin-bottom: 0.6rem;
+    font-size: 1.05rem;
+  }
+
+  .prose p:not(:where(.not-prose, .not-prose *)) {
+    text-wrap: pretty;
+  }
+
+  .prose strong:not(:where(.not-prose, .not-prose *)) {
+    font-weight: 700;
+    color: var(--color-brand-deep);
+  }
+
+  .prose a:not(:where(.not-prose, .not-prose *)) {
+    color: var(--color-brand);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-brand) 35%, transparent);
+    text-underline-offset: 0.25em;
+    transition: color 0.15s var(--ease-out-soft);
+  }
+
+  .prose a:not(:where(.not-prose, .not-prose *)):hover {
+    color: var(--color-gold);
+    text-decoration-color: var(--color-gold);
+  }
+
+  .prose ul:not(:where(.not-prose, .not-prose *)) {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .prose ul:not(:where(.not-prose, .not-prose *)) > li {
+    position: relative;
+    padding-left: 1.4rem;
+  }
+
+  .prose ul:not(:where(.not-prose, .not-prose *)) > li::before {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    top: 0.92em;
+    width: 0.36rem;
+    height: 0.36rem;
+    border-radius: 9999px;
+    background-color: var(--color-gold);
+  }
+
+  .prose ol:not(:where(.not-prose, .not-prose *)) {
+    list-style: decimal;
+    padding-left: 1.35rem;
+  }
+
+  .prose ol:not(:where(.not-prose, .not-prose *)) > li::marker {
+    color: var(--color-gold);
+    font-weight: 700;
+  }
+
+  .prose li:not(:where(.not-prose, .not-prose *)) + li {
+    margin-top: 0.5rem;
+  }
+
+  .prose blockquote:not(:where(.not-prose, .not-prose *)) {
+    border-left: 3px solid var(--color-gold);
+    padding: 0.15rem 0 0.15rem 1.25rem;
+    color: var(--color-ink-soft);
+    font-style: normal;
+  }
+
+  .prose code:not(:where(.not-prose, .not-prose *)) {
+    font-size: 0.9em;
+    background-color: var(--color-paper-deep);
+    padding: 0.1em 0.4em;
+    border-radius: 0.25rem;
+  }
+
+  .prose hr:not(:where(.not-prose, .not-prose *)) {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+  }
+
+  /* Markdown tables get a horizontally scrollable shell on narrow screens. */
+  .prose table:not(:where(.not-prose, .not-prose *)) {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+    background-color: var(--color-card);
+  }
+
+  .prose table:not(:where(.not-prose, .not-prose *)) :is(th, td) {
+    border-bottom: 1px solid var(--color-line-soft);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .prose table:not(:where(.not-prose, .not-prose *)) th {
+    background-color: var(--color-paper-deep);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .prose table:not(:where(.not-prose, .not-prose *)) tr:last-child :is(th, td) {
+    border-bottom: 0;
+  }
+
+  .prose figure figcaption:not(:where(.not-prose, .not-prose *)) {
+    margin-top: 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--color-ink-faint);
+    text-align: center;
+  }
+}
+
+@utility table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}

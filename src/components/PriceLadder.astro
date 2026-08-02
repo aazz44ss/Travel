@@ -1,0 +1,78 @@
+---
+import { formatYen } from '~/data/tokyo-disneyland-hotel';
+
+/**
+ * The same room, priced three ways. Isolating a single room type makes the
+ * view premium legible in a way the full price table cannot.
+ */
+const rungs = [
+  {
+    view: '無景觀指定',
+    price: 64500,
+    delta: null,
+    note: '窗外是中庭、正門或飯店側面',
+    tone: 'muted',
+  },
+  {
+    view: '樂園景觀',
+    price: 70500,
+    delta: 6000,
+    note: '斜看樂園，煙火看得到但構圖偏',
+    tone: 'mid',
+  },
+  {
+    view: '樂園全景觀',
+    price: 79000,
+    delta: 14500,
+    note: '正對樂園，全部在 5 樓以上',
+    tone: 'full',
+  },
+] as const;
+
+const max = Math.max(...rungs.map((r) => r.price));
+
+const toneStyle = {
+  muted: 'bg-ink-faint/45',
+  mid: 'bg-brand/55',
+  full: 'bg-brand',
+} as const;
+---
+
+<figure class="not-prose my-10 rounded-xl border border-line bg-card p-5 sm:p-7">
+  <figcaption class="mb-5">
+    <p class="font-serif text-base font-bold text-ink">同一間精緻客房，三種景觀的價差</p>
+    <p class="mt-1 text-xs leading-relaxed text-ink-faint">
+      以 2026 年的參考起價比較。房間規格完全相同，差別只有窗外。
+    </p>
+  </figcaption>
+
+  <ul class="space-y-4">
+    {
+      rungs.map((rung) => (
+        <li>
+          <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span class="text-sm font-bold text-ink">{rung.view}</span>
+            <span class="text-sm font-bold text-brand-deep">
+              {formatYen(rung.price)}
+              {rung.delta && (
+                <span class="ml-1.5 text-xs font-normal text-gold">＋{formatYen(rung.delta)}</span>
+              )}
+            </span>
+          </div>
+          <div class="mt-1.5 h-2.5 overflow-hidden rounded-full bg-paper-deep">
+            <div
+              class:list={['h-full rounded-full', toneStyle[rung.tone]]}
+              style={`width: ${Math.round((rung.price / max) * 100)}%`}
+            />
+          </div>
+          <p class="mt-1.5 text-xs text-ink-soft">{rung.note}</p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="mt-5 border-t border-line-soft pt-4 text-[0.8125rem] leading-relaxed text-ink-soft">
+    換句話說，從沒有景觀升到樂園景觀只要約 6,000 日圓；再往上升到正面景又要多付約 8,500
+    日圓。中間那一階幾乎是所有人都該按下去的按鈕，最後那一階才是真正需要考慮的支出。
+  </p>
+</figure>

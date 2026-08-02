@@ -1,0 +1,87 @@
+---
+interface Props {
+  type?: 'tip' | 'warn' | 'key' | 'note';
+  title?: string;
+}
+
+const { type = 'note', title } = Astro.props;
+
+const styles = {
+  tip: {
+    wrap: 'border-brand/25 bg-brand-soft/60',
+    label: 'text-brand-deep',
+    icon: 'M8 1.5a5.5 5.5 0 0 0-3 10.1V13a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1.4A5.5 5.5 0 0 0 8 1.5ZM6.5 15.5h3',
+    fallback: '實用技巧',
+  },
+  warn: {
+    wrap: 'border-berry/25 bg-berry-soft',
+    label: 'text-berry',
+    icon: 'M8 1.8 1.2 14.2h13.6L8 1.8Zm0 4.4v4m0 2.2v.1',
+    fallback: '注意',
+  },
+  key: {
+    wrap: 'border-gold/35 bg-gold-soft',
+    label: 'text-gold',
+    icon: 'M10.5 1.5a4 4 0 0 0-3.8 5.2L1.5 11.9v2.6h2.6l.9-.9v-1.5h1.5l1.2-1.2v-1.5h1.5l.5-.5A4 4 0 1 0 10.5 1.5Zm1.3 3.4h.01',
+    fallback: '重點',
+  },
+  note: {
+    wrap: 'border-line bg-paper-deep/70',
+    label: 'text-ink-soft',
+    icon: 'M8 14.5A6.5 6.5 0 1 0 8 1.5a6.5 6.5 0 0 0 0 13ZM8 5.2v.1M8 7.6v3.6',
+    fallback: '備註',
+  },
+}[type];
+---
+
+<aside class:list={['not-prose my-8 rounded-xl border px-5 py-4 sm:px-6 sm:py-5', styles.wrap]}>
+  <p class:list={['flex items-center gap-2 text-sm font-bold', styles.label]}>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      class="shrink-0"
+      aria-hidden="true"
+    >
+      <path
+        d={styles.icon}
+        stroke="currentColor"
+        stroke-width="1.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+    {title ?? styles.fallback}
+  </p>
+  <div class="callout-body mt-2.5 text-[0.9375rem] leading-[1.9] text-ink">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .callout-body :global(> * + *) {
+    margin-top: 0.8em;
+  }
+  .callout-body :global(ul) {
+    padding-left: 0;
+    list-style: none;
+  }
+  .callout-body :global(li) {
+    position: relative;
+    padding-left: 1.2rem;
+  }
+  .callout-body :global(li + li) {
+    margin-top: 0.35rem;
+  }
+  .callout-body :global(li::before) {
+    content: '';
+    position: absolute;
+    left: 0.15rem;
+    top: 0.85em;
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 9999px;
+    background-color: currentColor;
+    opacity: 0.45;
+  }
+</style>

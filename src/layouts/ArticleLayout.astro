@@ -1,0 +1,256 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import SourceList from '~/components/SourceList.astro';
+import { SITE, formatDate, withBase } from '~/consts';
+
+interface Props {
+  article: CollectionEntry<'articles'>;
+  headings: MarkdownHeading[];
+}
+
+const { article, headings } = Astro.props;
+const { data } = article;
+
+const toc = headings.filter((heading) => heading.depth === 2);
+
+const accentClass = {
+  teal: 'from-brand-deep via-brand to-[#1b6c7d]',
+  gold: 'from-[#6f4e18] via-[#8a6420] to-gold',
+  berry: 'from-[#4c1826] via-[#5f1f31] to-berry',
+}[data.accent];
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com').href;
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: data.title,
+    description: data.description,
+    inLanguage: 'zh-Hant-TW',
+    datePublished: data.publishedAt.toISOString(),
+    dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+    author: { '@type': 'Organization', name: SITE.author },
+    publisher: { '@type': 'Organization', name: SITE.name },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    keywords: data.tags.join(', '),
+    about: { '@type': 'Place', name: data.destination },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '首頁', item: new URL(withBase('/'), Astro.site).href },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: '所有文章',
+        item: new URL(withBase('/articles'), Astro.site).href,
+      },
+      { '@type': 'ListItem', position: 3, name: data.title, item: canonical },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  publishedAt={data.publishedAt}
+  updatedAt={data.updatedAt}
+  type="article"
+  schema={schema}
+>
+  <header class:list={['relative overflow-hidden bg-gradient-to-br text-white', accentClass]}>
+    <div
+      class="pointer-events-none absolute inset-0 opacity-30"
+      style="background-image: radial-gradient(circle at 15% 15%, rgba(255,255,255,.5), transparent 40%), radial-gradient(circle at 88% 82%, rgba(255,255,255,.28), transparent 45%)"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="relative mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label="麵包屑">
+        <a href={withBase('/')} class="transition-opacity hover:opacity-100">首頁</a>
+        <span aria-hidden="true">/</span>
+        <a href={withBase('/articles')} class="transition-opacity hover:opacity-100">所有文章</a>
+        <span aria-hidden="true">/</span>
+        <span>{data.country}</span>
+      </nav>
+
+      {
+        data.heroKicker && (
+          <p class="mt-8 text-2xs font-bold tracking-[0.22em] uppercase opacity-85">
+            {data.heroKicker}
+          </p>
+        )
+      }
+
+      <h1 class="mt-3 font-serif text-3xl leading-[1.35] font-bold sm:text-[2.6rem] sm:leading-[1.3]">
+        {data.title}
+      </h1>
+
+      <p class="mt-5 max-w-2xl text-[0.9375rem] leading-[1.9] opacity-90 sm:text-base">
+        {data.description}
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs opacity-85">
+        <time datetime={data.publishedAt.toISOString()}>
+          {formatDate(data.publishedAt)} 發布
+        </time>
+        {
+          data.updatedAt && (
+            <>
+              <span aria-hidden="true">·</span>
+              <time datetime={data.updatedAt.toISOString()}>{formatDate(data.updatedAt)} 更新</time>
+            </>
+          )
+        }
+        <span aria-hidden="true">·</span>
+        <span>閱讀約 {data.readingMinutes} 分鐘</span>
+        <span aria-hidden="true">·</span>
+        <span>{SITE.author}</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div class="lg:grid lg:grid-cols-[1fr_15rem] lg:gap-14">
+      <div class="min-w-0">
+        {
+          data.takeaways.length > 0 && (
+            <section class="mb-12 rounded-2xl border border-gold/30 bg-gold-soft/60 p-6 sm:p-7">
+              <h2 class="font-serif text-base font-bold text-ink">先看結論</h2>
+              <ul class="mt-4 space-y-3">
+                {data.takeaways.map((point) => (
+                  <li class="flex gap-3 text-[0.9375rem] leading-[1.9] text-ink">
+                    <span
+                      class="mt-[0.72em] h-1.5 w-1.5 shrink-0 rounded-full bg-gold"
+                      aria-hidden="true"
+                    />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        {
+          toc.length > 0 && (
+            <details class="mb-10 rounded-xl border border-line bg-card px-5 py-4 lg:hidden">
+              <summary class="cursor-pointer list-none font-serif text-sm font-bold text-ink">
+                本文目錄（{toc.length} 節）
+              </summary>
+              <ol class="mt-3 space-y-2 border-t border-line-soft pt-3">
+                {toc.map((heading, index) => (
+                  <li class="flex gap-2.5 text-sm">
+                    <span class="text-ink-faint tabular-nums">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <a href={`#${heading.slug}`} class="text-ink-soft hover:text-brand">
+                      {heading.text}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )
+        }
+
+        <article class="prose">
+          <slot />
+        </article>
+
+        <SourceList sources={data.sources} />
+
+        <nav class="mt-10 flex justify-between gap-4 text-sm">
+          <a
+            href={withBase('/articles')}
+            class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+          >
+            <span aria-hidden="true">←</span> 回到所有文章
+          </a>
+          <a
+            href="#main"
+            class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+          >
+            回到頂端 <span aria-hidden="true">↑</span>
+          </a>
+        </nav>
+      </div>
+
+      {
+        toc.length > 0 && (
+          <aside class="hidden lg:block">
+            <div class="sticky top-24">
+              <p class="text-2xs font-bold tracking-[0.18em] text-ink-faint uppercase">本文目錄</p>
+              <ol class="mt-4 space-y-2.5 border-l border-line pl-4" data-toc>
+                {toc.map((heading) => (
+                  <li>
+                    <a
+                      href={`#${heading.slug}`}
+                      data-toc-link={heading.slug}
+                      class="block text-[0.8125rem] leading-relaxed text-ink-faint transition-colors hover:text-brand"
+                    >
+                      {heading.text}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+
+              <div class="mt-8 rounded-xl border border-line bg-card p-4">
+                <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">目的地</p>
+                <p class="mt-2 font-serif text-base font-bold text-ink">{data.destination}</p>
+                <p class="mt-0.5 text-xs text-ink-soft">{data.country}</p>
+                <ul class="mt-3 flex flex-wrap gap-1.5">
+                  {data.tags.map((tag) => (
+                    <li class="rounded-full bg-paper-deep px-2 py-0.5 text-2xs text-ink-soft">
+                      #{tag}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </aside>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]');
+  if (links.length > 0) {
+    const targets = Array.from(links)
+      .map((link) => document.getElementById(link.dataset.tocLink ?? ''))
+      .filter((element): element is HTMLElement => element !== null);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          links.forEach((link) => {
+            link.classList.toggle('toc-active', link.dataset.tocLink === entry.target.id);
+          });
+        }
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: 0 },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+  }
+</script>
+
+<style>
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .toc-active {
+    color: var(--color-brand);
+    font-weight: 500;
+  }
+</style>

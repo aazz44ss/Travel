@@ -1,0 +1,243 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import HotelFacts from '~/components/HotelFacts.astro';
+import RoomExplorer from '~/components/RoomExplorer.astro';
+import BedTable from '~/components/BedTable.astro';
+import FacilityGrid from '~/components/FacilityGrid.astro';
+import DiningList from '~/components/DiningList.astro';
+import BenefitList from '~/components/BenefitList.astro';
+import FaqList from '~/components/FaqList.astro';
+import { withBase } from '~/consts';
+import {
+  CATEGORIES,
+  FAQS,
+  HOTEL,
+  ROOMS,
+  VIEWS,
+  roomsByCategory,
+} from '~/data/tokyo-disneyland-hotel';
+
+const article = await getEntry('articles', 'tokyo-disneyland-hotel');
+
+const title = `${HOTEL.name} 房型資料庫`;
+const description = `${HOTEL.name}全 ${ROOMS.length} 種房型的面積、床型、人數上限、景觀分級與參考價，整理成可篩選的清單。含床型尺寸、餐廳營業時間、住宿禮遇與常見問題。`;
+
+const sections = [
+  { id: 'overview', label: '基本資料' },
+  { id: 'views', label: '景觀分級' },
+  { id: 'categories', label: '四大分類' },
+  { id: 'room-explorer', label: '房型探索器' },
+  { id: 'beds', label: '床型尺寸' },
+  { id: 'facilities', label: '設施與拍照點' },
+  { id: 'dining', label: '餐廳' },
+  { id: 'benefits', label: '住宿禮遇' },
+  { id: 'faq', label: '常見問題' },
+];
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Hotel',
+    name: HOTEL.name,
+    alternateName: [HOTEL.nameEn, HOTEL.nameJa],
+    description,
+    url: HOTEL.officialUrl,
+    numberOfRooms: HOTEL.totalRooms,
+    checkinTime: HOTEL.checkIn,
+    checkoutTime: HOTEL.checkOut,
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'JP',
+      addressRegion: '千葉縣',
+      addressLocality: '浦安市',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  },
+];
+---
+
+<BaseLayout title={title} description={description} schema={schema}>
+  <header class="border-b border-line bg-gradient-to-br from-brand-deep to-brand text-white">
+    <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label="麵包屑">
+        <a href={withBase('/')} class="transition-opacity hover:opacity-100">首頁</a>
+        <span aria-hidden="true">/</span>
+        <span>房型資料庫</span>
+      </nav>
+      <p class="mt-8 text-2xs font-bold tracking-[0.22em] uppercase opacity-85">
+        日本・千葉縣浦安市
+      </p>
+      <h1 class="mt-3 font-serif text-3xl leading-tight font-bold sm:text-[2.6rem]">
+        {HOTEL.name}<span class="block text-xl font-medium opacity-80 sm:text-2xl"
+          >房型資料庫</span
+        >
+      </h1>
+      <p class="mt-5 max-w-2xl text-[0.9375rem] leading-[1.9] opacity-90">
+        全 {ROOMS.length} 種房型的規格與參考價，以及床型尺寸、餐廳、設施與住宿禮遇的完整整理。
+        訂房頁面開著的時候，把這一頁放在旁邊對照。
+      </p>
+      {
+        article && (
+          <a
+            href={withBase(`/articles/${article.id}`)}
+            class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-brand-deep transition-transform duration-300 hover:-translate-y-0.5"
+          >
+            先讀完整攻略 <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+  </header>
+
+  <nav
+    class="sticky top-16 z-40 border-b border-line bg-paper/90 backdrop-blur-md"
+    aria-label="頁面章節"
+  >
+    <div class="table-scroll mx-auto max-w-6xl px-5 sm:px-8">
+      <ul class="flex gap-1 py-2.5 whitespace-nowrap">
+        {
+          sections.map((section) => (
+            <li>
+              <a
+                href={`#${section.id}`}
+                class="block rounded-full px-3.5 py-1.5 text-sm text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+              >
+                {section.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </nav>
+
+  <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+    <section id="overview" class="scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">基本資料</h2>
+      <HotelFacts />
+      <p class="text-sm leading-relaxed text-ink-faint">
+        資料整理自官方繁體中文客房頁面與 2026 年公布的費率。價格為每室每晚、2
+        位大人的參考起價，實際金額依日期大幅浮動，請以官方訂房系統為準。
+      </p>
+    </section>
+
+    <section id="views" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">景觀分級</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        這是選房時最先要決定的一件事。房名括號裡寫的就是景觀等級；沒有括號代表沒有景觀保證。
+      </p>
+      <div class="mt-6 grid gap-4 lg:grid-cols-3">
+        {
+          VIEWS.map((view, index) => (
+            <article
+              class:list={[
+                'rounded-xl border p-5',
+                index === 0 ? 'border-brand/30 bg-brand-soft/50' : 'border-line bg-card',
+              ]}
+            >
+              <div class="flex items-baseline justify-between gap-2">
+                <h3 class="font-serif text-base font-bold text-ink">{view.label}</h3>
+                <span class="text-2xs text-ink-faint">
+                  {ROOMS.filter((room) => room.view === view.key).length} 種房型
+                </span>
+              </div>
+              <p class="mt-1 text-xs text-ink-faint">
+                {view.labelJa}／{view.labelEn}
+              </p>
+              <p class="mt-3 text-sm font-medium text-brand-deep">{view.summary}</p>
+              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">{view.detail}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section id="categories" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">四大分類</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        房名的第一段就是分類。分類決定了你有沒有貴賓室、含不含早餐，以及窗戶朝哪一邊。
+      </p>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        {
+          CATEGORIES.map((category) => (
+            <article class="rounded-xl border border-line bg-card p-5">
+              <div class="flex items-baseline justify-between gap-3">
+                <h3 class="font-serif text-base font-bold text-ink">{category.label}</h3>
+                <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
+                  {roomsByCategory(category.key).length} 種
+                </span>
+              </div>
+              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">{category.summary}</p>
+              <ul class="mt-3 flex flex-wrap gap-1.5">
+                {category.perks.map((perk) => (
+                  <li class="rounded-full border border-line px-2.5 py-1 text-2xs text-ink-soft">
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mt-20">
+      <RoomExplorer />
+    </section>
+
+    <section id="beds" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">床型尺寸</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        日本飯店的「標準床」寬度只有 120 公分，比台灣的單人床寬、離雙人床還很遠。訂房前先看這張表，比看房型名稱有用。
+      </p>
+      <BedTable />
+    </section>
+
+    <section id="facilities" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">設施與拍照點</h2>
+      <FacilityGrid />
+    </section>
+
+    <section id="dining" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">餐廳</h2>
+      <DiningList />
+    </section>
+
+    <section id="benefits" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">住宿禮遇</h2>
+      <BenefitList />
+    </section>
+
+    <section id="faq" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">常見問題</h2>
+      <FaqList />
+    </section>
+
+    {
+      article && (
+        <section class="mt-20 rounded-2xl border border-line bg-paper-deep/50 p-7 sm:p-10">
+          <h2 class="font-serif text-xl font-bold text-ink">想知道這些數字背後的判斷？</h2>
+          <p class="mt-3 max-w-2xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+            完整攻略裡有 2026 年 4
+            月客房分類改版的影響、從房間看夜間表演的真實狀況、四種明星主題房怎麼選，以及訂房開賣時間與撿取消房的做法。
+          </p>
+          <a
+            href={withBase(`/articles/${article.id}`)}
+            class="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+          >
+            閱讀完整攻略 <span aria-hidden="true">→</span>
+          </a>
+        </section>
+      )
+    }
+  </div>
+</BaseLayout>

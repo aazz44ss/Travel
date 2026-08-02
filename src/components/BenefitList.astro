@@ -1,0 +1,28 @@
+---
+import { BENEFITS } from '~/data/tokyo-disneyland-hotel';
+---
+
+<ol class="not-prose my-8 space-y-3">
+  {
+    BENEFITS.map((benefit, index) => (
+      <li class="flex gap-4 rounded-xl border border-line bg-card p-5">
+        <span
+          class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft font-serif text-sm font-bold text-brand-deep"
+          aria-hidden="true"
+        >
+          {index + 1}
+        </span>
+        <div>
+          <h4 class="font-serif text-[0.9375rem] font-bold text-ink">{benefit.title}</h4>
+          <p class="mt-1.5 text-[0.875rem] leading-[1.9] text-ink-soft">{benefit.description}</p>
+          {benefit.caveat && (
+            <p class="mt-2 inline-flex items-start gap-1.5 rounded-lg bg-berry-soft px-2.5 py-1.5 text-xs leading-relaxed text-berry">
+              <span class="font-bold">注意</span>
+              <span>{benefit.caveat}</span>
+            </p>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ol>
