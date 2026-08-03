@@ -1,5 +1,5 @@
 ---
-import { ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { HOTEL, ROOMS } from '~/data/tokyo-disneyland-hotel';
 import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
 import { PLAN_HEIGHT, PLAN_ROOMS, PLAN_WIDTH, type Tone } from '~/data/tdh-plan';
 
@@ -115,6 +115,19 @@ for (const cell of cells) {
   const set = floorFallback.get(group) ?? [];
   floorFallback.set(group, [...new Set([...set, ...cell.floors])].sort((a, b) => a - b));
 }
+
+/**
+ * One traced position can be several rooms, one per floor it repeats on, so the
+ * room count is the sum of those floors rather than the number of positions.
+ * It falls short of the hotel's total because the survey behind the plan never
+ * enumerated every position; the shortfall is stated rather than hidden.
+ */
+const planRooms = cells.reduce(
+  (sum, cell) =>
+    sum + (cell.floors.length > 0 ? cell.floors : (floorFallback.get(cell.code[0]!) ?? [])).length,
+  0,
+);
+const missingRooms = HOTEL.totalRooms - planRooms;
 
 const LEGEND: Tone[] = ['grand', 'park', 'entrance', 'inner', 'turret'];
 const CAT_LEGEND = ['standard', 'character', 'concierge', 'suite'] as const;
@@ -324,11 +337,19 @@ const biggest = Math.max(...cells.map((c) => c.area));
         313 到 301，其仙履奇緣／愛麗絲／美女與野獸／小仙子的排列與房號資料完全吻合；8 樓空橋（401–407）取自 8
         樓平面圖，套疊誤差在 2 像素以內。最大的家庭客房面積約是最小客房的 {Math.round((biggest / (median || 1)) * 10) / 10} 倍。手機請左右滑動圖面。
       </p>
+
+      <p class="text-xs leading-relaxed text-ink-faint">
+        <span class="font-bold text-ink-soft">圖上是 {planRooms} 間，不是全館 {HOTEL.totalRooms} 間。</span>
+        差的 {missingRooms} 間是原始調查沒有畫進去的位置。這 {cells.length} 個位置裡有 {
+          cells.filter((cell) => cell.floors.length > 0).length
+        } 個有公開房號，剩下的只能依同一段走廊推估樓層範圍，1、2 樓的掌握度最低（各只有 4
+        個公開房號）。來源本身也註明資料僅供參考、不保證完整。
+      </p>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload }}>
+<script is:inline define:vars={{ payload, planRooms, totalRooms: HOTEL.totalRooms }}>
   (() => {
     const root = document.querySelector('#floor-plan');
     if (!root) return;
@@ -393,15 +414,20 @@ const biggest = Math.max(...cells.map((c) => c.area));
       });
 
       if (active === null) {
-        const shown = payload.filter((c) => onFloor(c, f)).length;
+        const onThisFloor = payload.filter((c) => onFloor(c, f)).length;
         if (hint) hint.textContent = f === null ? '點圖上任一間房' : `${f} 樓`;
         if (label) label.textContent = '整層平面';
         if (blurb) blurb.textContent = DEFAULT_BLURB;
         if (toneBadge) toneBadge.classList.add('hidden');
-        if (facts)
+        if (facts) {
+          const row = (term, value) =>
+            `<div class="flex justify-between gap-3"><dt class="text-ink-faint">${term}</dt><dd class="font-bold text-ink">${value}</dd></div>`;
           facts.innerHTML =
-            `<div class="flex justify-between gap-3"><dt class="text-ink-faint">${f === null ? '圖上客房' : `${f} 樓客房`}</dt><dd class="font-bold text-ink">${shown} 間</dd></div>` +
-            `<div class="flex justify-between gap-3"><dt class="text-ink-faint">全館客房</dt><dd class="font-bold text-ink">706 間</dd></div>`;
+            (f === null
+              ? row('圖上位置', `${onThisFloor} 處`) + row('這些位置的客房', `${planRooms} 間`)
+              : row(`${f} 樓客房`, `${onThisFloor} 間`)) +
+            row('全館客房', `${totalRooms} 間`);
+        }
         return;
       }
 
