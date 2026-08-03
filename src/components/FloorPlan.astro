@@ -1,223 +1,105 @@
 ---
 import { ROOMS } from '~/data/tokyo-disneyland-hotel';
 import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import { BARS, CELL_H, CELL_W, CORRIDOR, type Slot } from '~/data/tdh-layout';
 
 /**
- * Bird's-eye schematic of Tokyo Disneyland Hotel.
+ * Room-level plan of Tokyo Disneyland Hotel.
  *
- * Drawn as a squashed plan with each block extruded downward, so the building
- * reads as a solid mass seen from above rather than an abstract diagram. The
- * massing follows the published floor plans and the resort's aerial map: a
- * courtyard on the main-entrance side, two wings, and two legs reaching toward
- * the park with a turret and an end block each, plus a high bridge that exists
- * only on the top two floors.
- *
- * Individual rooms are not placed. Each block covers the position codes that
- * belong to it, which is as precise as the underlying data supports.
+ * Each cell is one guest room, placed along the corridor it belongs to, so the
+ * two sides of a double-loaded arm read as facing opposite ways. Cells whose
+ * room number the survey did not publish are still drawn, hatched, because
+ * leaving them out would make the corridors look half empty and hide the fact
+ * that a character-room wing has park-facing rooms on its other side.
  */
 
 const roomById = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
 
-type Tone = 'grand' | 'park' | 'entrance' | 'inner' | 'turret';
-
-interface Part {
-  key: string;
-  label: string;
-  /** Shown on the drawing itself. */
-  short: string;
-  codes: string[];
-  tone: Tone;
-  blurb: string;
-}
-
-const PARTS: Part[] = [
-  {
-    key: 'ring',
-    label: '中庭環',
-    short: '明星房 3xx',
-    codes: ['301', '302', '303', '304', '305', '306', '307', '308', '309', '310', '311', '312', '313'],
-    tone: 'entrance',
-    blurb: '圍著中庭的一圈，幾乎全是迪士尼明星房。仙履奇緣、愛麗絲、小仙子、美女與野獸都在這裡，窗外是飯店正門那一側。',
-  },
-  {
-    key: 'wing-west',
-    label: '西翼',
-    short: '明星房 6xx',
-    codes: ['602', '603', '604', '606', '608', '610', '612', '614', '616', '617', '619', '622', '624', '626', '628', '630', '632'],
-    tone: 'entrance',
-    blurb: '全飯店最長的一支，房號 6 開頭。愛麗絲房與小仙子房大量集中在這裡。末端的 617 從 4 樓起是樂園景觀。',
-  },
-  {
-    key: 'wing-east',
-    label: '東翼',
-    short: '樂園景觀 1xx',
-    codes: ['103', '105', '106', '107', '121'],
-    tone: 'park',
-    blurb: '房號 1 開頭。105 到 107 是禮賓房與景隅客房的樂園景觀，121 是一層一間的塔樓客房。',
-  },
-  {
-    key: 'leg-top-w',
-    label: '西腳・上段',
-    short: '明星房',
-    codes: ['201', '202'],
-    tone: 'entrance',
-    blurb: '靠中庭的一段，美女與野獸客房（三床）。',
-  },
-  {
-    key: 'leg-mid-w',
-    label: '西腳・中段',
-    short: '無景觀 2xx',
-    codes: ['209', '211', '213'],
-    tone: 'inner',
-    blurb: '精緻凹室客房與尊爵客房。官方沒有給這一段景觀分類。',
-  },
-  {
-    key: 'turret-w',
-    label: '西角塔',
-    short: '215',
-    codes: ['215'],
-    tone: 'turret',
-    blurb: '3 樓景隅客房、4–7 樓塔樓客房、8–9 樓套房。同一座塔越高等級越高。',
-  },
-  {
-    key: 'end-w',
-    label: '西端・正面客房',
-    short: '樂園全景觀 216–224',
-    codes: ['216', '217', '218', '220', '221', '222', '224', '324'],
-    tone: 'grand',
-    blurb: '往樂園方向突出的一塊。5 樓以上是樂園全景觀，3、4 樓被車站站體擋住就沒有景觀分類。93 平方公尺的家庭客房也在這一端。',
-  },
-  {
-    key: 'leg-top-e',
-    label: '東腳・上段',
-    short: '明星房',
-    codes: ['501', '502'],
-    tone: 'entrance',
-    blurb: '靠中庭的一段，美女與野獸客房（三床）。',
-  },
-  {
-    key: 'leg-mid-e',
-    label: '東腳・中段',
-    short: '無景觀 5xx',
-    codes: ['503', '505', '507', '509', '511', '513'],
-    tone: 'inner',
-    blurb: '精緻凹室客房與尊爵客房。官方沒有給這一段景觀分類。',
-  },
-  {
-    key: 'turret-e',
-    label: '東角塔',
-    short: '515',
-    codes: ['515'],
-    tone: 'turret',
-    blurb: '與西角塔對稱。華特・迪士尼套房與迪士尼魔法王國套房都在這兩座塔的頂端。',
-  },
-  {
-    key: 'end-e',
-    label: '東端・正面客房',
-    short: '樂園全景觀 516–522',
-    codes: ['516', '517', '518', '520', '521', '522'],
-    tone: 'grand',
-    blurb: '與西端對稱，同樣是 5 樓以上才掛上樂園全景觀。',
-  },
-  {
-    key: 'bridge',
-    label: '空橋（8–9 樓）',
-    short: '樂園全景觀 401–407',
-    codes: ['401', '402', '403', '404', '405', '406', '407'],
-    tone: 'grand',
-    blurb: '只存在於 8 樓與 9 樓，橫跨兩腳之間、正對樂園。8 樓那一排就是全飯店唯一有陽台的禮賓房。',
-  },
-];
-
-const codeToPart = new Map<string, string>();
-for (const part of PARTS) for (const code of part.codes) codeToPart.set(code, part.key);
-
-const stats: Record<string, { total: number; byFloor: Record<number, number> }> = {};
-for (const part of PARTS) stats[part.key] = { total: 0, byFloor: {} };
+/** code -> floors on which a room with that code is recorded. */
+const floorsByCode = new Map<string, Map<number, string>>();
 for (const hit of KNOWN_ROOM_NUMBERS) {
-  const key = codeToPart.get(hit.number.slice(1));
-  if (!key) continue;
-  const bucket = stats[key]!;
-  bucket.total += 1;
-  bucket.byFloor[hit.floor] = (bucket.byFloor[hit.floor] ?? 0) + 1;
+  const code = hit.number.slice(1);
+  if (!floorsByCode.has(code)) floorsByCode.set(code, new Map());
+  floorsByCode.get(code)!.set(hit.floor, hit.roomId);
 }
 
-const samples: Record<string, string[]> = {};
-for (const part of PARTS) {
-  const names = new Set<string>();
-  for (const hit of KNOWN_ROOM_NUMBERS) {
-    if (codeToPart.get(hit.number.slice(1)) !== part.key) continue;
-    const room = roomById[hit.roomId];
-    if (room) names.add(room.name);
-  }
-  samples[part.key] = [...names];
+const TONE = {
+  grand: { fill: '#0f4c5c', text: '#ffffff', label: '樂園全景觀', note: '正面看得到城堡' },
+  park: { fill: '#5b93a1', text: '#ffffff', label: '樂園景觀', note: '斜角看得到樂園' },
+  entrance: { fill: '#d8a9b7', text: '#5c3140', label: '迪士尼明星房', note: '面向飯店正門' },
+  inner: { fill: '#cdc2ae', text: '#4f4739', label: '無景觀分類', note: '中庭或側面' },
+  turret: { fill: '#b4832c', text: '#ffffff', label: '角塔', note: '景隅／塔樓／套房' },
+} as const;
+
+interface Cell {
+  x: number;
+  y: number;
+  angle: number;
+  code?: string;
+  tone: string;
+  type: string;
+  bed?: string;
+  facing: string;
+  bar: string;
+  /** Floors on which this position is a recorded room. Empty = never listed. */
+  floors: number[];
+  /** Room name from the main dataset, when the number is known. */
+  roomName?: string;
 }
 
-/** Roof colour and the darker face used for the extruded side. */
-const TONE: Record<Tone, { top: string; side: string; label: string; note: string }> = {
-  grand: { top: '#0f4c5c', side: '#082e38', label: '樂園全景觀', note: '正面看得到城堡' },
-  park: { top: '#5b93a1', side: '#3b6d79', label: '樂園景觀', note: '斜角看得到樂園' },
-  entrance: { top: '#d8a9b7', side: '#a97485', label: '迪士尼明星房', note: '面向飯店正門，看不到樂園' },
-  inner: { top: '#cdc2ae', side: '#a2977f', label: '無景觀分類', note: '中庭、側面或停車場方向' },
-  turret: { top: '#b4832c', side: '#7c5817', label: '角塔', note: '景隅、塔樓客房與套房' },
-};
+const cells: Cell[] = [];
+for (const bar of BARS) {
+  const rad = (bar.angle * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  bar.rows.forEach((row, rowIndex) => {
+    const localY = rowIndex * (CELL_H + CORRIDOR);
+    row.slots.forEach((slot: Slot, i) => {
+      const localX = i * CELL_W;
+      cells.push({
+        x: bar.x + localX * cos - localY * sin,
+        y: bar.y + localX * sin + localY * cos,
+        angle: bar.angle,
+        code: slot.code,
+        tone: slot.tone,
+        type: slot.type,
+        bed: slot.bed,
+        facing: row.facing,
+        bar: bar.label,
+        floors: slot.code ? [...(floorsByCode.get(slot.code)?.keys() ?? [])].sort((a, b) => a - b) : [],
+        roomName: slot.code
+          ? roomById[[...(floorsByCode.get(slot.code)?.values() ?? [])][0] ?? '']?.name
+          : undefined,
+      });
+    });
+  });
+}
 
-const LEGEND: Tone[] = ['grand', 'park', 'entrance', 'inner', 'turret'];
+const placedCodes = new Set(cells.map((cell) => cell.code).filter(Boolean));
+const recordedInPlan = KNOWN_ROOM_NUMBERS.filter((hit) => placedCodes.has(hit.number.slice(1))).length;
 
-/** Plan geometry. y is squashed by the group transform to fake the viewing angle. */
-const SHAPES: Record<string, string> = {
-  ring: 'M320 52 h260 v130 h-260 Z M372 88 h156 v58 h-156 Z',
-  'wing-west': 'M320 108 L92 40 L60 104 L286 186 Z',
-  'wing-east': 'M580 122 L816 174 L802 244 L596 196 Z',
-  'leg-top-w': 'M286 182 L352 222 L352 286 L286 286 Z',
-  'leg-mid-w': 'M286 286 h66 v124 h-66 Z',
-  'end-w': 'M228 470 h180 v66 h-180 Z',
-  'leg-top-e': 'M614 196 L548 226 L548 286 L614 286 Z',
-  'leg-mid-e': 'M548 286 h66 v124 h-66 Z',
-  'end-e': 'M492 470 h180 v66 h-180 Z',
-  bridge: 'M370 296 h160 v56 h-160 Z',
-};
-
-/** Back-to-front, so the extruded faces overlap correctly. */
-const DRAW_ORDER = [
-  'ring',
-  'wing-west',
-  'wing-east',
-  'leg-top-w',
-  'leg-top-e',
-  'leg-mid-w',
-  'leg-mid-e',
-  'bridge',
-  'turret-w',
-  'turret-e',
-  'end-w',
-  'end-e',
-];
-
-const partByKey = Object.fromEntries(PARTS.map((part) => [part.key, part]));
-const EXTRUDE = 30;
-/** The bridge only exists on the top two floors, so it floats above the rest. */
-const BRIDGE_LIFT = 34;
-
+const LEGEND = ['grand', 'park', 'entrance', 'inner', 'turret'] as const;
 const FLOORS = [9, 8, 7, 6, 5, 4, 3, 2, 1];
-const payload = PARTS.map((part) => ({
-  key: part.key,
-  label: part.label,
-  blurb: part.blurb,
-  tone: part.tone,
-  toneLabel: TONE[part.tone].label,
-  codes: part.codes,
-  total: stats[part.key]!.total,
-  byFloor: stats[part.key]!.byFloor,
-  samples: samples[part.key]!,
+
+const payload = cells.map((cell, index) => ({
+  i: index,
+  code: cell.code ?? null,
+  tone: cell.tone,
+  type: cell.type,
+  bed: cell.bed ?? null,
+  facing: cell.facing,
+  bar: cell.bar,
+  floors: cell.floors,
+  roomName: cell.roomName ?? null,
 }));
 ---
 
 <section id="floor-plan" class="not-prose scroll-mt-32">
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
-    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">飯店俯瞰示意圖</h2>
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">逐間客房平面圖</h2>
     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-      把房號的位置代號放回建築上。飯店大致是一個開口朝向樂園的形狀：中庭在飯店正門那一側，兩隻腳往樂園方向伸出去，末端各有一座角塔和一塊正面客房，8 樓與 9 樓還多一道橫跨兩腳之間的空橋。點任一塊看它是什麼。
+      一格就是一間房。飯店大部分的走廊兩側都有房間，所以同一棟裡會出現「一邊是明星房、另一邊面對樂園」的情況——西翼就是最典型的例子。
+      選樓層可以看那一層有哪些房間，點任一格看它是什麼房型、幾號房、什麼床型。
     </p>
 
     <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
@@ -226,7 +108,7 @@ const payload = PARTS.map((part) => ({
           <li class="flex items-center gap-2 text-xs">
             <span
               class="h-3.5 w-3.5 shrink-0 rounded-sm"
-              style={`background:${TONE[tone].top}`}
+              style={`background:${TONE[tone].fill}`}
               aria-hidden="true"
             />
             <span class="font-bold text-ink">{TONE[tone].label}</span>
@@ -234,6 +116,13 @@ const payload = PARTS.map((part) => ({
           </li>
         ))
       }
+      <li class="flex items-center gap-2 text-xs">
+        <span
+          class="h-3.5 w-3.5 shrink-0 rounded-sm border border-dashed border-ink-faint bg-paper"
+          aria-hidden="true"></span>
+        <span class="font-bold text-ink">房號未公布</span>
+        <span class="text-ink-faint">房間存在，原始調查沒有列號</span>
+      </li>
     </ul>
 
     <div class="mt-5 flex flex-wrap items-center gap-2">
@@ -256,203 +145,198 @@ const payload = PARTS.map((part) => ({
       }
     </div>
 
-    <div class="mt-5 grid gap-6 lg:grid-cols-[1.85fr_1fr]">
-      <div class="overflow-hidden rounded-xl border border-line bg-[#f4f1ea] p-2">
+    <div class="mt-5 space-y-5">
+      <div class="table-scroll rounded-xl border border-line bg-[#f6f3ec] p-2">
         <svg
-          viewBox="30 10 840 460"
-          class="h-auto w-full"
+          viewBox="50 46 1130 590"
+          class="h-auto w-full min-w-[46rem]"
           role="img"
           aria-labelledby="plan-title plan-desc"
         >
-          <title id="plan-title">東京迪士尼樂園大飯店俯瞰示意圖</title>
+          <title id="plan-title">東京迪士尼樂園大飯店逐間客房平面圖</title>
           <desc id="plan-desc">
-            示意圖。上方是飯店正門側的中庭，左右是西翼與東翼，中央兩隻腳往下（樂園方向）延伸，末端各有角塔與正面客房，8 至 9 樓另有橫跨兩腳的空橋。
+            平面圖。上方是飯店正門側的中庭環，左右是西翼與東翼，中央兩隻腳往下（樂園方向）延伸，末端是正面客房與角塔。每一格代表一間客房。
           </desc>
 
-          <text x="450" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#8b8f99">
+          <defs>
+            <pattern id="unlisted" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="6" height="6" fill="#f0ebe0"></rect>
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#c9bda8" stroke-width="2"></line>
+            </pattern>
+          </defs>
+
+          <text x="610" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#8b8f99">
             飯店正門側・幻想曲廣場
           </text>
+          <text x="600" y="150" text-anchor="middle" font-size="12" fill="#b3aa9a">中庭</text>
 
-          <g transform="translate(0, 22) scale(1, 0.62)" data-plan-parts>
-            {
-              DRAW_ORDER.map((key) => {
-                const part = partByKey[key]!;
-                const tone = TONE[part.tone];
-                const lift = key === 'bridge' ? BRIDGE_LIFT : 0;
-                const isTurret = key.startsWith('turret');
-                const cx = key === 'turret-w' ? 319 : 581;
-                return (
-                  <g data-part={key} class="cursor-pointer transition-opacity hover:opacity-80">
-                    {isTurret ? (
-                      <>
-                        <ellipse cx={cx} cy={440 + EXTRUDE} rx="30" ry="30" fill={tone.side} />
-                        <rect x={cx - 30} y="440" width="60" height={EXTRUDE} fill={tone.side} />
-                        <ellipse cx={cx} cy="440" rx="30" ry="30" fill={tone.top} stroke="#fff" stroke-width="2.5" />
-                      </>
-                    ) : (
-                      <>
-                        <path
-                          d={SHAPES[key]}
-                          fill={tone.side}
-                          transform={`translate(0, ${EXTRUDE - lift})`}
-                          fill-rule="evenodd"
-                        />
-                        <path
-                          d={SHAPES[key]}
-                          fill={tone.top}
-                          stroke="#ffffff"
-                          stroke-width="2.5"
-                          fill-rule="evenodd"
-                          transform={lift ? `translate(0, ${-lift})` : undefined}
-                        />
-                      </>
-                    )}
-                  </g>
-                );
-              })
-            }
-          </g>
-
-          <g font-size="11.5" font-weight="700" text-anchor="middle" pointer-events="none">
-            <text x="450" y="60" fill="#7a4658">明星房 3xx</text>
-            <text x="450" y="105" fill="#a89a86" font-size="10.5" font-weight="400">中庭</text>
-            <text x="176" y="98" fill="#ffffff">明星房 6xx</text>
-            <text x="700" y="145" fill="#ffffff">樂園景觀 1xx</text>
-            <text x="319" y="238" fill="#6b6255">無景觀 2xx</text>
-            <text x="581" y="238" fill="#6b6255">無景觀 5xx</text>
-            <text x="450" y="200" fill="#ffffff">樂園全景觀 401–407</text>
-            <text x="319" y="299" fill="#ffffff" font-size="10.5">215</text>
-            <text x="581" y="299" fill="#ffffff" font-size="10.5">515</text>
-            <text x="319" y="331" fill="#ffffff">樂園全景觀</text>
-            <text x="319" y="345" fill="#ffffff" font-size="10">216–224</text>
-            <text x="581" y="331" fill="#ffffff">樂園全景觀</text>
-            <text x="581" y="345" fill="#ffffff" font-size="10">516–522</text>
-          </g>
+          {
+            cells.map((cell, index) => (
+              <g
+                transform={`translate(${cell.x} ${cell.y}) rotate(${cell.angle})`}
+                data-cell={index}
+                data-code={cell.code ?? ''}
+                data-floors={cell.floors.join(',')}
+                class="cursor-pointer"
+              >
+                <rect
+                  width={CELL_W}
+                  height={CELL_H}
+                  rx="1.5"
+                  fill={cell.code ? TONE[cell.tone as keyof typeof TONE].fill : 'url(#unlisted)'}
+                  stroke="#ffffff"
+                  stroke-width="1.6"
+                  data-shape
+                />
+                {cell.code && (
+                  <text
+                    x={CELL_W / 2}
+                    y={CELL_H / 2 + 3.6}
+                    text-anchor="middle"
+                    font-size="11"
+                    font-weight="700"
+                    fill={TONE[cell.tone as keyof typeof TONE].text}
+                    pointer-events="none"
+                  >
+                    {cell.code}
+                  </text>
+                )}
+              </g>
+            ))
+          }
 
           <line
-            x1="140"
-            y1="418"
-            x2="760"
-            y2="418"
+            x1="180"
+            y1="576"
+            x2="1040"
+            y2="576"
             stroke="#0f4c5c"
             stroke-width="2"
             stroke-dasharray="9 7"></line>
-          <text x="450" y="444" text-anchor="middle" font-size="14" font-weight="700" fill="#0f4c5c">
+          <text x="610" y="602" text-anchor="middle" font-size="15" font-weight="700" fill="#0f4c5c">
             東京迪士尼樂園
           </text>
         </svg>
       </div>
 
-      <div>
-        <div class="rounded-xl border border-line bg-paper-deep/40 p-5">
+      <div class="grid gap-5 rounded-xl border border-line bg-paper-deep/40 p-5 sm:grid-cols-[1.4fr_1fr] sm:p-6">
+        <div>
           <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-plan-hint>
-            點圖上任一塊
+            點圖上任一格
           </p>
-          <h3 class="mt-2 font-serif text-lg font-bold text-ink" data-plan-label>整棟建築</h3>
-          <p
-            class="mt-1 hidden w-fit rounded-full px-2.5 py-1 text-2xs font-bold text-white"
-            data-plan-tone
-          >
-          </p>
+          <h3 class="mt-2 font-serif text-lg font-bold text-ink" data-plan-label>整層平面</h3>
+          <p class="mt-1 hidden w-fit rounded-full px-2.5 py-1 text-2xs font-bold" data-plan-tone />
           <p class="mt-2 text-[0.875rem] leading-[1.9] text-ink-soft" data-plan-blurb>
-            上方是飯店正門與幻想曲廣場那一側，下方是東京迪士尼樂園。中庭與兩翼的明星房面向正門，兩隻腳末端的正面客房面向樂園。
+            上方是飯店正門與幻想曲廣場，下方是東京迪士尼樂園。斜線格代表那個位置確實有房間，只是原始調查沒有公布房號。
           </p>
-          <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-            <div>
-              <dt class="text-2xs text-ink-faint">已知房號</dt>
-              <dd class="mt-0.5 font-serif text-xl font-bold text-brand-deep" data-plan-count>
-                {KNOWN_ROOM_NUMBERS.length}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-2xs text-ink-faint">位置代號</dt>
-              <dd class="mt-0.5 font-serif text-xl font-bold text-brand-deep" data-plan-codes>71</dd>
-            </div>
-          </dl>
-          <p class="mt-4 text-xs leading-relaxed text-ink-faint" data-plan-samples></p>
         </div>
-
-        <p class="mt-4 text-xs leading-relaxed text-ink-faint">
-          示意圖，非等比例，也沒有畫出每一間房。量體依照原始資料的樓層平面圖與度假區鳥瞰圖描繪，各區塊的歸屬則由房號與官方景觀分類推得。想看逐間精確位置，請看文末資料來源裡的原始平面圖。
-        </p>
+        <dl class="space-y-2.5 border-t border-line pt-4 text-sm sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5" data-plan-facts />
       </div>
+
+      <p class="text-xs leading-relaxed text-ink-faint">
+        房間位置與房型轉錄自原始資料的樓層平面圖，並與房號資料交叉驗證過：9 樓空橋那七間讀出來是 41-42-42-41-42-42-41，正好對上
+        9401 到 9407 的禮賓房精緻客房與凹室客房交錯。圖形為示意，不代表實際尺寸與角度。
+      </p>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload, TONE }}>
+<script is:inline define:vars={{ payload, recordedInPlan }}>
   (() => {
     const root = document.querySelector('#floor-plan');
     if (!root) return;
 
-    const parts = new Map(payload.map((p) => [p.key, p]));
     const label = root.querySelector('[data-plan-label]');
     const blurb = root.querySelector('[data-plan-blurb]');
-    const count = root.querySelector('[data-plan-count]');
-    const codes = root.querySelector('[data-plan-codes]');
     const hint = root.querySelector('[data-plan-hint]');
-    const samples = root.querySelector('[data-plan-samples]');
+    const facts = root.querySelector('[data-plan-facts]');
     const toneBadge = root.querySelector('[data-plan-tone]');
+    const nodes = Array.from(root.querySelectorAll('[data-cell]'));
+
+    const TONE_FILL = {
+      grand: ['#0f4c5c', '#fff', '樂園全景觀'],
+      park: ['#5b93a1', '#fff', '樂園景觀'],
+      entrance: ['#d8a9b7', '#5c3140', '迪士尼明星房'],
+      inner: ['#cdc2ae', '#4f4739', '無景觀分類'],
+      turret: ['#b4832c', '#fff', '角塔'],
+    };
 
     const DEFAULT_BLURB =
-      '上方是飯店正門與幻想曲廣場那一側，下方是東京迪士尼樂園。中庭與兩翼的明星房面向正門，兩隻腳末端的正面客房面向樂園。';
+      '上方是飯店正門與幻想曲廣場，下方是東京迪士尼樂園。斜線格代表那個位置確實有房間，只是原始調查沒有公布房號。';
 
-    let activeKey = null;
+    let active = null;
 
     const floor = () => {
       const checked = root.querySelector('input[name="plan-floor"]:checked');
       return checked && checked.value !== 'all' ? Number(checked.value) : null;
     };
-    const countFor = (part, f) => (f === null ? part.total : (part.byFloor[f] ?? 0));
+
+    const onFloor = (cell, f) => f === null || cell.floors.includes(f) || cell.floors.length === 0;
 
     function paint() {
       const f = floor();
-      root.querySelectorAll('[data-part]').forEach((node) => {
-        const part = parts.get(node.dataset.part);
-        if (!part) return;
-        node.setAttribute('opacity', countFor(part, f) === 0 ? '0.2' : '1');
-        node.querySelectorAll('[stroke]').forEach((shape) => {
-          const on = activeKey === node.dataset.part;
+      nodes.forEach((node, i) => {
+        const cell = payload[i];
+        const present = onFloor(cell, f);
+        node.setAttribute('opacity', present ? '1' : '0.14');
+        const shape = node.querySelector('[data-shape]');
+        if (shape) {
+          const on = active === i;
           shape.setAttribute('stroke', on ? '#15181d' : '#ffffff');
-          shape.setAttribute('stroke-width', on ? '4' : '2.5');
-        });
+          shape.setAttribute('stroke-width', on ? '3' : '1.6');
+        }
       });
 
-      if (activeKey) {
-        const part = parts.get(activeKey);
-        const n = countFor(part, f);
-        if (hint) hint.textContent = f === null ? '全部樓層' : `${f} 樓`;
-        if (label) label.textContent = part.label;
-        if (blurb) blurb.textContent = part.blurb;
-        if (count) count.textContent = String(n);
-        if (codes) codes.textContent = String(part.codes.length);
-        if (toneBadge) {
-          toneBadge.textContent = part.toneLabel;
-          toneBadge.style.background = TONE[part.tone].top;
-          toneBadge.style.color = part.tone === 'entrance' || part.tone === 'inner' ? '#4a3f33' : '#fff';
-          toneBadge.classList.remove('hidden');
-        }
-        if (samples)
-          samples.textContent =
-            n === 0
-              ? '這一層沒有這一塊，或原始調查沒有列出這裡的房號。'
-              : `房型：${part.samples.slice(0, 4).join('、')}${part.samples.length > 4 ? ' 等' : ''}`;
-      } else {
-        const total = payload.reduce((sum, p) => sum + countFor(p, f), 0);
-        const live = payload.filter((p) => countFor(p, f) > 0);
-        if (hint) hint.textContent = f === null ? '點圖上任一塊' : `${f} 樓`;
-        if (label) label.textContent = '整棟建築';
+      if (active === null) {
+        const shown = payload.filter((c) => c.code && onFloor(c, f)).length;
+        if (hint) hint.textContent = f === null ? '點圖上任一格' : `${f} 樓`;
+        if (label) label.textContent = '整層平面';
         if (blurb) blurb.textContent = DEFAULT_BLURB;
-        if (count) count.textContent = String(total);
-        if (codes) codes.textContent = String(live.reduce((s, p) => s + p.codes.length, 0));
-        if (samples) samples.textContent = '';
         if (toneBadge) toneBadge.classList.add('hidden');
+        if (facts)
+          facts.innerHTML =
+            `<div class="flex justify-between gap-3"><dt class="text-ink-faint">圖上已標號的房間</dt><dd class="font-bold text-ink">${shown} 間</dd></div>` +
+            `<div class="flex justify-between gap-3"><dt class="text-ink-faint">收錄房號總數</dt><dd class="font-bold text-ink">${recordedInPlan} 個</dd></div>`;
+        return;
+      }
+
+      const cell = payload[active];
+      const [fill, text, toneLabel] = TONE_FILL[cell.tone];
+      const roomNumbers = cell.code ? cell.floors.map((fl) => `${fl}${cell.code}`) : [];
+      const visible = f === null ? roomNumbers : roomNumbers.filter((n) => Number(n[0]) === f);
+
+      if (hint) hint.textContent = cell.bar;
+      if (label) label.textContent = cell.code ? `位置 ${cell.code}` : '房號未公布的位置';
+      if (toneBadge) {
+        toneBadge.textContent = toneLabel;
+        toneBadge.style.background = fill;
+        toneBadge.style.color = text;
+        toneBadge.classList.remove('hidden');
+      }
+      if (blurb)
+        blurb.textContent = cell.code
+          ? `${cell.type}。${cell.facing === 'park' ? '這一側面向東京迪士尼樂園。' : cell.facing === 'entrance' ? '這一側面向飯店正門。' : '這一側面向建築側面或中庭。'}`
+          : `${cell.type}。這個位置確實有房間，但原始調查沒有公布房號——這幾個類別各有數十間，只用平面圖標了範圍。`;
+
+      if (facts) {
+        const rows = [];
+        if (cell.bed) rows.push(['床型', cell.bed]);
+        if (cell.roomName) rows.push(['官方房型名稱', cell.roomName]);
+        if (visible.length)
+          rows.push([f === null ? '各樓層房號' : `${f} 樓房號`, visible.join('、')]);
+        else if (cell.code) rows.push([`${f} 樓`, '這一層沒有這個房號']);
+        facts.innerHTML = rows
+          .map(
+            ([k, v]) =>
+              `<div class="flex justify-between gap-3"><dt class="shrink-0 text-ink-faint">${k}</dt><dd class="text-right font-bold text-ink">${v}</dd></div>`,
+          )
+          .join('');
       }
     }
 
-    root.querySelectorAll('[data-part]').forEach((node) => {
+    nodes.forEach((node, i) => {
       node.addEventListener('click', () => {
-        activeKey = activeKey === node.dataset.part ? null : node.dataset.part;
+        active = active === i ? null : i;
         paint();
       });
     });
