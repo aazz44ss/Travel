@@ -223,7 +223,17 @@ const monthLabel = (m: number) => `${m} 月`;
         月偏高的部分，可能混了一點年度調價而不是純粹的季節因素。
       </p>
       <p>
-        資料整理自公開的 2026 年費率表。金額為每室每晚、2 位大人，小學生以下 2 名同價。
+        <span class="font-bold text-ink-soft">資料來源。</span>
+        整理自日本迪士尼媒體 CASTEL 的
+        <a
+          href="https://castel.jp/p/4155"
+          rel="noopener nofollow"
+          target="_blank"
+          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+          >客房種類與價格整理</a
+        >（2026 年 4 月 9 日）裡的逐月費率表，共 31 張表對應本頁 {priced.length}
+        種房型。這是二手來源不是官方公告——官方只在訂房日曆上逐日標價，並沒有發布按房型的月費率表，所以這裡的數字請當作參考值。金額為每室每晚、2
+        位大人，小學生以下 2 名同價。
         {unpriced.length} 種房型只有起價、沒有逐月資料：{
           unpriced.map((room) => room.name).join('、')
         }。

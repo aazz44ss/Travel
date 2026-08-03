@@ -1,15 +1,26 @@
 /**
  * Month-by-month rate ranges for Tokyo Disneyland Hotel, per room type.
  *
- * Each entry is [lowest, highest] for that month, in yen per room per night
- * for two adults. Within a single month the low end lands on ordinary
- * weekdays and the high end on weekends, long weekends and peak dates, so the
- * pair gives both the weekday/weekend spread and the seasonal swing.
+ * Each entry is [lowest, highest] for that month, in yen per room per night for
+ * two adults. This is the cheapest and dearest date within the month and
+ * nothing finer: the source publishes one range per month under a plain
+ * `| 月 | 料金 |` header, with no day-of-week breakdown. So the spread cannot be
+ * read as a weekday-to-weekend difference.
  *
- * Compiled from the published 2026 rate tables. January to September are 2026
- * rates; October to December are the 2025 rates, which is as far ahead as the
- * source goes. Six room types are absent because the source lists only a
- * starting price for them.
+ * Source: CASTEL, "【2026/4〜】ディズニーランドホテル客室の種類一覧＆値段まとめ"
+ * (https://castel.jp/p/4155), article dated 2026-04-09. This is Japanese Disney
+ * fan media, not an official publication. Tokyo Disney Resort itself only
+ * exposes per-date prices through its booking calendar and does not publish a
+ * per-room-type monthly table, so these figures are one step removed from
+ * official and should be treated as indicative.
+ *
+ * The article carries 31 such tables; several room types legitimately share one
+ * (Alice and the three-guest Tinker Bell room have identical rates, and the
+ * article repeats the same table under both). Six of the hotel's room types are
+ * absent here because the article gives them only a starting price.
+ *
+ * January to September are 2026 rates; October to December are 2025 rates,
+ * which is as far ahead as the source goes.
  */
 
 export type MonthRange = readonly [low: number, high: number];
