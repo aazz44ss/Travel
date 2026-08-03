@@ -1,4 +1,5 @@
 ---
+import type { GetStaticPaths } from 'astro';
 import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
@@ -10,7 +11,9 @@ import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
 import BenefitList from '~/components/BenefitList.astro';
 import FaqList from '~/components/FaqList.astro';
-import { withBase } from '~/consts';
+import { localeParams, localePath } from '~/i18n/config';
+import { t } from '~/i18n/ui';
+import { hotelCopy } from '~/i18n/hotel';
 import {
   BED_SPECS,
   BENEFITS,
@@ -26,8 +29,14 @@ import {
   roomsByCategory,
 } from '~/data/tokyo-disneysea-hotel-miracosta';
 import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/dhm-rates';
-import { CONNECTING_PAIRS, NUMBER_BLOCKS, ROOM_NUMBERS } from '~/data/dhm-room-numbers';
+import { CONNECTING_PAIRS, KNOWN_ROOM_NUMBERS, NUMBER_BLOCKS, ROOM_NUMBERS } from '~/data/dhm-room-numbers';
 import { LAYOUTS } from '~/data/dhm-room-layouts';
+
+export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props;
+const ui = t(locale);
+const copy = hotelCopy(locale, 'dhm');
 
 const viewStyle = {
   'harbour-grand': 'bg-brand-deep text-white',
@@ -47,30 +56,17 @@ const categoryStyle = {
   speciale: 'border-gold/40 text-gold',
 };
 
-const article = await getEntry('articles', 'tokyo-disneysea-hotel-miracosta');
+const article = await getEntry('articles', `${locale}/tokyo-disneysea-hotel-miracosta`);
+const articlePath = localePath(locale, '/articles/tokyo-disneysea-hotel-miracosta');
 
-const title = `${HOTEL.name}房型資料庫`;
-const description = `${HOTEL.name}全 ${ROOMS.length} 種可訂組合的面積、床型、人數、景觀與 2026 參考價；另整理海港區逐間房號索引、官方格局圖、設施、餐廳與住宿禮遇。`;
-
-const sections = [
-  { id: 'overview', label: '基本資料' },
-  { id: 'sides', label: '三區怎麼分' },
-  { id: 'views', label: '八種景觀' },
-  { id: 'room-index', label: '海港區房號' },
-  { id: 'room-explorer', label: '房型探索器' },
-  { id: 'price-seasons', label: '逐月價格' },
-  { id: 'beds', label: '床型尺寸' },
-  { id: 'facilities', label: '設施' },
-  { id: 'dining', label: '餐廳' },
-  { id: 'benefits', label: '住宿禮遇' },
-  { id: 'faq', label: '常見問題' },
-];
+const title = `${copy.hotelName}${copy.titleSuffix}`;
+const description = copy.pageDescription(ROOMS.length, KNOWN_ROOM_NUMBERS.length);
 
 const schema = [
   {
     '@context': 'https://schema.org',
     '@type': 'Hotel',
-    name: HOTEL.name,
+    name: copy.hotelName,
     alternateName: [HOTEL.nameEn, HOTEL.nameJa],
     description,
     url: HOTEL.officialUrl,
@@ -96,30 +92,44 @@ const schema = [
 ];
 ---
 
-<BaseLayout title={title} description={description} schema={schema}>
-  <header class="border-b border-line bg-gradient-to-br from-[#3b1822] via-berry to-[#9a6840] text-white">
+<BaseLayout
+  title={title}
+  description={description}
+  schema={schema}
+  locale={locale}
+  path="/hotels/tokyo-disneysea-hotel-miracosta"
+>
+  <header
+    class="border-b border-line bg-gradient-to-br from-[#3b1822] via-berry to-[#9a6840] text-white"
+  >
     <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label="麵包屑">
-        <a href={withBase('/')} class="transition-opacity hover:opacity-100">首頁</a>
+      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label={ui.common.breadcrumb}>
+        <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100"
+          >{ui.common.home}</a
+        >
         <span aria-hidden="true">/</span>
-        <span>房型資料庫</span>
+        <a href={localePath(locale, '/hotels')} class="transition-opacity hover:opacity-100"
+          >{copy.databaseLabel}</a
+        >
       </nav>
       <p class="mt-8 text-2xs font-bold tracking-[0.22em] uppercase opacity-85">
-        日本・千葉縣浦安市
+        {copy.regionLabel}
       </p>
       <h1 class="mt-3 max-w-4xl font-serif text-3xl leading-tight font-bold sm:text-[2.6rem]">
-        {HOTEL.name}<span class="block text-xl font-medium opacity-80 sm:text-2xl">房型資料庫</span>
+        {copy.hotelName}<span class="block text-xl font-medium opacity-80 sm:text-2xl"
+          >{copy.databaseLabel}</span
+        >
       </h1>
       <p class="mt-5 max-w-2xl text-[0.9375rem] leading-[1.9] opacity-90">
-        {`${ROOMS.length} 種可訂組合`}、八種景觀、官方客房格局與海港區逐間房號，放在同一頁對照。這間飯店最貴的不是房間大小，是窗外那一格。
+        {copy.heroIntro(ROOMS.length)}
       </p>
       {
         article && (
           <a
-            href={withBase(`/articles/${article.id}`)}
+            href={articlePath}
             class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-[#5f1f31] transition-transform duration-300 hover:-translate-y-0.5"
           >
-            先讀完整攻略 <span aria-hidden="true">→</span>
+            {copy.readArticle} <span aria-hidden="true">→</span>
           </a>
         )
       }
@@ -128,12 +138,12 @@ const schema = [
 
   <nav
     class="sticky top-16 z-40 border-b border-line bg-paper/90 backdrop-blur-md"
-    aria-label="頁面章節"
+    aria-label={ui.common.tableOfContents}
   >
     <div class="table-scroll mx-auto max-w-6xl px-5 sm:px-8">
       <ul class="flex gap-1 py-2.5 whitespace-nowrap">
         {
-          sections.map((section) => (
+          copy.sections.map((section) => (
             <li>
               <a
                 href={`#${section.id}`}
@@ -150,18 +160,15 @@ const schema = [
 
   <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
     <section id="overview" class="scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">基本資料</h2>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.overview}</h2>
       <HotelFacts facts={HOTEL_FACTS} />
-      <p class="text-sm leading-relaxed text-ink-faint">
-        房型名稱、面積、定員、床型與格局圖取自官方繁體中文及日文客房頁。價格是每室每晚、2
-        位大人的公開費率二手整理，不是報價；房號只涵蓋有逐間調查的海港區，實際房價與房間分配以官方為準。
-      </p>
+      <p class="text-sm leading-relaxed text-ink-faint">{copy.provenance}</p>
     </section>
 
-    <section id="sides" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">三個區，加上一個服務等級</h2>
+    <section id="categories" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.categories}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        托斯卡納、威尼斯、海港描述的是建築朝向；「尊榮客房＆套房」則是跨威尼斯與海港的服務等級。先決定要看哪一側，再決定要不要為貴賓室與早餐加價。
+        {copy.categoriesIntro}
       </p>
       <div class="mt-6 grid gap-4 sm:grid-cols-2">
         {
@@ -170,7 +177,7 @@ const schema = [
               <div class="flex items-baseline justify-between gap-3">
                 <h3 class="font-serif text-base font-bold text-ink">{category.label}</h3>
                 <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
-                  {roomsByCategory(category.key).length} 種
+                  {copy.typeCount(roomsByCategory(category.key).length)}
                 </span>
               </div>
               <p class="mt-1 text-xs text-ink-faint">{category.labelEn}</p>
@@ -189,10 +196,8 @@ const schema = [
     </section>
 
     <section id="views" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">八種景觀名稱，不能只看「哪一區」</h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        海港區不等於港灣全景，威尼斯區也不等於運河景。真正的景觀承諾寫在房名最後一個括號；房名沒有景觀後綴，就沒有保證。
-      </p>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.views}</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.viewsIntro}</p>
       <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {
           VIEWS.map((view) => (
@@ -207,7 +212,7 @@ const schema = [
               <div class="flex items-baseline justify-between gap-2">
                 <h3 class="font-serif text-base font-bold text-ink">{view.label}</h3>
                 <span class="shrink-0 text-2xs text-ink-faint">
-                  {ROOMS.filter((room) => room.view === view.key).length} 種
+                  {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
                 </span>
               </div>
               <p class="mt-1 text-xs text-ink-faint">{view.labelJa}</p>
@@ -242,7 +247,7 @@ const schema = [
         jpyPerTwd={HOTEL.jpyPerTwd}
         viewStyle={viewStyle}
         categoryStyle={categoryStyle}
-        provenance="名稱依官方繁中頁，「・」之後是本站為拆開床型或定員所加。房號收錄海港區 {numbered} 間；托斯卡納與威尼斯區沒有可靠的逐間調查，故不填號碼。"
+        provenance={copy.explorerProvenance}
       />
     </section>
 
@@ -254,52 +259,49 @@ const schema = [
         currentYearMonths={RATE_YEAR_2026_MONTHS}
         years={{ current: '2026', carried: '2025' }}
         defaultRoomId="porto-superior-harbour-twin"
-        source={{ label: 'CASTEL 的逐月費率表', url: 'https://castel.jp/p/5614' }}
-        bargainNote="暑假同時有低價日和全年的高價日，能不能移動入住日期，比月份名稱更重要。"
+        source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/5614' }}
+        bargainNote={copy.bargainNote}
       />
     </section>
 
     <section id="beds" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">床型尺寸</h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        「最多 4 位」常代表第四位要睡 84 × 182 公分的郵輪床；「頂樓陽台客房」的雙人床又比一般雙人床窄 20
-        公分。人數上限相同，不代表四個人的睡眠品質相同。
-      </p>
-      <BedTable beds={BED_SPECS} caption={`${HOTEL.name}床型尺寸與可睡人數`} />
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
+      <BedTable beds={BED_SPECS} caption={`${copy.hotelName}${copy.bedTableCaption}`} />
     </section>
 
     <section id="facilities" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">設施與園區動線</h2>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
       <FacilityGrid facilities={FACILITIES} />
     </section>
 
     <section id="dining" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">餐廳</h2>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
       <DiningList dining={DINING} />
     </section>
 
     <section id="benefits" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">住宿禮遇</h2>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
       <BenefitList benefits={BENEFITS} />
     </section>
 
     <section id="faq" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">常見問題</h2>
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
       <FaqList faqs={FAQS} />
     </section>
 
     {
       article && (
         <section class="mt-20 rounded-2xl border border-line bg-paper-deep/50 p-7 sm:p-10">
-          <h2 class="font-serif text-xl font-bold text-ink">資料都在這裡，選房邏輯在完整攻略</h2>
+          <h2 class="font-serif text-xl font-bold text-ink">{copy.articleTeaseHeading}</h2>
           <p class="mt-3 max-w-2xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-            完整攻略會把三區與四級海港景觀的價差拆開，說明房內看水上表演的限制、陽台與頂樓露天陽台的差別，以及歡樂入園和飯店通路該怎麼排進行程。
+            {copy.articleTease}
           </p>
           <a
-            href={withBase(`/articles/${article.id}`)}
+            href={articlePath}
             class="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
           >
-            閱讀完整攻略 <span aria-hidden="true">→</span>
+            {copy.readArticle} <span aria-hidden="true">→</span>
           </a>
         </section>
       )

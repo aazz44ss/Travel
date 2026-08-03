@@ -1,4 +1,7 @@
 ---
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { t } from '~/i18n/ui';
+
 interface Source {
   label: string;
   url: string;
@@ -7,16 +10,12 @@ interface Source {
 
 interface Props {
   sources: Source[];
+  locale?: Locale;
 }
 
-const { sources } = Astro.props;
-
-const kindLabel: Record<Source['kind'], string> = {
-  official: '官方',
-  blog: '部落格',
-  social: '社群',
-  media: '媒體',
-};
+const { sources, locale = DEFAULT_LOCALE } = Astro.props;
+const ui = t(locale);
+const kindLabel = ui.sources.kinds;
 
 const kindStyle: Record<Source['kind'], string> = {
   official: 'bg-brand text-white',
@@ -32,9 +31,9 @@ const sorted = [...sources].sort((a, b) => order.indexOf(a.kind) - order.indexOf
 {
   sorted.length > 0 && (
     <section class="mt-16 rounded-2xl border border-line bg-paper-deep/40 p-6 sm:p-8">
-      <h2 class="font-serif text-lg font-bold text-ink">資料來源</h2>
+      <h2 class="font-serif text-lg font-bold text-ink">{ui.sources.heading}</h2>
       <p class="mt-1.5 text-sm text-ink-soft">
-        本文交叉查證下列資料。規格與價格請以出發前的官方公告為準。
+        {ui.sources.intro}
       </p>
       <ul class="mt-5 space-y-2.5">
         {sorted.map((source) => (
