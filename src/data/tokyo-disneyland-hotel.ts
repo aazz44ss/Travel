@@ -140,7 +140,7 @@ export const ROOMS: Room[] = [
   // ── 標準房 ─────────────────────────────────────────────────────────────
   {
     id: 'std-superior-double',
-    name: '精緻客房（雙人床）',
+    name: '精緻客房・1 張雙人床',
     nameJa: 'スタンダード スーペリアルーム（ダブル）',
     category: 'standard',
     view: 'none',
@@ -160,7 +160,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-superior-twin',
-    name: '精緻客房（兩張標準床）',
+    name: '精緻客房・2 張標準床',
     nameJa: 'スタンダード スーペリアルーム（ツイン）',
     category: 'standard',
     view: 'none',
@@ -200,7 +200,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-superior-pgv-double',
-    name: '精緻客房（樂園全景觀・雙人床）',
+    name: '精緻客房（樂園全景觀）・1 張雙人床',
     nameJa: 'スタンダード スーペリアルーム（パークグランドビュー）（ダブル）',
     category: 'standard',
     view: 'grand',
@@ -220,7 +220,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-superior-pgv-twin',
-    name: '精緻客房（樂園全景觀・兩張標準床）',
+    name: '精緻客房（樂園全景觀）・2 張標準床',
     nameJa: 'スタンダード スーペリアルーム（パークグランドビュー）（ツイン）',
     category: 'standard',
     view: 'grand',
@@ -300,7 +300,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-deluxe-twin',
-    name: '尊爵客房（兩張標準床）',
+    name: '尊爵客房・2 張標準床',
     nameJa: 'スタンダード デラックスルーム（ツイン）',
     category: 'standard',
     view: 'none',
@@ -320,7 +320,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-deluxe-double',
-    name: '尊爵客房（雙人床）',
+    name: '尊爵客房・1 張雙人床',
     nameJa: 'スタンダード デラックスルーム（ダブル）',
     category: 'standard',
     view: 'none',
@@ -340,7 +340,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'std-deluxe-quad',
-    name: '尊爵客房（4 名對應）',
+    name: '尊爵客房・4 位',
     nameJa: 'スタンダード デラックスルーム（4名対応）',
     category: 'standard',
     view: 'none',
@@ -485,7 +485,7 @@ export const ROOMS: Room[] = [
   // ── 迪士尼明星房 ────────────────────────────────────────────────────────
   {
     id: 'char-tinkerbell-3',
-    name: '迪士尼小仙子客房（3 人）',
+    name: '迪士尼小仙子客房・3 位',
     nameJa: 'ディズニーティンカーベルルーム',
     category: 'character',
     view: 'none',
@@ -505,7 +505,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-tinkerbell-4',
-    name: '迪士尼小仙子客房（4 人・凹室）',
+    name: '迪士尼小仙子客房・4 位＋凹室床',
     nameJa: 'ディズニーティンカーベルルーム（アルコーヴ）',
     category: 'character',
     view: 'none',
@@ -545,7 +545,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-alice-alcove',
-    name: '迪士尼愛麗絲夢遊仙境客房（凹室）',
+    name: '迪士尼愛麗絲夢遊仙境客房・含凹室床',
     nameJa: 'ディズニーふしぎの国のアリスルーム（アルコーヴ）',
     category: 'character',
     view: 'none',
@@ -565,7 +565,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-beast-twin-51',
-    name: '迪士尼美女與野獸客房（雙床 51 m²）',
+    name: '迪士尼美女與野獸客房・2 張標準床 51 m²',
     nameJa: 'ディズニー美女と野獣ルーム（ツイン）',
     category: 'character',
     view: 'none',
@@ -585,7 +585,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-beast-alcove-51',
-    name: '迪士尼美女與野獸客房（雙床＋凹室 51 m²）',
+    name: '迪士尼美女與野獸客房・2 張標準床＋凹室床 51 m²',
     nameJa: 'ディズニー美女と野獣ルーム（アルコーヴ）',
     category: 'character',
     view: 'none',
@@ -605,7 +605,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-beast-twin-61',
-    name: '迪士尼美女與野獸客房（雙床 61 m²）',
+    name: '迪士尼美女與野獸客房・2 張標準床 61 m²',
     nameJa: 'ディズニー美女と野獣ルーム（ツイン・61 m²）',
     category: 'character',
     view: 'none',
@@ -625,7 +625,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'char-beast-triple-61',
-    name: '迪士尼美女與野獸客房（三床 61 m²）',
+    name: '迪士尼美女與野獸客房・3 張標準床 61 m²',
     nameJa: 'ディズニー美女と野獣ルーム（トリプル）',
     category: 'character',
     view: 'none',
@@ -788,7 +788,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'conc-turret-twin',
-    name: '禮賓房 塔樓客房（兩張標準床）',
+    name: '禮賓房 塔樓客房・2 張標準床',
     nameJa: 'コンシェルジュ タレットルーム（ツイン）',
     category: 'concierge',
     view: 'none',
@@ -809,7 +809,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'conc-turret-double',
-    name: '禮賓房 塔樓客房（雙人床）',
+    name: '禮賓房 塔樓客房・1 張雙人床',
     nameJa: 'コンシェルジュ タレットルーム（ダブル）',
     category: 'concierge',
     view: 'none',
@@ -853,7 +853,7 @@ export const ROOMS: Room[] = [
   // ── 套房 ──────────────────────────────────────────────────────────────
   {
     id: 'suite-magic-kingdom-8f',
-    name: '迪士尼魔法王國套房（8 樓）',
+    name: '迪士尼魔法王國套房・8 樓',
     nameJa: 'ディズニー・マジックキングダム・スイート（8階）',
     category: 'suite',
     view: 'park',
@@ -874,7 +874,7 @@ export const ROOMS: Room[] = [
   },
   {
     id: 'suite-magic-kingdom-9f',
-    name: '迪士尼魔法王國套房（9 樓）',
+    name: '迪士尼魔法王國套房・9 樓',
     nameJa: 'ディズニー・マジックキングダム・スイート（9階）',
     category: 'suite',
     view: 'park',
