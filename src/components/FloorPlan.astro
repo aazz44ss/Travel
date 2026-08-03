@@ -1,0 +1,376 @@
+---
+import { ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+
+/**
+ * Schematic footprint of Tokyo Disneyland Hotel.
+ *
+ * The outline follows the massing visible in the published floor plans — a
+ * courtyard ring on the main-entrance side, two legs reaching toward the park
+ * with a turret and an end block each, a high bridge between them, and two
+ * outer wings. It is drawn to be read, not measured: individual rooms are not
+ * placed, only the blocks that the position codes belong to.
+ */
+
+const roomById = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
+
+type PartKey =
+  | 'ring'
+  | 'wing-west'
+  | 'wing-east'
+  | 'leg-top-w'
+  | 'leg-top-e'
+  | 'leg-mid-w'
+  | 'leg-mid-e'
+  | 'turret-w'
+  | 'turret-e'
+  | 'end-w'
+  | 'end-e'
+  | 'bridge';
+
+interface Part {
+  key: PartKey;
+  label: string;
+  codes: string[];
+  tone: 'grand' | 'park' | 'entrance' | 'inner' | 'turret';
+  blurb: string;
+}
+
+const PARTS: Part[] = [
+  {
+    key: 'ring',
+    label: '中庭環',
+    codes: ['301', '302', '303', '304', '305', '306', '307', '308', '309', '310', '311', '312', '313'],
+    tone: 'entrance',
+    blurb: '圍著中庭的一圈，幾乎全是迪士尼明星房。仙履奇緣、愛麗絲、小仙子、美女與野獸都在這裡。',
+  },
+  {
+    key: 'wing-west',
+    label: '西翼',
+    codes: ['602', '603', '604', '606', '608', '610', '612', '614', '616', '617', '619', '622', '624', '626', '628', '630', '632'],
+    tone: 'entrance',
+    blurb: '全飯店最長的一支，房號 6 開頭。愛麗絲房與小仙子房大量集中在這裡，末端的 617 從 4 樓起是樂園景觀。',
+  },
+  {
+    key: 'wing-east',
+    label: '東翼',
+    codes: ['103', '105', '106', '107', '121'],
+    tone: 'park',
+    blurb: '房號 1 開頭。105 到 107 是禮賓房與景隅客房的樂園景觀，121 是一層一間的塔樓客房。',
+  },
+  {
+    key: 'leg-top-w',
+    label: '西腳・上段',
+    codes: ['201', '202'],
+    tone: 'entrance',
+    blurb: '靠中庭的一段，美女與野獸客房（三床）。',
+  },
+  {
+    key: 'leg-mid-w',
+    label: '西腳・中段',
+    codes: ['209', '211', '213'],
+    tone: 'inner',
+    blurb: '精緻凹室客房與尊爵客房，沒有景觀分類。',
+  },
+  {
+    key: 'turret-w',
+    label: '西角塔',
+    codes: ['215'],
+    tone: 'turret',
+    blurb: '3 樓景隅客房、4–7 樓塔樓客房、8–9 樓套房。同一座塔越高等級越高。',
+  },
+  {
+    key: 'end-w',
+    label: '西端・正面',
+    codes: ['216', '217', '218', '220', '221', '222', '224', '324'],
+    tone: 'grand',
+    blurb:
+      '往樂園方向突出的一塊。5 樓以上是樂園全景觀，3、4 樓被車站站體擋住就沒有景觀分類。93 平方公尺的家庭客房（房號結尾 224 與 324）也在這一端。',
+  },
+  {
+    key: 'leg-top-e',
+    label: '東腳・上段',
+    codes: ['501', '502'],
+    tone: 'entrance',
+    blurb: '靠中庭的一段，美女與野獸客房（三床）。',
+  },
+  {
+    key: 'leg-mid-e',
+    label: '東腳・中段',
+    codes: ['503', '505', '507', '509', '511', '513'],
+    tone: 'inner',
+    blurb: '精緻凹室客房與尊爵客房，沒有景觀分類。',
+  },
+  {
+    key: 'turret-e',
+    label: '東角塔',
+    codes: ['515'],
+    tone: 'turret',
+    blurb: '與西角塔對稱。華特・迪士尼套房與迪士尼魔法王國套房都在這兩座塔的頂端。',
+  },
+  {
+    key: 'end-e',
+    label: '東端・正面',
+    codes: ['516', '517', '518', '520', '521', '522'],
+    tone: 'grand',
+    blurb: '與西端對稱，同樣是 5 樓以上才掛上樂園全景觀。',
+  },
+  {
+    key: 'bridge',
+    label: '空橋（8–9 樓）',
+    codes: ['401', '402', '403', '404', '405', '406', '407'],
+    tone: 'grand',
+    blurb: '只存在於 8 樓與 9 樓，橫跨兩腳之間、正對樂園。8 樓那一排就是唯一有陽台的禮賓房。',
+  },
+];
+
+const codeToPart = new Map<string, PartKey>();
+for (const part of PARTS) for (const code of part.codes) codeToPart.set(code, part.key);
+
+/** part -> floor -> count, plus totals, computed from the room number index. */
+const stats: Record<string, { total: number; byFloor: Record<number, number> }> = {};
+for (const part of PARTS) stats[part.key] = { total: 0, byFloor: {} };
+for (const hit of KNOWN_ROOM_NUMBERS) {
+  const key = codeToPart.get(hit.number.slice(1));
+  if (!key) continue;
+  const bucket = stats[key]!;
+  bucket.total += 1;
+  bucket.byFloor[hit.floor] = (bucket.byFloor[hit.floor] ?? 0) + 1;
+}
+
+/** Sample room names per part, for the detail panel. */
+const samples: Record<string, string[]> = {};
+for (const part of PARTS) {
+  const names = new Set<string>();
+  for (const hit of KNOWN_ROOM_NUMBERS) {
+    if (codeToPart.get(hit.number.slice(1)) !== part.key) continue;
+    const room = roomById[hit.roomId];
+    if (room) names.add(room.name);
+  }
+  samples[part.key] = [...names];
+}
+
+const fill: Record<Part['tone'], string> = {
+  grand: '#0f4c5c',
+  park: 'color-mix(in srgb, #0f4c5c 42%, white)',
+  entrance: '#d8a9b7',
+  inner: '#cdc2ae',
+  turret: '#b4832c',
+};
+
+const partProps = (part: Part) => ({
+  'data-part': part.key,
+  fill: fill[part.tone],
+  stroke: '#ffffff',
+  'stroke-width': 2,
+  class: 'cursor-pointer transition-opacity hover:opacity-75',
+});
+
+const FLOORS = [9, 8, 7, 6, 5, 4, 3, 2, 1];
+const payload = PARTS.map((part) => ({
+  key: part.key,
+  label: part.label,
+  blurb: part.blurb,
+  codes: part.codes,
+  total: stats[part.key]!.total,
+  byFloor: stats[part.key]!.byFloor,
+  samples: samples[part.key]!,
+}));
+---
+
+<section id="floor-plan" class="not-prose scroll-mt-32">
+  <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">建築平面示意圖</h2>
+    <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
+      把房號的位置代號放回建築上。飯店大致是一個開口朝向樂園的形狀：中庭環在飯店正門那一側，兩隻腳往樂園方向伸出去，末端各有一座角塔和一塊正面客房，8 樓與 9 樓還多一道橫跨兩腳之間的空橋。點任一區塊看它是什麼。
+    </p>
+
+    <div class="mt-5 flex flex-wrap items-center gap-2">
+      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">樓層</span>
+      <label class="cursor-pointer">
+        <input type="radio" name="plan-floor" value="all" checked class="peer sr-only" />
+        <span
+          class="block rounded-full border border-line px-3 py-1 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep"
+          >全部</span
+        >
+      </label>
+      {
+        FLOORS.map((floor) => (
+          <label class="cursor-pointer">
+            <input type="radio" name="plan-floor" value={floor} class="peer sr-only" />
+            <span class="block rounded-full border border-line px-3 py-1 text-sm text-ink-soft tabular-nums transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+              {floor}F
+            </span>
+          </label>
+        ))
+      }
+    </div>
+
+    <div class="mt-5 grid gap-6 lg:grid-cols-[1.8fr_1fr]">
+      <div class="overflow-hidden rounded-xl border border-line bg-paper/60 p-3">
+        <svg viewBox="34 8 832 592" class="h-auto w-full" role="img" aria-labelledby="plan-title plan-desc">
+          <title id="plan-title">東京迪士尼樂園大飯店建築平面示意圖</title>
+          <desc id="plan-desc">
+            示意圖。上方是飯店正門側的中庭環，兩側是西翼與東翼，中央兩隻腳往下（樂園方向）延伸，末端各有角塔與正面客房，8 至 9 樓另有橫跨兩腳的空橋。
+          </desc>
+
+          <text x="450" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#8b8f99">
+            飯店正門側・幻想曲廣場
+          </text>
+
+          <g data-plan-parts>
+            {/* Courtyard ring, drawn as a frame with a hole */}
+            <path
+              d="M320 52 h260 v130 h-260 Z M372 88 h156 v58 h-156 Z"
+              fill-rule="evenodd"
+              {...partProps(PARTS[0]!)}
+            />
+            <text x="450" y="124" text-anchor="middle" font-size="13" fill="#8b8f99">中庭</text>
+
+            {/* Outer wings */}
+            <path d="M320 112 L92 44 L64 106 L286 186 Z" {...partProps(PARTS[1]!)} />
+            <path d="M580 126 L812 176 L800 240 L596 196 Z" {...partProps(PARTS[2]!)} />
+
+            {/* Legs: west then east, split into the segments the codes fall into */}
+            <path d="M286 186 L352 224 L352 284 L286 284 Z" {...partProps(PARTS[3]!)} />
+            <rect x="286" y="284" width="66" height="122" {...partProps(PARTS[4]!)} />
+            <circle cx="319" cy="438" r="27" {...partProps(PARTS[5]!)} />
+            <rect x="230" y="474" width="178" height="62" rx="4" {...partProps(PARTS[6]!)} />
+
+            <path d="M614 196 L548 228 L548 284 L614 284 Z" {...partProps(PARTS[7]!)} />
+            <rect x="548" y="284" width="66" height="122" {...partProps(PARTS[8]!)} />
+            <circle cx="581" cy="438" r="27" {...partProps(PARTS[9]!)} />
+            <rect x="492" y="474" width="178" height="62" rx="4" {...partProps(PARTS[10]!)} />
+
+            {/* High bridge, 8-9F only */}
+            <rect x="372" y="300" width="156" height="52" rx="4" {...partProps(PARTS[11]!)} />
+          </g>
+
+          <g font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle" pointer-events="none">
+            <text x="176" y="118">西翼 6xx</text>
+            <text x="700" y="192">東翼 1xx</text>
+            <text x="319" y="345" fill="#6b6255">2xx</text>
+            <text x="581" y="345" fill="#6b6255">5xx</text>
+            <text x="319" y="443">215</text>
+            <text x="581" y="443">515</text>
+            <text x="319" y="510">216–224</text>
+            <text x="581" y="510">516–522</text>
+            <text x="450" y="331">401–407</text>
+            <text x="450" y="72" fill="#7a4658">3xx</text>
+          </g>
+
+          <line x1="120" y1="566" x2="780" y2="566" stroke="#0f4c5c" stroke-width="2" stroke-dasharray="8 6"></line>
+          <text x="450" y="588" text-anchor="middle" font-size="15" font-weight="700" fill="#0f4c5c">
+            東京迪士尼樂園
+          </text>
+        </svg>
+      </div>
+
+      <div>
+        <div class="rounded-xl border border-line bg-paper-deep/40 p-5" data-plan-detail>
+          <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-plan-hint>
+            點圖上任一區塊
+          </p>
+          <h3 class="mt-2 font-serif text-lg font-bold text-ink" data-plan-label>整棟建築</h3>
+          <p class="mt-2 text-[0.875rem] leading-[1.9] text-ink-soft" data-plan-blurb>
+            上方是飯店正門與幻想曲廣場那一側，下方是東京迪士尼樂園。中庭環與兩翼的明星房面向正門，兩隻腳末端的正面客房面向樂園。
+          </p>
+          <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
+            <div>
+              <dt class="text-2xs text-ink-faint">已知房號</dt>
+              <dd class="mt-0.5 font-serif text-xl font-bold text-brand-deep" data-plan-count>
+                {KNOWN_ROOM_NUMBERS.length}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-2xs text-ink-faint">位置代號</dt>
+              <dd class="mt-0.5 font-serif text-xl font-bold text-brand-deep" data-plan-codes>71</dd>
+            </div>
+          </dl>
+          <p class="mt-4 text-xs leading-relaxed text-ink-faint" data-plan-samples></p>
+        </div>
+
+        <p class="mt-4 text-xs leading-relaxed text-ink-faint">
+          示意圖，非等比例，也沒有畫出每一間房。輪廓依照原始資料的樓層平面圖描繪，各區塊的歸屬則由房號與官方景觀分類推得。想看逐間精確位置，請看文末資料來源裡的原始平面圖。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ payload }}>
+  (() => {
+    const root = document.querySelector('#floor-plan');
+    if (!root) return;
+
+    const parts = new Map(payload.map((p) => [p.key, p]));
+    const label = root.querySelector('[data-plan-label]');
+    const blurb = root.querySelector('[data-plan-blurb]');
+    const count = root.querySelector('[data-plan-count]');
+    const codes = root.querySelector('[data-plan-codes]');
+    const hint = root.querySelector('[data-plan-hint]');
+    const samples = root.querySelector('[data-plan-samples]');
+
+    let activeKey = null;
+
+    const floor = () => {
+      const checked = root.querySelector('input[name="plan-floor"]:checked');
+      return checked && checked.value !== 'all' ? Number(checked.value) : null;
+    };
+
+    const countFor = (part, f) => (f === null ? part.total : (part.byFloor[f] ?? 0));
+
+    function paint() {
+      const f = floor();
+      root.querySelectorAll('[data-part]').forEach((node) => {
+        const part = parts.get(node.dataset.part);
+        if (!part) return;
+        const n = countFor(part, f);
+        node.setAttribute('opacity', n === 0 ? '0.22' : '1');
+        node.setAttribute(
+          'stroke',
+          activeKey === node.dataset.part ? '#15181d' : '#ffffff',
+        );
+        node.setAttribute('stroke-width', activeKey === node.dataset.part ? '4' : '2');
+      });
+
+      if (activeKey) {
+        const part = parts.get(activeKey);
+        const n = countFor(part, f);
+        if (hint) hint.textContent = f === null ? '全部樓層' : `${f} 樓`;
+        if (label) label.textContent = part.label;
+        if (blurb) blurb.textContent = part.blurb;
+        if (count) count.textContent = String(n);
+        if (codes) codes.textContent = String(part.codes.length);
+        if (samples)
+          samples.textContent =
+            n === 0
+              ? '這一層沒有這個區塊，或原始調查沒有列出這裡的房號。'
+              : `房型：${part.samples.slice(0, 4).join('、')}${part.samples.length > 4 ? ' 等' : ''}`;
+      } else {
+        const total = payload.reduce((sum, p) => sum + countFor(p, f), 0);
+        const live = payload.filter((p) => countFor(p, f) > 0);
+        if (hint) hint.textContent = f === null ? '點圖上任一區塊' : `${f} 樓`;
+        if (count) count.textContent = String(total);
+        if (codes) codes.textContent = String(live.reduce((s, p) => s + p.codes.length, 0));
+        if (samples) samples.textContent = '';
+      }
+    }
+
+    root.querySelectorAll('[data-part]').forEach((node) => {
+      node.addEventListener('click', () => {
+        activeKey = activeKey === node.dataset.part ? null : node.dataset.part;
+        if (!activeKey) {
+          if (label) label.textContent = '整棟建築';
+          if (blurb)
+            blurb.textContent =
+              '上方是飯店正門與幻想曲廣場那一側，下方是東京迪士尼樂園。中庭環與兩翼的明星房面向正門，兩隻腳末端的正面客房面向樂園。';
+        }
+        paint();
+      });
+    });
+
+    root.addEventListener('change', paint);
+    paint();
+  })();
+</script>

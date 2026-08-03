@@ -100,6 +100,7 @@ import BenefitList from '~/components/BenefitList.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
 import RoomNumberLookup from '~/components/RoomNumberLookup.astro';
 import FloorMatrix from '~/components/FloorMatrix.astro';
+import FloorPlan from '~/components/FloorPlan.astro';
 import SocialWall from '~/components/SocialWall.astro';
 import FaqList from '~/components/FaqList.astro';
 import { withBase } from '~/consts';
@@ -239,9 +240,15 @@ import { withBase } from '~/consts';
 
 <RoomNumberLookup />
 
-### 把整棟樓攤平來看
+### 這些號碼在建築上的哪裡
 
-單看一組號碼還是沒有空間感。但只要把所有房號排成「橫軸＝位置、縱軸＝樓層」的矩陣，整棟建築的邏輯就會自己浮出來——因為位置代號相同的房間，本來就是同一面窗戶往上疊一層。
+先看平面。飯店大致是一個開口朝向樂園的形狀：中庭環在飯店正門那一側，兩隻腳往樂園方向伸出去，末端各有一座角塔和一塊正面客房，8 樓與 9 樓還多一道橫跨兩腳之間的空橋。位置代號的第一碼就是你在哪一塊。
+
+<FloorPlan />
+
+### 再把整棟樓攤平來看
+
+平面告訴你在哪一塊，但同一塊裡低樓層和高樓層差很多。把所有房號排成「橫軸＝位置、縱軸＝樓層」的矩陣，這一層資訊就出來了——因為位置代號相同的房間，本來就是同一面窗戶往上疊一層。
 
 <FloorMatrix />
 
