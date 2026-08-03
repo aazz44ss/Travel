@@ -1,29 +1,39 @@
 ---
-import { formatYen } from '~/data/tokyo-disneyland-hotel';
+import { ROOMS, formatYen } from '~/data/tokyo-disneyland-hotel';
 
 /**
- * The same room, priced three ways. Isolating a single room type makes the
- * view premium legible in a way the full price table cannot.
+ * The same room, priced three ways. Isolating a single room type makes the view
+ * premium legible in a way the full price table cannot. Prices come from the
+ * three 40 m² two-bed Superior rooms so the only variable is the window.
  */
+const priceOf = (name: string) => {
+  const room = ROOMS.find((r) => r.name === name);
+  if (!room) throw new Error(`PriceLadder: no room named ${name}`);
+  return room.priceFrom;
+};
+const base = priceOf('精緻客房・2 張標準床');
+const park = priceOf('精緻客房（樂園景觀）');
+const grand = priceOf('精緻客房（樂園全景觀）・2 張標準床');
+
 const rungs = [
   {
     view: '無景觀指定',
-    price: 64500,
+    price: base,
     delta: null,
     note: '窗外是中庭、正門或飯店側面',
     tone: 'muted',
   },
   {
     view: '樂園景觀',
-    price: 70500,
-    delta: 6000,
+    price: park,
+    delta: park - base,
     note: '斜看樂園，煙火看得到但構圖偏',
     tone: 'mid',
   },
   {
     view: '樂園全景觀',
-    price: 79000,
-    delta: 14500,
+    price: grand,
+    delta: grand - base,
     note: '正對樂園，全部在 5 樓以上',
     tone: 'full',
   },
