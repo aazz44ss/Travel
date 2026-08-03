@@ -3,15 +3,31 @@ import type { CollectionEntry } from 'astro:content';
 import type { MarkdownHeading } from 'astro';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import SourceList from '~/components/SourceList.astro';
-import { SITE, formatDate, withBase } from '~/consts';
+import { articleSlug } from '~/content.config';
+import {
+  DEFAULT_LOCALE,
+  LOCALE_META,
+  formatDate,
+  localePath,
+  type Locale,
+} from '~/i18n/config';
+import { t } from '~/i18n/ui';
 
 interface Props {
   article: CollectionEntry<'articles'>;
   headings: MarkdownHeading[];
+  locale?: Locale;
 }
 
-const { article, headings } = Astro.props;
+const { article, headings, locale = DEFAULT_LOCALE } = Astro.props;
 const { data } = article;
+const ui = t(locale);
+const site = ui.site;
+const PUBLISHED: Record<Locale, (d: string) => string> = {
+  'zh-hant': (d) => `${d} 發布`,
+  ja: (d) => `${d} 公開`,
+  en: (d) => `Published ${d}`,
+};
 
 const toc = headings.filter((heading) => heading.depth === 2);
 
@@ -29,11 +45,11 @@ const schema = [
     '@type': 'Article',
     headline: data.title,
     description: data.description,
-    inLanguage: 'zh-Hant-TW',
+    inLanguage: LOCALE_META[locale].htmlLang,
     datePublished: data.publishedAt.toISOString(),
     dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
-    author: { '@type': 'Organization', name: SITE.author },
-    publisher: { '@type': 'Organization', name: SITE.name },
+    author: { '@type': 'Organization', name: site.author },
+    publisher: { '@type': 'Organization', name: site.name },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     keywords: data.tags.join(', '),
     about: { '@type': 'Place', name: data.destination },
@@ -42,12 +58,17 @@ const schema = [
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: '首頁', item: new URL(withBase('/'), Astro.site).href },
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: ui.common.home,
+        item: new URL(localePath(locale, '/'), Astro.site).href,
+      },
       {
         '@type': 'ListItem',
         position: 2,
-        name: '所有文章',
-        item: new URL(withBase('/articles'), Astro.site).href,
+        name: ui.common.allArticles,
+        item: new URL(localePath(locale, '/articles'), Astro.site).href,
       },
       { '@type': 'ListItem', position: 3, name: data.title, item: canonical },
     ],
@@ -62,6 +83,8 @@ const schema = [
   updatedAt={data.updatedAt}
   type="article"
   schema={schema}
+  locale={locale}
+  path={`/articles/${articleSlug(article.id)}`}
 >
   <header class:list={['relative overflow-hidden bg-gradient-to-br text-white', accentClass]}>
     <div
@@ -72,10 +95,10 @@ const schema = [
     </div>
 
     <div class="relative mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label="麵包屑">
-        <a href={withBase('/')} class="transition-opacity hover:opacity-100">首頁</a>
+      <nav class="flex items-center gap-2 text-xs opacity-80" aria-label={ui.common.breadcrumb}>
+        <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100">{ui.common.home}</a>
         <span aria-hidden="true">/</span>
-        <a href={withBase('/articles')} class="transition-opacity hover:opacity-100">所有文章</a>
+        <a href={localePath(locale, '/articles')} class="transition-opacity hover:opacity-100">{ui.common.allArticles}</a>
         <span aria-hidden="true">/</span>
         <span>{data.country}</span>
       </nav>
@@ -98,20 +121,20 @@ const schema = [
 
       <div class="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs opacity-85">
         <time datetime={data.publishedAt.toISOString()}>
-          {formatDate(data.publishedAt)} 發布
+          {PUBLISHED[locale](formatDate(data.publishedAt, locale))}
         </time>
         {
           data.updatedAt && (
             <>
               <span aria-hidden="true">·</span>
-              <time datetime={data.updatedAt.toISOString()}>{formatDate(data.updatedAt)} 更新</time>
+              <time datetime={data.updatedAt.toISOString()}>{ui.common.updatedOn(formatDate(data.updatedAt, locale))}</time>
             </>
           )
         }
         <span aria-hidden="true">·</span>
-        <span>閱讀約 {data.readingMinutes} 分鐘</span>
+        <span>{ui.common.readingTime(data.readingMinutes)}</span>
         <span aria-hidden="true">·</span>
-        <span>{SITE.author}</span>
+        <span>{site.author}</span>
       </div>
     </div>
   </header>
@@ -122,7 +145,7 @@ const schema = [
         {
           data.takeaways.length > 0 && (
             <section class="mb-12 rounded-2xl border border-gold/30 bg-gold-soft/60 p-6 sm:p-7">
-              <h2 class="font-serif text-base font-bold text-ink">先看結論</h2>
+              <h2 class="font-serif text-base font-bold text-ink">{ui.common.takeaways}</h2>
               <ul class="mt-4 space-y-3">
                 {data.takeaways.map((point) => (
                   <li class="flex gap-3 text-[0.9375rem] leading-[1.9] text-ink">
@@ -142,7 +165,7 @@ const schema = [
           toc.length > 0 && (
             <details class="mb-10 rounded-xl border border-line bg-card px-5 py-4 lg:hidden">
               <summary class="cursor-pointer list-none font-serif text-sm font-bold text-ink">
-                本文目錄（{toc.length} 節）
+                {ui.common.tableOfContents}（{ui.common.sections(toc.length)}）
               </summary>
               <ol class="mt-3 space-y-2 border-t border-line-soft pt-3">
                 {toc.map((heading, index) => (
@@ -164,20 +187,20 @@ const schema = [
           <slot />
         </article>
 
-        <SourceList sources={data.sources} />
+        <SourceList sources={data.sources} locale={locale} />
 
         <nav class="mt-10 flex justify-between gap-4 text-sm">
           <a
-            href={withBase('/articles')}
+            href={localePath(locale, '/articles')}
             class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
           >
-            <span aria-hidden="true">←</span> 回到所有文章
+            <span aria-hidden="true">←</span> {ui.common.backToArticles}
           </a>
           <a
             href="#main"
             class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
           >
-            回到頂端 <span aria-hidden="true">↑</span>
+            {ui.common.backToTop} <span aria-hidden="true">↑</span>
           </a>
         </nav>
       </div>
@@ -186,7 +209,7 @@ const schema = [
         toc.length > 0 && (
           <aside class="hidden lg:block">
             <div class="sticky top-24">
-              <p class="text-2xs font-bold tracking-[0.18em] text-ink-faint uppercase">本文目錄</p>
+              <p class="text-2xs font-bold tracking-[0.18em] text-ink-faint uppercase">{ui.common.tableOfContents}</p>
               <ol
                 class="mt-4 max-h-[min(28rem,calc(100vh-22rem))] space-y-2.5 overflow-y-auto border-l border-line pl-4"
                 data-toc
@@ -205,7 +228,7 @@ const schema = [
               </ol>
 
               <div class="mt-8 rounded-xl border border-line bg-card p-4">
-                <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">目的地</p>
+                <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{ui.common.destination}</p>
                 <p class="mt-2 font-serif text-base font-bold text-ink">{data.destination}</p>
                 <p class="mt-0.5 text-xs text-ink-soft">{data.country}</p>
                 <ul class="mt-3 flex flex-wrap gap-1.5">

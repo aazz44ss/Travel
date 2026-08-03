@@ -1,5 +1,7 @@
 ---
-import { SITE, withBase } from '~/consts';
+import { withBase } from '~/consts';
+import { DEFAULT_LOCALE, LOCALES, LOCALE_META, localePath, type Locale } from '~/i18n/config';
+import { t } from '~/i18n/ui';
 import '~/styles/global.css';
 
 interface Props {
@@ -10,12 +12,32 @@ interface Props {
   publishedAt?: Date;
   updatedAt?: Date;
   type?: 'website' | 'article';
+  locale?: Locale;
+  /** Path written as if the site were single-language, used for hreflang. */
+  path?: string;
 }
 
-const { title, description, schema, publishedAt, updatedAt, type = 'website' } = Astro.props;
+const {
+  title,
+  description,
+  schema,
+  publishedAt,
+  updatedAt,
+  type = 'website',
+  locale = DEFAULT_LOCALE,
+  path = '/',
+} = Astro.props;
 
-const pageTitle = title === SITE.name ? `${SITE.name}｜${SITE.tagline}` : `${title}｜${SITE.name}`;
+const site = t(locale).site;
+const pageTitle = title === site.name ? `${site.name}｜${site.tagline}` : `${title}｜${site.name}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+const origin = Astro.site ?? new URL('https://example.com');
+/** Every locale of this same page, so search engines can pair them up. */
+const alternates = LOCALES.map((code) => ({
+  code,
+  hreflang: LOCALE_META[code].htmlLang,
+  href: new URL(localePath(code, path), origin).href,
+}));
 ---
 
 <meta charset="utf-8" />
@@ -26,11 +48,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
 <meta name="generator" content={Astro.generator} />
 
 <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
-<link rel="alternate" type="application/rss+xml" title={SITE.name} href={withBase('/rss.xml')} />
+<link rel="alternate" type="application/rss+xml" title={site.name} href={withBase('/rss.xml')} />
+
+{alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+<link
+  rel="alternate"
+  hreflang="x-default"
+  href={alternates.find((alt) => alt.code === DEFAULT_LOCALE)!.href}
+/>
 
 <meta property="og:type" content={type} />
-<meta property="og:site_name" content={SITE.name} />
-<meta property="og:locale" content="zh_TW" />
+<meta property="og:site_name" content={site.name} />
+<meta property="og:locale" content={LOCALE_META[locale].ogLocale} />
 <meta property="og:title" content={pageTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical.href} />
