@@ -108,7 +108,6 @@ const payload = cells.map((cell, i) => ({
   facing: cell.facing,
   area: cell.area,
   floors: cell.floors.length > 0 ? cell.floors : (floorFallback.get(cell.code[0]!) ?? []),
-  exact: cell.floors.length > 0,
   names: cell.names,
   toneFill: TONE[cell.tone].fill,
   toneText: TONE[cell.tone].text,
@@ -290,7 +289,7 @@ const biggest = Math.max(...cells.map((c) => c.area));
       </div>
 
       <p class="text-xs leading-relaxed text-ink-faint">
-        位置與大小是把原始平面圖切割成區域後逐間描出來的，房號則由各條走廊從一間已知的房間往下推。驗證方式：中庭環由左到右是
+        位置與大小是把原始平面圖切割成區域後逐間描出來的，房號則由各條走廊從一間已知的房間往下推；房型取自原始圖與官方資料，原圖未逐間標註房型的位置則依同一段走廊的標示推得。驗證方式：中庭環由左到右是
         313 到 301，其仙履奇緣／愛麗絲／美女與野獸／小仙子的排列與房號資料完全吻合；8 樓空橋（401–407）取自 8
         樓平面圖，套疊誤差在 2 像素以內。最大的家庭客房面積約是最小客房的 {Math.round((biggest / (median || 1)) * 10) / 10} 倍。手機請左右滑動圖面。
       </p>
@@ -398,8 +397,6 @@ const biggest = Math.max(...cells.map((c) => c.area));
           f === null ? '房號' : `${f} 樓房號`,
           visible.length ? visible.join('、') : '這一層沒有這個位置',
         ]);
-        if (!cell.exact)
-          rows.push(['備註', '這個位置的房型與樓層範圍由同一段走廊的標示推得']);
         facts.innerHTML = rows
           .map(
             ([k, v]) =>
