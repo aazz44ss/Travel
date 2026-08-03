@@ -1159,7 +1159,7 @@ export const FACTS: HotelFact[] = [
   { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
   {
     label: '最低參考價',
-    value: formatYen(cheapestRoom(ROOMS).priceFrom),
+    value: formatYen(cheapestRoom(ROOMS)!.priceFrom!),
     sub: '每室每晚・2 位大人',
   },
   { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },

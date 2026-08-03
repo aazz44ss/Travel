@@ -1,6 +1,6 @@
 ---
 import type { Room, RoomCategory, RoomView } from '~/data/hotel-schema';
-import { formatYen, toTwd } from '~/data/hotel-schema';
+import { byPrice, formatYen, toTwd } from '~/data/hotel-schema';
 import RoomLayout from '~/components/RoomLayout.astro';
 
 /** The hotel's own plan drawing for one room type, hotlinked from the resort CDN. */
@@ -86,7 +86,7 @@ const grouped = categories
     ...category,
     entries: rooms
       .filter((room) => room.category === category.key)
-      .sort((a, b) => a.priceFrom - b.priceFrom)
+      .sort(byPrice)
       .map((room) => ({
         room,
         layout: layout?.(room.id),
@@ -301,7 +301,11 @@ function features(room: Room): string[] {
             <div>
               <dt class="text-2xs text-ink-faint">價格區間</dt>
               <dd class="mt-0.5 text-sm font-bold text-brand">
-                {range ? `${formatYen(range[0])}–${formatYen(range[1])}` : `${formatYen(room.priceFrom)} 起`}
+                {range
+                  ? `${formatYen(range[0])}–${formatYen(range[1])}`
+                  : room.priceFrom !== undefined
+                    ? `${formatYen(room.priceFrom)} 起`
+                    : '未公布'}
               </dd>
             </div>
           </dl>
@@ -381,7 +385,9 @@ function features(room: Room): string[] {
           )}
 
           <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            最低約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚
+            {room.priceFrom !== undefined
+              ? `約新台幣 ${toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚`
+              : '官方與二手來源都沒有這個房型的價格'}
           </p>
         </li>
         )),
