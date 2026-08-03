@@ -1,5 +1,6 @@
 ---
 import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
+import { annualRange } from '~/data/tdh-rates';
 
 const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
 const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
@@ -26,8 +27,8 @@ const capacityOptions = [
 ];
 
 const sortOptions = [
-  { value: 'price-asc', label: '參考價：低到高' },
-  { value: 'price-desc', label: '參考價：高到低' },
+  { value: 'price-asc', label: '最低價：低到高' },
+  { value: 'price-desc', label: '最低價：高到低' },
   { value: 'size-desc', label: '坪數：大到小' },
   { value: 'capacity-desc', label: '人數：多到少' },
 ];
@@ -49,7 +50,7 @@ function features(room: Room): string[] {
       <div>
         <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
-          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。參考價是公開費率表中該房型的最低價位，落在淡季的平日；週末、連假或旺季通常會比這個數字高三到九成。
+          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高——下限落在淡季平日，上限落在旺季的週末與連假。
         </p>
       </div>
       <p
@@ -239,8 +240,12 @@ function features(room: Room): string[] {
               </dd>
             </div>
             <div>
-              <dt class="text-2xs text-ink-faint">參考起價</dt>
-              <dd class="mt-0.5 text-sm font-bold text-brand">{formatYen(room.priceFrom)}</dd>
+              <dt class="text-2xs text-ink-faint">價格區間</dt>
+              <dd class="mt-0.5 text-sm font-bold text-brand">
+                {annualRange(room.id)
+                  ? `${formatYen(annualRange(room.id)![0])}–${formatYen(annualRange(room.id)![1])}`
+                  : `${formatYen(room.priceFrom)} 起`}
+              </dd>
             </div>
           </dl>
 
@@ -268,7 +273,7 @@ function features(room: Room): string[] {
 
 
           <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元起／每室每晚
+            淡季平日約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元起／每室每晚
           </p>
         </li>
       ))

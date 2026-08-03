@@ -1,0 +1,184 @@
+---
+import { CATEGORIES, ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-rates';
+
+/**
+ * Month-by-month rate ranges. Each bar spans that month's lowest to highest
+ * rate, so its position shows the season and its width shows the weekday to
+ * weekend spread within the month.
+ */
+
+const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
+
+const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
+  const months = MONTHLY_RATES[room.id]!;
+  const range = annualRange(room.id)!;
+  const entries = Object.entries(months)
+    .map(([month, value]) => ({ month: Number(month), low: value![0], high: value![1] }))
+    .sort((a, b) => a.month - b.month);
+  const cheapest = entries.reduce((min, e) => (e.low < min.low ? e : min));
+  const dearest = entries.reduce((max, e) => (e.high > max.high ? e : max));
+  return {
+    id: room.id,
+    name: room.name,
+    category: categoryLabel[room.category] ?? '',
+    low: range[0],
+    high: range[1],
+    ratio: Math.round((range[1] / range[0]) * 100) / 100,
+    months: entries,
+    cheapest: cheapest.month,
+    dearest: dearest.month,
+    /** True when the source only publishes April to September. */
+    partial: entries.length < 12,
+  };
+});
+
+const unpriced = ROOMS.filter((room) => !MONTHLY_RATES[room.id]);
+
+/** Shared scale so bars are comparable when switching room type. */
+const scaleFor = (low: number, high: number) => {
+  const pad = (high - low) * 0.12 || 1;
+  return { min: low - pad, max: high + pad };
+};
+
+const defaultRoom = priced.find((room) => room.id === 'std-superior-pgv-double') ?? priced[0]!;
+const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.high) }));
+---
+
+<section id="price-seasons" class="not-prose scroll-mt-32">
+  <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">平假日與淡旺季價格</h2>
+    <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
+      每一條橫棒是那個月的價格區間。棒子的位置看淡旺季，棒子的長度看平假日——同一個月裡下限落在一般平日，上限落在週末、連假與旺季日期。選一個房型看它整年的樣子。
+    </p>
+
+    <div class="mt-5">
+      <label class="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
+        房型
+        <select
+          data-rate-room
+          class="max-w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          {
+            CATEGORIES.map((category) => (
+              <optgroup label={category.label}>
+                {priced
+                  .filter((room) => room.category === category.label)
+                  .map((room) => (
+                    <option value={room.id} selected={room.id === defaultRoom.id}>
+                      {room.name}
+                    </option>
+                  ))}
+              </optgroup>
+            ))
+          }
+        </select>
+      </label>
+    </div>
+
+    <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4">
+      {
+        [
+          { key: 'low', label: '全年最低', sub: '淡季平日' },
+          { key: 'high', label: '全年最高', sub: '旺季或週末' },
+          { key: 'ratio', label: '最高／最低', sub: '同一間房的倍數' },
+          { key: 'season', label: '最便宜／最貴', sub: '以月份看' },
+        ].map((item) => (
+          <div class="bg-card px-4 py-4">
+            <dt class="text-2xs tracking-[0.12em] text-ink-faint uppercase">{item.label}</dt>
+            <dd
+              class="mt-1 font-serif text-lg font-bold text-brand-deep sm:text-xl"
+              data-rate-stat={item.key}
+            />
+            <dd class="mt-0.5 text-xs text-ink-faint">{item.sub}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="mt-6">
+      <div class="flex items-baseline justify-between text-2xs text-ink-faint tabular-nums">
+        <span data-rate-axis-min></span>
+        <span data-rate-axis-max></span>
+      </div>
+      <ul class="mt-2 space-y-1.5" data-rate-chart></ul>
+      <p class="mt-3 text-xs text-ink-faint" data-rate-note></p>
+    </div>
+
+    <div class="mt-6 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
+      <p>
+        資料整理自公開的 2026 年費率表，1 到 9 月是 2026 年的價格，10 到 12
+        月沿用 2025 年的，因為來源只公布到那裡。金額為每室每晚、2 位大人，小學生以下 2 名同價。
+        {unpriced.length} 種房型只有起價、沒有逐月資料：{
+          unpriced.map((room) => room.name).join('、')
+        }。
+      </p>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ payload, months2026: RATE_YEAR_2026_MONTHS }}>
+  (() => {
+    const root = document.querySelector('#price-seasons');
+    if (!root) return;
+    const select = root.querySelector('[data-rate-room]');
+    const chart = root.querySelector('[data-rate-chart]');
+    const note = root.querySelector('[data-rate-note]');
+    if (!select || !chart || !note) return;
+
+    const rooms = new Map(payload.map((room) => [room.id, room]));
+    const yen = (n) => `¥${n.toLocaleString('en-US')}`;
+    const set2026 = new Set(months2026);
+
+    function render() {
+      const room = rooms.get(select.value);
+      if (!room) return;
+      const { min, max } = room.scale;
+      const span = max - min || 1;
+
+      const stat = (key, value) => {
+        const node = root.querySelector(`[data-rate-stat="${key}"]`);
+        if (node) node.textContent = value;
+      };
+      stat('low', yen(room.low));
+      stat('high', yen(room.high));
+      const flat = room.low === room.high;
+      stat('ratio', flat ? '全年同價' : `${room.ratio.toFixed(2)} 倍`);
+      stat('season', flat ? '無淡旺季' : `${room.cheapest} 月／${room.dearest} 月`);
+
+      const axisMin = root.querySelector('[data-rate-axis-min]');
+      const axisMax = root.querySelector('[data-rate-axis-max]');
+      if (axisMin) axisMin.textContent = yen(Math.round(min / 1000) * 1000);
+      if (axisMax) axisMax.textContent = yen(Math.round(max / 1000) * 1000);
+
+      chart.innerHTML = room.months
+        .map((m) => {
+          const left = ((m.low - min) / span) * 100;
+          const width = Math.max(((m.high - m.low) / span) * 100, 1.5);
+          const cheapest = m.month === room.cheapest;
+          const dearest = m.month === room.dearest;
+          const tone = dearest ? '#8c2f4a' : cheapest ? '#0f4c5c' : '#5b93a1';
+          const year = set2026.has(m.month) ? '2026' : '2025';
+          return `<li class="flex items-center gap-2">
+            <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${m.month} 月</span>
+            <span class="relative h-5 flex-1 rounded bg-paper-deep/70">
+              <span class="absolute inset-y-0 rounded" style="left:${left}%;width:${width}%;background:${tone}"
+                title="${year} 年 ${m.month} 月：${yen(m.low)} – ${yen(m.high)}"></span>
+            </span>
+            <span class="w-40 shrink-0 text-2xs text-ink-soft tabular-nums">${yen(m.low)} – ${yen(m.high)}</span>
+          </li>`;
+        })
+        .join('');
+
+      const coverage = room.partial
+        ? `這個房型的來源只公布 ${room.months[0].month} 到 ${room.months[room.months.length - 1].month} 月。`
+        : '';
+      note.textContent = flat
+        ? `${coverage}這個房型不分平假日與季節，全年一價。`
+        : `${coverage}深色是最便宜的月份，紅色是最貴的。`;
+    }
+
+    select.addEventListener('change', render);
+    render();
+  })();
+</script>

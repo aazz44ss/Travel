@@ -2,6 +2,7 @@
 import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
+import PriceSeasons from '~/components/PriceSeasons.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
 import FloorPlan from '~/components/FloorPlan.astro';
 import BedTable from '~/components/BedTable.astro';
@@ -31,6 +32,7 @@ const sections = [
   { id: 'categories', label: '四大分類' },
   { id: 'floor-plan', label: '客房平面圖' },
   { id: 'room-explorer', label: '房型探索器' },
+  { id: 'price-seasons', label: '平假日與淡旺季' },
   { id: 'beds', label: '床型尺寸' },
   { id: 'facilities', label: '設施與拍照點' },
   { id: 'dining', label: '餐廳' },
@@ -199,6 +201,10 @@ const schema = [
 
     <section class="mt-20">
       <RoomExplorer />
+    </section>
+
+    <section class="mt-20">
+      <PriceSeasons />
     </section>
 
     <section id="beds" class="mt-20 scroll-mt-32">
