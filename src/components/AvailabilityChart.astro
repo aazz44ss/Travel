@@ -1,0 +1,85 @@
+---
+import {
+  AVAILABILITY,
+  AVAILABILITY_PEERS,
+  AVAILABILITY_SOURCE,
+  AVAILABILITY_TOTAL,
+} from '~/data/fsh-rates';
+import { HOTEL } from '~/data/fantasy-springs-hotel';
+
+/**
+ * The official rate calendar shows a price only on dates that still have a room,
+ * so counting the priced days measures availability rather than price. Reading
+ * the same calendar for the other Disney hotels on the same day turns the figure
+ * from a fact about the season into a fact about this hotel.
+ */
+const peerMax = Math.max(...AVAILABILITY_PEERS.map((peer) => peer.open));
+const peerTotal = AVAILABILITY_TOTAL.dates;
+---
+
+<div class="not-prose my-10 rounded-2xl border border-line bg-card p-5 sm:p-7">
+  <h3 class="font-serif text-lg font-bold text-ink">
+    官方日曆上還訂得到的日期：{AVAILABILITY_TOTAL.dates} 天裡 {AVAILABILITY_TOTAL.open} 天
+  </h3>
+  <p class="mt-2 text-[0.875rem] leading-[1.85] text-ink-soft">
+    官方的空房狀況／客房價格表只在還有房的日期上標價格。把 {AVAILABILITY_SOURCE.snapshot} 那天日曆上的
+    {AVAILABILITY_TOTAL.dates} 個日期數過去，有標價的只有 {AVAILABILITY_TOTAL.open} 天。
+  </p>
+
+  <ul class="mt-6 space-y-2.5">
+    {
+      AVAILABILITY.map((month) => (
+        <li class="flex items-center gap-3">
+          <span class="w-24 shrink-0 text-xs text-ink-soft tabular-nums">{month.month}</span>
+          <span class="relative h-6 flex-1 overflow-hidden rounded bg-paper-deep">
+            <span
+              class="absolute inset-y-0 left-0 rounded bg-brand"
+              style={`width: ${(month.open / month.dates) * 100}%`}
+            />
+          </span>
+          <span class="w-24 shrink-0 text-right text-xs text-ink-soft tabular-nums">
+            {month.dates} 天裡 {month.open} 天
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="mt-5 border-t border-line-soft pt-5 text-[0.875rem] leading-[1.85] text-ink-soft">
+    10 月 31 天完全沒有空房。同一天、同一份日曆上，其他迪士尼飯店是這樣：
+  </p>
+
+  <ul class="mt-4 space-y-2">
+    {
+      AVAILABILITY_PEERS.map((peer) => (
+        <li class="flex items-center gap-3">
+          <span
+            class:list={[
+              'w-52 shrink-0 truncate text-xs',
+              peer.hotel === HOTEL.name ? 'font-bold text-brand-deep' : 'text-ink-soft',
+            ]}
+          >
+            {peer.hotel}
+          </span>
+          <span class="relative h-4 flex-1 overflow-hidden rounded bg-paper-deep">
+            <span
+              class:list={[
+                'absolute inset-y-0 left-0 rounded',
+                peer.hotel === HOTEL.name ? 'bg-brand' : 'bg-line',
+              ]}
+              style={`width: ${(peer.open / peerMax) * 100}%`}
+            />
+          </span>
+          <span class="w-20 shrink-0 text-right text-xs text-ink-soft tabular-nums">
+            {peer.open} 天
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="mt-4 text-xs leading-relaxed text-ink-faint">
+    同一份日曆、同一個 {peerTotal} 天區間、同樣是 2 位大人 1 間房的條件。這是某一天的快照，不是全年統計；
+    會變的是哪幾天有房，不太會變的是這個排序。
+  </p>
+</div>

@@ -1,0 +1,76 @@
+---
+import { HOTEL } from '~/data/fantasy-springs-hotel';
+
+/**
+ * The one decision that comes before every other decision at this hotel, so it
+ * gets its own table. Everything in it is published by the hotel except the two
+ * room-count figures' sum, which is arithmetic on two official figures.
+ */
+const rows = [
+  {
+    label: '客房數',
+    fcu: `${HOTEL.fantasyChateauRooms} 間`,
+    gcu: `${HOTEL.grandChateauRooms} 間`,
+  },
+  { label: '客房面積', fcu: '41／48／50 m²', gcu: '70／100 m²' },
+  { label: '陽台或露台', fcu: '只有泉鄉區的兩種房型', gcu: '全部客房' },
+  { label: '面向園區', fcu: '依所在區域而定，四區只有兩區看得到', gcu: '全部客房' },
+  { label: '園區入口', fcu: '夢幻泉鄉口，每次進出出示住宿證明', gcu: '豪華館通路，本館住客專用通道' },
+  { label: '遊樂設施體驗券', fcu: '無', gcu: '房價含 8 張' },
+  { label: '娛樂表演觀賞券', fcu: '無', gcu: '房價含 4 張' },
+  { label: '住房手續', fcu: '可提前辦理（7:00–13:00），房間 16:30 起', gcu: '在客房內辦理，附迎賓飲料' },
+  { label: '專屬餐廳', fcu: '無', gcu: '法式餐廳 利貝爾' },
+  { label: '客房送餐服務', fcu: '無，改為客房內享用的外帶餐飲', gcu: '有' },
+  { label: '行李遞送', fcu: '送到行李服務櫃檯自取', gcu: '直接送到客房' },
+  { label: '官方公布房價', fcu: '網站上有逐日的最低價日曆', gcu: '網站不公布，導向線上訂房網站' },
+] as const;
+
+const shared = [
+  '專用的園區入口與 21:00（夏季 21:10）回到夢幻泉鄉的規定',
+  '歡樂入園',
+  '在飯店購買園區票券',
+  '全日餐廳 夢幻泉鄉餐廳、大廳咖啡廳 格蘭派拉迪大廳',
+  '住宿遊客限定的迪士尼飯店獨家商品（在園區內的商店販售）',
+  '入住 15:00、退房 12:00',
+];
+---
+
+<div class="not-prose my-10">
+  <div class="table-scroll overflow-hidden rounded-xl border border-line bg-card">
+    <table class="w-full min-w-[34rem] text-sm">
+      <caption class="sr-only">夢幻館與豪華館的差異對照</caption>
+      <thead>
+        <tr class="bg-paper-deep text-left">
+          <th scope="col" class="px-4 py-3 font-bold text-ink"></th>
+          <th scope="col" class="px-4 py-3 font-bold text-ink">
+            夢幻館
+            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">麗緻型</span>
+          </th>
+          <th scope="col" class="px-4 py-3 font-bold text-brand-deep">
+            豪華館
+            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">奢華型</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line-soft">
+        {
+          rows.map((row) => (
+            <tr class="align-top transition-colors hover:bg-paper-deep/40">
+              <th scope="row" class="px-4 py-3 text-left font-medium whitespace-nowrap text-ink">
+                {row.label}
+              </th>
+              <td class="px-4 py-3 leading-relaxed text-ink-soft">{row.fcu}</td>
+              <td class="px-4 py-3 leading-relaxed text-ink">{row.gcu}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-4 rounded-xl border border-line bg-paper-deep/50 px-5 py-4">
+    <p class="text-2xs font-bold tracking-[0.12em] text-ink-faint uppercase">兩館相同</p>
+    <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.8125rem] text-ink-soft">
+      {shared.map((item) => <li>{item}</li>)}
+    </ul>
+  </div>
+</div>

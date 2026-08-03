@@ -3,8 +3,25 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ArticleCard from '~/components/ArticleCard.astro';
 import { SITE, withBase } from '~/consts';
-import { CATEGORIES, HOTEL, ROOMS } from '~/data/tokyo-disneyland-hotel';
-import { roomsByCategory } from '~/data/hotel-schema';
+import { ROOMS as TDH_ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { ROOMS as FSH_ROOMS } from '~/data/fantasy-springs-hotel';
+
+const databases = [
+  {
+    name: '東京迪士尼海洋夢幻泉鄉大飯店',
+    href: '/hotels/fantasy-springs-hotel',
+    types: FSH_ROOMS.length,
+    note: '兩館 31 種房型，加上玫瑰庭區 147 間客房的逐間位置圖',
+  },
+  {
+    name: '東京迪士尼樂園大飯店',
+    href: '/hotels/tokyo-disneyland-hotel',
+    types: TDH_ROOMS.length,
+    note: '38 種房型，116 個位置照實際比例描繪的客房平面圖',
+  },
+];
+
+const roomTypeCount = TDH_ROOMS.length + FSH_ROOMS.length;
 
 const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
@@ -34,6 +51,7 @@ const principles = [
 
 const upcoming = [
   { place: '東京迪士尼海洋觀海景大飯店', note: '威尼斯側與托斯卡尼側的房型與視野比較' },
+  { place: '東京迪士尼度假區玩具總動員飯店', note: '房價最低的迪士尼飯店，代價是什麼' },
   { place: '東京迪士尼度假區交通', note: '從成田、羽田到舞濱的四種走法與實際花費' },
   { place: '東京迪士尼樂園單日行程', note: '不買尊享卡的情況下，怎麼排才不會走冤枉路' },
 ];
@@ -84,17 +102,17 @@ const schema = {
           )
         }
         <a
-          href={withBase('/hotels/tokyo-disneyland-hotel')}
+          href={withBase('/hotels')}
           class="inline-flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
         >
-          打開房型資料庫
+          打開飯店資料庫
         </a>
       </div>
 
       <dl class="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-line pt-8">
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">已收錄房型</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{ROOMS.length} 種</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{roomTypeCount} 種</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">目前文章</dt>
@@ -169,31 +187,37 @@ const schema = {
     <div
       class="overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-deep to-brand text-white"
     >
-      <div class="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+      <div class="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.1fr_1fr] lg:items-center">
         <div>
           <p class="text-2xs font-bold tracking-[0.22em] uppercase opacity-80">工具</p>
-          <h2 class="mt-3 font-serif text-2xl leading-snug font-bold sm:text-3xl">
-            {HOTEL.name}房型資料庫
-          </h2>
+          <h2 class="mt-3 font-serif text-2xl leading-snug font-bold sm:text-3xl">飯店資料庫</h2>
           <p class="mt-4 max-w-lg text-[0.9375rem] leading-[1.9] opacity-90">
-            {ROOMS.length}
-            種房型的面積、床型配置、人數上限、景觀分級與參考價，全部整理成可以篩選的清單。訂房前打開它，用你的條件把不適合的濾掉。
+            每一間飯店的房型面積、床型配置、人數上限、景觀分級與參考價，全部整理成可以篩選的清單，
+            並且把房號對應到實際位置。訂房前打開它，用你的條件把不適合的濾掉。
           </p>
           <a
-            href={withBase('/hotels/tokyo-disneyland-hotel')}
+            href={withBase('/hotels')}
             class="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-brand-deep transition-transform duration-300 hover:-translate-y-0.5"
           >
             打開資料庫 <span aria-hidden="true">→</span>
           </a>
         </div>
-        <ul class="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-white/20">
+        <ul class="space-y-px overflow-hidden rounded-xl bg-white/20">
           {
-            CATEGORIES.map((category) => (
-              <li class="bg-brand-deep/60 px-5 py-6 backdrop-blur-sm">
-                <p class="text-2xs tracking-[0.14em] uppercase opacity-70">{category.label}</p>
-                <p class="mt-1.5 font-serif text-xl font-bold">
-                  {roomsByCategory(ROOMS, category.key).length} 種
-                </p>
+            databases.map((database) => (
+              <li class="bg-brand-deep/60 backdrop-blur-sm">
+                <a
+                  href={withBase(database.href)}
+                  class="block px-5 py-5 transition-colors hover:bg-brand-deep/80"
+                >
+                  <p class="flex items-baseline justify-between gap-3 font-serif text-base font-bold">
+                    {database.name}
+                    <span class="shrink-0 text-sm font-normal opacity-80">
+                      {database.types} 種
+                    </span>
+                  </p>
+                  <p class="mt-1.5 text-[0.8125rem] leading-relaxed opacity-75">{database.note}</p>
+                </a>
               </li>
             ))
           }
