@@ -42,6 +42,15 @@ export interface ExplorerCopy {
     noneOnFloor: string;
     note: (planRooms: number, total: number, positions: number, published: number) => string;
     legendNote: string;
+    turretLabel: string;
+    colourLabel: string;
+    entranceSide: string;
+    parkSide: string;
+    svgTitle: string;
+    svgDesc: string;
+    blurbIntro: string;
+    detail: string;
+    positionLabel: (code: string) => string;
   };
   beds: { name: string; size: string; capacity: string; note: string };
 }
@@ -101,6 +110,15 @@ const zhHant: ExplorerCopy = {
     note: (planRooms, total, positions, published) =>
       `依原始平面圖逐間描出位置與大小，房號沿走廊推得。圖上涵蓋 ${planRooms} 間，全館 ${total} 間；${positions} 個位置裡有 ${published} 個有公開房號，1、2 樓最不完整。手機請左右滑動。`,
     legendNote: '選定樓層後，顏色是該樓層實際販售的分類',
+    turretLabel: '角塔',
+    colourLabel: '上色依據',
+    entranceSide: '飯店正門側・幻想曲廣場',
+    parkSide: '東京迪士尼樂園',
+    svgTitle: '東京迪士尼樂園大飯店逐間客房平面圖',
+    svgDesc: '依實際比例描繪的平面圖。每一個多邊形是一間客房。',
+    blurbIntro: '這張圖從原始平面圖描出來，位置、大小和角度都照實際比例。',
+    detail: '逐間客房平面圖',
+    positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: '床型', size: '尺寸（cm）', capacity: '每張床鋪的人數上限', note: '說明' },
 };
@@ -166,6 +184,15 @@ const ja: ExplorerCopy = {
     note: (planRooms, total, positions, published) =>
       `元の配置図から 1 室ずつ位置と広さを描き出し、部屋番号は廊下沿いに推定しました。図が扱うのは ${planRooms} 室で、全館は ${total} 室。${positions} か所のうち ${published} か所に公開された部屋番号があり、1〜2 階がもっとも不完全です。スマートフォンでは左右にスクロールしてください。`,
     legendNote: '階を選ぶと、その階で実際に販売されているカテゴリーの色になります',
+    turretLabel: '小塔',
+    colourLabel: '色分けの基準',
+    entranceSide: '正面エントランス側・ファンタジア広場',
+    parkSide: '東京ディズニーランド',
+    svgTitle: '東京ディズニーランドホテル 客室配置図',
+    svgDesc: '実際の比率で描いた配置図。多角形の一つが 1 室です。',
+    blurbIntro: '元の配置図から描き出し、位置・広さ・角度をすべて実際の比率で表しています。',
+    detail: '客室配置図',
+    positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: 'ベッド', size: 'サイズ（cm）', capacity: '1 台あたりの定員', note: '備考' },
 };
@@ -234,6 +261,15 @@ const en: ExplorerCopy = {
     note: (planRooms, total, positions, published) =>
       `Positions and sizes are traced room by room from the published plan, with numbers inferred along each corridor. The plan accounts for ${planRooms} rooms of the hotel's ${total}; ${published} of ${positions} positions have a published room number, and floors 1 and 2 are the least complete. Scroll sideways on a phone.`,
     legendNote: 'With a floor selected, colours show the category sold on that floor',
+    turretLabel: 'Turret',
+    colourLabel: 'Colour by',
+    entranceSide: 'Main entrance side · Fantasia Plaza',
+    parkSide: 'Tokyo Disneyland',
+    svgTitle: 'Tokyo Disneyland Hotel floor plan, room by room',
+    svgDesc: 'Drawn to true proportions. Each polygon is one guest room.',
+    blurbIntro: 'Traced from the published plan, with position, size and angle all to true scale.',
+    detail: 'Floor plan, room by room',
+    positionLabel: (code) => `Position ${code}`,
   },
   beds: { name: 'Bed', size: 'Size (cm)', capacity: 'Maximum per bed', note: 'Notes' },
 };

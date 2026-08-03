@@ -1,6 +1,8 @@
 ---
 import { CATEGORIES, ROOMS } from '~/data/tokyo-disneyland-hotel';
 import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-rates';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { CATEGORY_LABELS, roomName } from '~/i18n/rooms';
 
 /**
  * Month-by-month rate ranges. Each bar spans that month's lowest to highest
@@ -9,7 +11,12 @@ import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-ra
  * attributed to weekends specifically.
  */
 
-const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+const categoryLabel = CATEGORY_LABELS[locale];
 
 const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
   const months = MONTHLY_RATES[room.id]!;
@@ -21,7 +28,7 @@ const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
   const dearest = entries.reduce((max, e) => (e.high > max.high ? e : max));
   return {
     id: room.id,
-    name: room.name,
+    name: roomName(room, locale),
     category: categoryLabel[room.category] ?? '',
     low: range[0],
     high: range[1],

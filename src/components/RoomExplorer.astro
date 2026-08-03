@@ -49,6 +49,7 @@ const numbered = Object.values(ROOM_NUMBERS).reduce((sum, entry) => sum + entry.
  */
 const grouped = CATEGORIES.map((category) => ({
   ...category,
+  label: categoryLabel[category.key] ?? category.label,
   rooms: ROOMS.filter((room) => room.category === category.key).sort(
     (a, b) => a.priceFrom - b.priceFrom,
   ),
