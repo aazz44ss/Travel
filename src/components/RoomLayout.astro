@@ -1,0 +1,277 @@
+---
+import { ROOMS, type Room } from '~/data/tokyo-disneyland-hotel';
+
+interface Props {
+  room: Room;
+}
+
+const { room } = Astro.props;
+
+/**
+ * Schematic plan of a single room type, drawn from its own specification rather
+ * than copied from the hotel's own diagrams.
+ *
+ * Everything is laid out in real centimetres: the shell is sized so its area
+ * matches the published square metres, and the beds are drawn at the official
+ * sizes from the bed table. Every room shares one canvas scale, so the drawings
+ * are comparable card to card — a 93 m² family room really is drawn more than
+ * twice the size of a 40 m² superior room. The Walt Disney Suite is far enough
+ * off the scale that it gets its own and says so.
+ *
+ * The arrangement itself is conventional, not surveyed: entry and bathroom on
+ * the corridor side, beds toward the window. Treat it as "what fits and how
+ * much room is left", not as the actual furniture plan.
+ */
+
+const BED = {
+  regular: { w: 120, h: 210, label: '標準床' },
+  double: { w: 180, h: 210, label: '雙人床' },
+  king: { w: 200, h: 210, label: 'King' },
+  trundle: { w: 100, h: 190, label: '推拉床' },
+  cruise: { w: 83, h: 183, label: '郵輪床' },
+  alcove: { w: 90, h: 206, label: '凹室床' },
+} as const;
+
+function parseBeds(text: string) {
+  const regular = Number(/(\d) 張(?:無障礙)?標準床/.exec(text)?.[1] ?? 0);
+  const alcove = /凹室床/.test(text) ? Number(/(\d) 張凹室床/.exec(text)?.[1] ?? 1) : 0;
+  return {
+    regular,
+    alcove,
+    double: /1 張雙人床/.test(text),
+    king: /King size/.test(text),
+    trundle: /推拉床/.test(text),
+    /** Paid extras are drawn dashed because they are not in the room by default. */
+    cruise: /郵輪床/.test(text),
+    cruiseOptional: /可加價.*郵輪床/.test(text),
+  };
+}
+
+const beds = parseBeds(room.beds);
+
+/** Shell proportions. Corner and turret rooms get squarer shells. */
+const aspect = room.name.includes('景隅') ? 1.15 : room.name.includes('塔樓') ? 1 : 1.55;
+const areaCm2 = room.sizeValue * 10_000;
+const shellW = Math.sqrt(areaCm2 * aspect);
+const shellH = shellW / aspect;
+
+/**
+ * One shared canvas for every room that fits it, so a bigger room is drawn
+ * bigger. The suite is an order away from the rest and would shrink everything
+ * else to nothing, so it opts out.
+ */
+const SCALE_CAP = 75;
+const referenceArea = Math.max(
+  ...ROOMS.filter((r) => r.sizeValue <= SCALE_CAP).map((r) => r.sizeValue),
+);
+const ownScale = room.sizeValue > SCALE_CAP;
+const canvasShellW = Math.sqrt(referenceArea * 10_000 * 1.55);
+
+const bathW = Math.min(340, shellW * 0.3);
+const bathH = Math.min(240, shellH * 0.42);
+const balconyDepth = room.balcony ? 130 : 0;
+
+/** Padding leaves room for the window wall, the balcony and the labels. */
+const pad = 90;
+const canvasW = ownScale ? shellW + balconyDepth : canvasShellW + 130;
+const canvasH = ownScale ? shellH : canvasShellW / 1.55;
+const viewW = canvasW + pad * 2;
+const viewH = canvasH + pad * 2;
+/** Centre the shell on the shared canvas. */
+const offsetX = pad + (canvasW - shellW - balconyDepth) / 2;
+const offsetY = pad + (canvasH - shellH) / 2;
+
+const VIEW_FILL = { grand: '#0f4c5c', park: '#5b93a1', none: '#cdc2ae' } as const;
+const windowFill = VIEW_FILL[room.view];
+
+/** Beds sit against the top wall, working back from the window. */
+const bedTop = offsetY + Math.max(70, shellH * 0.16);
+const doorW = Math.min(95, shellH * 0.2);
+const doorY = offsetY + shellH - doorW - 40;
+const windowX = offsetX + shellW;
+const clearance = 150;
+
+type Piece = { x: number; y: number; w: number; h: number; kind: string; dashed?: boolean };
+const pieces: Piece[] = [];
+
+let cursor = windowX - clearance;
+const place = (spec: { w: number; h: number }, kind: string, dashed = false) => {
+  cursor -= spec.w;
+  pieces.push({ x: cursor, y: bedTop, w: spec.w, h: spec.h, kind, dashed });
+  cursor -= 34;
+};
+
+if (beds.king) place(BED.king, 'king');
+else if (beds.double) place(BED.double, 'double');
+for (let i = 0; i < beds.regular; i += 1) place(BED.regular, 'regular');
+
+/**
+ * The trundle stows under a regular bed, so it is drawn pulled out from the foot
+ * of the bed row and overlapping it, clamped to stay inside the shell.
+ */
+const trundle = beds.trundle
+  ? {
+      x: windowX - clearance - BED.trundle.w,
+      y: Math.min(bedTop + BED.regular.h - 70, offsetY + shellH - BED.trundle.h - 20),
+      w: BED.trundle.w,
+      h: BED.trundle.h,
+    }
+  : null;
+
+/** The alcove is a niche in the wall, so it is drawn inset into the bottom edge. */
+const alcoves = Array.from({ length: beds.alcove }, (_, i) => ({
+  x: windowX - clearance - (i + 1) * (BED.alcove.w + 40),
+  y: offsetY + shellH - BED.alcove.w,
+  w: BED.alcove.h,
+  h: BED.alcove.w,
+}));
+
+const cruise = beds.cruise
+  ? { x: offsetX + bathW + 60, y: offsetY + shellH - BED.cruise.h - 30, w: BED.cruise.w, h: BED.cruise.h }
+  : null;
+
+const inventory = [
+  beds.king && `1 張 King size 床`,
+  beds.double && `1 張雙人床`,
+  beds.regular > 0 && `${beds.regular} 張標準床`,
+  beds.trundle && '推拉床',
+  beds.alcove > 0 && `${beds.alcove} 張凹室床`,
+  beds.cruise && `郵輪床${beds.cruiseOptional ? '（加價）' : ''}`,
+]
+  .filter(Boolean)
+  .join('・');
+---
+
+<figure class="not-prose mt-3 overflow-hidden rounded-lg border border-line-soft bg-paper-deep/30">
+  <svg
+    viewBox={`0 0 ${Math.round(viewW)} ${Math.round(viewH)}`}
+    class="block h-auto w-full"
+    role="img"
+    aria-label={`${room.name}的配置示意圖，${room.size} 平方公尺，${inventory}`}
+  >
+    <!-- floor -->
+    <rect x={offsetX} y={offsetY} width={shellW} height={shellH} fill="#fdfaf4" stroke="#6b4f1d" stroke-width="14" />
+
+    <!-- bathroom and entry on the corridor side -->
+    <rect x={offsetX} y={offsetY} width={bathW} height={bathH} fill="#f2ece0" stroke="#6b4f1d" stroke-width="10" />
+    <circle cx={offsetX + bathW * 0.3} cy={offsetY + bathH * 0.5} r={Math.min(38, bathH * 0.2)} fill="none" stroke="#a8935f" stroke-width="8" />
+    <rect
+      x={offsetX + bathW * 0.5}
+      y={offsetY + bathH * 0.24}
+      width={bathW * 0.42}
+      height={bathH * 0.52}
+      rx="12"
+      fill="none"
+      stroke="#a8935f"
+      stroke-width="8"
+    />
+    <g stroke="#b4832c" stroke-width="9" fill="none">
+      <line x1={offsetX} y1={doorY} x2={offsetX} y2={doorY + doorW} stroke="#fdfaf4" stroke-width="18" />
+      <line x1={offsetX} y1={doorY} x2={offsetX + doorW} y2={doorY} />
+      <path d={`M ${offsetX + doorW} ${doorY} A ${doorW} ${doorW} 0 0 1 ${offsetX} ${doorY + doorW}`} />
+    </g>
+
+    <!-- window wall, tinted by view grade; balcony drawn beyond it when present -->
+    <line x1={windowX} y1={offsetY} x2={windowX} y2={offsetY + shellH} stroke={windowFill} stroke-width="26" />
+    {
+      room.balcony && (
+        <rect
+          x={windowX}
+          y={offsetY + shellH * 0.18}
+          width={balconyDepth}
+          height={shellH * 0.64}
+          fill="none"
+          stroke={windowFill}
+          stroke-width="10"
+          stroke-dasharray="22 16"
+        />
+      )
+    }
+
+    <!-- corner rooms have a second window wall -->
+    {
+      room.name.includes('景隅') && (
+        <line x1={offsetX} y1={offsetY} x2={windowX} y2={offsetY} stroke={windowFill} stroke-width="26" />
+      )
+    }
+
+    {
+      pieces.map((piece) => (
+        <g>
+          <rect
+            x={piece.x}
+            y={piece.y}
+            width={piece.w}
+            height={piece.h}
+            rx="10"
+            fill={piece.kind === 'regular' ? '#fdf3c8' : '#f7e491'}
+            stroke="#a8935f"
+            stroke-width="8"
+          />
+          <line
+            x1={piece.x}
+            y1={piece.y + 46}
+            x2={piece.x + piece.w}
+            y2={piece.y + 46}
+            stroke="#a8935f"
+            stroke-width="6"
+          />
+        </g>
+      ))
+    }
+
+    {
+      trundle && (
+        <rect
+          x={trundle.x}
+          y={trundle.y}
+          width={trundle.w}
+          height={trundle.h}
+          rx="10"
+          fill="#fdfaf4"
+          stroke="#a8935f"
+          stroke-width="8"
+          stroke-dasharray="20 14"
+        />
+      )
+    }
+
+    {
+      alcoves.map((niche) => (
+        <rect
+          x={niche.x}
+          y={niche.y}
+          width={niche.w}
+          height={niche.h}
+          rx="8"
+          fill="#f6efe0"
+          stroke="#b4832c"
+          stroke-width="8"
+        />
+      ))
+    }
+
+    {
+      cruise && (
+        <rect
+          x={cruise.x}
+          y={cruise.y}
+          width={cruise.w}
+          height={cruise.h}
+          rx="8"
+          fill="#fdfaf4"
+          stroke="#a8935f"
+          stroke-width="8"
+          stroke-dasharray={beds.cruiseOptional ? '20 14' : undefined}
+        />
+      )
+    }
+  </svg>
+
+  <figcaption class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint">
+    <span class="font-medium text-ink-soft">{room.size} m²</span>
+    <span>{inventory}</span>
+    {(beds.trundle || beds.cruise || room.balcony) && <span>虛線＝收納床位或陽台</span>}
+    <span class="ml-auto">{ownScale ? '示意圖・比例與其他房型不同' : '示意圖・各房型同比例'}</span>
+  </figcaption>
+</figure>

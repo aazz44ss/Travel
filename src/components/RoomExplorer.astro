@@ -2,6 +2,7 @@
 import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
 import { annualRange } from '~/data/tdh-rates';
 import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import RoomLayout from '~/components/RoomLayout.astro';
 
 const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
 const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
@@ -234,6 +235,8 @@ function features(room: Room): string[] {
             {room.name}
           </h3>
           <p class="mt-1 text-xs text-ink-faint">{room.nameJa}</p>
+
+          <RoomLayout room={room} />
 
           <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
             <div>
