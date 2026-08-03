@@ -8,8 +8,11 @@
 
 | 內容 | 路徑 |
 | --- | --- |
+| 東京迪士尼海洋觀海景大飯店完全指南 | `/articles/tokyo-disneysea-hotel-miracosta` |
+| 東京迪士尼海洋觀海景大飯店房型資料庫（37 種組合、海港區房號索引） | `/hotels/tokyo-disneysea-hotel-miracosta` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
 | 東京迪士尼樂園大飯店房型資料庫（38 種房型，可篩選） | `/hotels/tokyo-disneyland-hotel` |
+| 房型資料庫總覽 | `/hotels` |
 
 ## 技術
 
@@ -36,7 +39,9 @@ src/
 │   └── articles/     文章（MDX，可直接嵌入元件）
 ├── content.config.ts 文章的 schema 定義
 ├── data/             結構化資料集，與文章分離維護
-│   └── tokyo-disneyland-hotel.ts
+│   ├── hotel.ts      各飯店共用型別與價格工具
+│   ├── tokyo-disneyland-hotel.ts
+│   └── tokyo-disneysea-hotel-miracosta.ts
 ├── layouts/          BaseLayout / ArticleLayout
 ├── pages/            路由
 ├── styles/           設計 token 與長文排版

@@ -1,0 +1,148 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { withBase } from '~/consts';
+import {
+  CATEGORIES as TDH_CATEGORIES,
+  HOTEL as TDH_HOTEL,
+  ROOMS as TDH_ROOMS,
+} from '~/data/tokyo-disneyland-hotel';
+import {
+  CATEGORIES as DHM_CATEGORIES,
+  HOTEL as DHM_HOTEL,
+  ROOMS as DHM_ROOMS,
+} from '~/data/tokyo-disneysea-hotel-miracosta';
+
+const databases = [
+  {
+    hotel: DHM_HOTEL,
+    rooms: DHM_ROOMS,
+    categories: DHM_CATEGORIES,
+    href: '/hotels/tokyo-disneysea-hotel-miracosta',
+    articleHref: '/articles/tokyo-disneysea-hotel-miracosta',
+    kicker: '住在東京迪士尼海洋裡',
+    description:
+      '拆解托斯卡納、威尼斯、海港與尊榮客房，並整理八種景觀、海港區 178 間房號、官方格局與 2026 逐月費率。',
+    facts: ['37 種可訂組合', '八種景觀', '海港區房號索引', '官方格局圖'],
+    gradient: 'from-[#4c1826] via-berry to-[#9a6840]',
+  },
+  {
+    hotel: TDH_HOTEL,
+    rooms: TDH_ROOMS,
+    categories: TDH_CATEGORIES,
+    href: '/hotels/tokyo-disneyland-hotel',
+    articleHref: '/articles/tokyo-disneyland-hotel',
+    kicker: '東京迪士尼樂園正門前',
+    description:
+      '把標準房、明星房、禮賓房與套房拆成可篩選規格，另有 116 個位置依實際比例描繪的客房平面圖。',
+    facts: ['38 種可訂組合', '三種景觀', '逐間比例平面圖', '官方格局圖'],
+    gradient: 'from-brand-deep to-brand',
+  },
+];
+
+const totalTypes = databases.reduce((sum, entry) => sum + entry.rooms.length, 0);
+const title = '迪士尼飯店房型資料庫';
+const description = `目前收錄 ${databases.length} 間東京迪士尼飯店、共 ${totalTypes} 種可訂房型組合，提供景觀、床型、面積、參考價與房號工具。`;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: title,
+  description,
+  numberOfItems: databases.length,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: databases.map((entry, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: entry.hotel.name,
+      url: new URL(withBase(entry.href), Astro.site).href,
+    })),
+  },
+};
+---
+
+<BaseLayout title={title} description={description} schema={schema}>
+  <header class="border-b border-line bg-paper-deep/40">
+    <div class="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label="麵包屑">
+        <a href={withBase('/')} class="transition-colors hover:text-brand">首頁</a>
+        <span aria-hidden="true">/</span>
+        <span>房型資料庫</span>
+      </nav>
+      <p class="mt-8 text-2xs font-bold tracking-[0.22em] text-gold uppercase">Hotel databases</p>
+      <h1 class="mt-3 font-serif text-3xl font-bold text-ink sm:text-4xl">房型資料庫</h1>
+      <p class="mt-4 max-w-2xl text-[0.9375rem] leading-[1.95] text-ink-soft">{description}</p>
+      <dl class="mt-9 flex flex-wrap gap-x-12 gap-y-5 border-t border-line pt-6">
+        <div>
+          <dt class="text-2xs tracking-[0.14em] text-ink-faint uppercase">飯店</dt>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{databases.length} 間</dd>
+        </div>
+        <div>
+          <dt class="text-2xs tracking-[0.14em] text-ink-faint uppercase">可訂組合</dt>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{totalTypes} 種</dd>
+        </div>
+        <div>
+          <dt class="text-2xs tracking-[0.14em] text-ink-faint uppercase">資料原則</dt>
+          <dd class="mt-1 font-serif text-lg font-bold text-brand-deep">官方規格＋標明二手來源</dd>
+        </div>
+      </dl>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+    <div class="grid gap-7 lg:grid-cols-2">
+      {
+        databases.map((entry) => (
+          <article class="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-card">
+            <div class:list={['bg-gradient-to-br p-7 text-white sm:p-8', entry.gradient]}>
+              <p class="text-2xs font-bold tracking-[0.18em] uppercase opacity-75">{entry.kicker}</p>
+              <h2 class="mt-3 font-serif text-2xl leading-snug font-bold">{entry.hotel.name}</h2>
+              <p class="mt-1 text-xs opacity-70">{entry.hotel.nameEn}</p>
+              <p class="mt-4 text-sm leading-[1.9] opacity-90">{entry.description}</p>
+            </div>
+
+            <div class="flex flex-1 flex-col p-7 sm:p-8">
+              <ul class="grid grid-cols-2 gap-2">
+                {entry.facts.map((fact) => (
+                  <li class="rounded-lg bg-paper-deep/60 px-3 py-2.5 text-xs font-medium text-ink-soft">
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+
+              <dl class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line">
+                {entry.categories.map((category) => (
+                  <div class="bg-card px-4 py-4">
+                    <dt class="text-2xs leading-snug text-ink-faint">{category.label}</dt>
+                    <dd class="mt-1 font-serif text-lg font-bold text-ink">
+                      {entry.rooms.filter((room) => room.category === category.key).length} 種
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div class="mt-auto flex flex-wrap gap-2 pt-7">
+                <a
+                  href={withBase(entry.href)}
+                  class="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+                >
+                  打開資料庫 <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href={withBase(entry.articleHref)}
+                  class="inline-flex items-center rounded-full border border-line px-5 py-3 text-sm font-medium text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+                >
+                  閱讀完整攻略
+                </a>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <p class="mt-10 text-sm leading-relaxed text-ink-faint">
+      「房型種數」是把官方同一名稱下不同床型、面積或定員拆開後的可訂組合，不等於飯店官方宣稱的房型名稱數。價格一律作為比較用參考值，實際庫存與金額以東京迪士尼度假區訂房系統為準。
+    </p>
+  </main>
+</BaseLayout>
