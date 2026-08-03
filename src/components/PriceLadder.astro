@@ -7,9 +7,9 @@ import { formatYen } from '~/data/hotel-schema';
  * premium legible in a way the full price table cannot. Prices come from the
  * three 40 m² two-bed Superior rooms so the only variable is the window.
  */
-const priceOf = (name: string) => {
+const priceOf = (name: string): number => {
   const room = ROOMS.find((r) => r.name === name);
-  if (!room) throw new Error(`PriceLadder: no room named ${name}`);
+  if (room?.priceFrom === undefined) throw new Error(`PriceLadder: no priced room named ${name}`);
   return room.priceFrom;
 };
 const base = priceOf('精緻客房・2 張標準床');

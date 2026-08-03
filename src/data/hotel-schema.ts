@@ -38,8 +38,11 @@ export interface Room {
   size: string;
   /** Numeric size used for sorting and filtering. */
   sizeValue: number;
-  /** Reference "from" rate in JPY per room per night. */
-  priceFrom: number;
+  /**
+   * Reference "from" rate in JPY per room per night. Left undefined when no
+   * source publishes a rate for the type, rather than filled with an estimate.
+   */
+  priceFrom?: number;
   floors?: string;
   alcove: boolean;
   balcony: boolean;
@@ -121,6 +124,18 @@ export function roomsByCategory(rooms: Room[], key: string): Room[] {
   return rooms.filter((room) => room.category === key);
 }
 
-export function cheapestRoom(rooms: Room[]): Room {
-  return rooms.reduce((min, room) => (room.priceFrom < min.priceFrom ? room : min), rooms[0]!);
+export function cheapestRoom(rooms: Room[]): Room | undefined {
+  return rooms
+    .filter((room) => room.priceFrom !== undefined)
+    .reduce<Room | undefined>(
+      (min, room) => (!min || room.priceFrom! < min.priceFrom! ? room : min),
+      undefined,
+    );
+}
+
+/** Priced types first and cheapest first; unpriced types keep their input order at the end. */
+export function byPrice(a: Room, b: Room): number {
+  if (a.priceFrom === undefined) return b.priceFrom === undefined ? 0 : 1;
+  if (b.priceFrom === undefined) return -1;
+  return a.priceFrom - b.priceFrom;
 }
