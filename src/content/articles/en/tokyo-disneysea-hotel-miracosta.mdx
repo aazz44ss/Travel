@@ -1,0 +1,347 @@
+---
+title: 'Tokyo DisneySea Hotel MiraCosta in full: 37 room types, eight view grades, and the Porto room numbers'
+cardTitle: Tokyo DisneySea Hotel MiraCosta in full
+description: Official room data, 2026 rates, first-hand stays and a room-by-room survey of the Porto Paradiso side, put together to explain the three sides, what Harbor View actually buys, and how a Balcony Room differs from a Terrace Room.
+destination: Tokyo DisneySea Hotel MiraCosta
+country: Urayasu, Chiba, Japan
+heroKicker: Taking a hotel apart
+publishedAt: 2026-08-03
+readingMinutes: 16
+featured: true
+accent: berry
+tags:
+  - Tokyo Disney
+  - Tokyo DisneySea
+  - Hotel MiraCosta
+  - Disney hotels
+  - Family travel
+  - Room comparison
+takeaways:
+  - 'Toscana, Venezia and Porto Paradiso name the side of the building, not the view. What your window is promised is the last bracket of the room name: DisneySea AquaSphere View, Palazzo Canals View, Piazza View or Harbor View.'
+  - To watch a whole water show from your room the name has to say Harbor View. Piazza View starts around ¥93,000 and Harbor View around ¥111,000, so roughly ¥18,000 is the price of the open water.
+  - A Balcony Room and a Terrace Room are different products. Balcony Rooms sit on floors 2–3 and sleep up to four; Terrace Rooms are all on the fifth floor with 43 m² inside plus about 30 m² of open terrace, and sleep two.
+  - '178 room numbers on the Porto Paradiso side can be checked: the first digit is the floor, the last three are the position. The hotel accepts no request for a specific floor or room, so the index is for after you have the key card.'
+  - The hotel's own park gateway is not a morning shortcut. Leaving the park it works all day; entering or re-entering only from an hour after normal opening. Happy Entry still goes through the designated north security check.
+sources:
+  - label: Tokyo DisneySea Hotel MiraCosta (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm.html
+    kind: official
+  - label: Hotel MiraCosta rooms (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/room.html
+    kind: official
+  - label: Superior Room (Partial View) official room page
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/room/detail/porto_superior_partial/
+    kind: official
+  - label: Superior Room (Harbor View) official room page
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/room/detail/porto_superior_harbor/
+    kind: official
+  - label: Terrace Room (Harbor Grand View) official room page
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/room/detail/suite_porto_terrace_grand/
+    kind: official
+  - label: Hotel MiraCosta facilities and floor guide (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/facility.html
+    kind: official
+  - label: Hotel MiraCosta restaurants (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/restaurant.html
+    kind: official
+  - label: Hotel MiraCosta guest benefits (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/privilege.html
+    kind: official
+  - label: Happy Entry, the Disney hotel guest benefit (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/topics/info/happy_entry.html
+    kind: official
+  - label: Hotel MiraCosta directions (official)
+    url: https://www.tokyodisneyresort.jp/en/hotel/dhm/access.html
+    kind: official
+  - label: 'CASTEL: 2026 rate tables for all 502 MiraCosta rooms'
+    url: https://castel.jp/p/5614
+    kind: media
+  - label: 'dhoteloo: Porto Paradiso side room positions, numbers and connecting pairs'
+    url: https://dhoteloo.com/%e3%83%9d%e3%83%ab%e3%83%88%e3%83%bb%e3%83%91%e3%83%a9%e3%83%87%e3%82%a3%e3%83%bc%e3%82%be%e3%83%bb%e3%82%b5%e3%82%a4%e3%83%89%e5%ae%a2%e5%ae%a4%e4%bd%8d%e7%bd%ae%e5%9b%b3%e3%80%90%e3%83%9f%e3%83%a9/
+    kind: blog
+  - label: 'dhoteloo: bed counts for every MiraCosta room'
+    url: https://dhoteloo.com/%e5%85%a8%e5%ae%a2%e5%ae%a4%e3%83%99%e3%83%83%e3%83%89%e6%95%b0%e4%b8%80%e8%a6%a7%e3%80%90%e3%83%9f%e3%83%a9%e3%82%b3%e3%82%b9%e3%82%bf%e3%80%91/
+    kind: blog
+  - label: A family stay in room 3147, the “gravel view”
+    url: https://daichan-life.com/miracosta-partialview-jari-3147/2920/
+    kind: blog
+  - label: A Venice Balcony Room stay that met a typhoon
+    url: https://ameblo.jp/fukufukusatoka/entry-12917380849.html
+    kind: social
+  - label: A midwinter Venice Balcony Room stay
+    url: https://note.com/makino_tabi2025/n/na57ad7c214dd
+    kind: social
+  - label: A Terrace Room (Harbor Grand View) stay
+    url: https://kakuyasu-kenkyu.com/terraceharborgrand/
+    kind: blog
+---
+
+import Callout from '~/components/Callout.astro';
+import PriceLadder from '~/components/PriceLadder.astro';
+import { localePath } from '~/i18n/config';
+import { ROOMS, VIEWS } from '~/data/tokyo-disneysea-hotel-miracosta';
+
+export const priceOf = (id) => ROOMS.find((room) => room.id === id).priceFrom;
+export const viewName = (key) => VIEWS.find((view) => view.key === key).labelEn;
+export const harbourLadder = [
+  {
+    view: viewName('partial'),
+    price: priceOf('porto-superior-partial'),
+    note: 'Inside the park, but a wall, a roof or a close-range gravel yard blocks the line of sight',
+    tone: 'muted',
+  },
+  {
+    view: viewName('piazza'),
+    price: priceOf('porto-superior-piazza-twin'),
+    note: 'The piazza and the harbour-town streets, with no promise of open water',
+    tone: 'mid',
+  },
+  {
+    view: viewName('piazza-grand'),
+    price: priceOf('porto-superior-piazza-grand-twin'),
+    note: 'The piazza and streets plus part of the harbour: the middle answer',
+    tone: 'mid',
+  },
+  {
+    view: viewName('harbour'),
+    price: priceOf('porto-superior-harbour-twin'),
+    note: 'The official promise: a full view of the Porto Paradiso harbour',
+    tone: 'full',
+  },
+];
+
+The easiest mistake to make at this hotel is reading a place name as a view.
+
+Porto Paradiso Side surely means you see the harbour; Venice Side surely means you see a canal. The official room names do not work that way. **The side tells you which part of the building you are in; only the view grade at the end of the name says anything about your window.** The cheapest room on the harbour side, Partial View, can face a wall and a gravel yard. A Venice Side room without “Palazzo Canals View” in its name can look at the roof of the spa.
+
+Tokyo DisneySea Hotel MiraCosta has 502 rooms. The official list files several bed layouts and occupancies under one heading — the same “Superior Room (Piazza View)” covers a double, a twin and a 40 m² four-guest plan — so this site splits them wherever the booking decision changes, giving {ROOMS.length} types. Rather than reciting 37 names, this piece takes the naming apart first.
+
+<Callout type="note" title="How to read the prices">
+Every figure here is per room per night for two adults, benchmarked against CASTEL's compilation of 2026 published rates. Tokyo Disney Resort only exposes per-date prices in its booking calendar and publishes no monthly table, so these are secondary-source floors, not quotes. The same room can run tens of thousands of yen above its floor in the school holidays.
+</Callout>
+
+## What actually makes this hotel different
+
+“Close to Tokyo DisneySea” is not precise enough. The hotel is not next to the park: **the building is part of Mediterranean Harbor.** The Italian harbour-town facades you look up at from inside the park have guest rooms, corridors and restaurants behind them.
+
+Three things follow from that.
+
+First, some rooms do not overlook a park in the distance — you are inside it. In the morning you watch the harbour being prepared; at night you watch the streets after the crowd has gone. Neither appears on a show schedule, and both are when a Harbor View window actually gets used the longest.
+
+Second, a Hotel & Park Gateway on the second floor connects straight into the park. Going back to the room in the afternoon to drop off shopping, letting a child sleep for an hour, then returning for the night show is genuinely more practical here than anywhere else.
+
+Third, and consequently, the window becomes a product with its own price. Across comparable 37 m² Superior Rooms, going from Partial View to Harbor View changes almost nothing indoors and ¥28,000 on the rate. You are not buying another bed; you are buying where the window is.
+
+## The three sides are not three views
+
+### Toscana Side: the entrance and the AquaSphere
+
+Toscana Side faces the hotel's main entrance and the Tokyo DisneySea entrance. All six combinations here carry the Capitano Mickey seafaring theme, with 37 m² Superior Rooms from about ¥83,000 and a 43 m² Triple Room from about ¥88,500 — the lowest threshold in the hotel.
+
+An ordinary Toscana room comes with no view guarantee. To turn the lottery into a certainty the name needs “DisneySea AquaSphere View”, which promises the AquaSphere at the park entrance rather than the harbour inside it. The step costs about ¥5,500 for either the Superior or the Triple.
+
+### Venezia Side: canals, a spa, and two kinds of outdoor space
+
+Venezia Side runs along the Palazzo Canals and Terme Venezia. An ordinary Superior Room starts at about ¥83,000, the same as Toscana, but without “Palazzo Canals View” in the name the gondola waterway is not promised. About ¥5,500 turns that into a guarantee.
+
+This side holds two options found nowhere else in the hotel. The ground-floor **Palazzo Patio Room** has a private patio, and the second-floor **Balcony Room**, added in 2025, lets you step outside on the canal side. The latter is not a Speciale room, so it comes without lounge access or breakfast, yet it sleeps four — a rare chance to pay for outdoor space alone.
+
+### Porto Paradiso Side: the longest names, and where the view premium really happens
+
+Porto Paradiso Side faces the harbour town on Mediterranean Harbor, but inside it there are four further grades: Partial, Piazza, Piazza Grand and Harbor. **Stopping at the words “Porto Paradiso Side” is the most expensive misreading in the whole booking process.**
+
+And “Speciale Rooms & Suites” is not a fourth side. It is a service grade spanning the Venice and Porto sides, made of the fifth-floor Salone dell'Amico, next-morning breakfast, and check-in and check-out at a dedicated counter.
+
+## What the four harbour-side grades cost
+
+<PriceLadder
+  title="One Superior Room, four Porto Paradiso view grades"
+  caption="Compared on 2026 reference starting rates, using the 37 m² twin for three guests. The variable that moves is the window."
+  rungs={harbourLadder}
+  footnote="Piazza View to Piazza Grand View costs about ¥11,900; Piazza Grand View to a full Harbor View only about ¥6,100 more. If open water is the goal, stopping at Piazza Grand is the least satisfying rung. If you only want to feel the streets of the park, ordinary Piazza View already does it."
+/>
+
+**Partial View** starts around ¥83,000, and the official page puts the drawback in the name: the room faces the harbour town, but a wall or a roof interrupts the view. A guest who stayed in room 3147 called what was straight ahead a “gravel view”, with the piazza and a corner of the harbour visible at an angle. The right expectation is not a cheap Harbor View but a room on the park side at Toscana prices.
+
+**Piazza View** starts around ¥93,000. The subject is Piazza Topolino and the harbour-town streets. Some positions catch a slice of water, or the glow of a night show, but that is how the rooms were allocated, not what the name promised.
+
+**Piazza Grand View** starts around ¥104,900, and the official definition adds part of the harbour to the piazza and the streets. It is not the whole harbour, but it is where an explicit promise about water begins.
+
+**Harbor View** starts around ¥111,000, described officially as a full view of the Porto Paradiso harbour. If a water show is going into your plans from indoors, this is the floor.
+
+Above that sits **Harbor Grand View**, which belongs to two Terrace Rooms only. It is not simply “more harbour than Harbor View”: the official definition includes viewing it *from the spacious terrace*. Rooms 5353 and 5357, fifth floor, about 30 m² of open space — those things together make the grade.
+
+<Callout type="key" title="Working back from what you want">
+- **You only want to sleep inside the park, and the window is not part of the plan** → an ordinary Toscana or Venezia room, or Partial View treated as a no-view room.
+- **You want the streets, and the atmosphere before opening and after closing** → Piazza View is the sensible stop.
+- **You want the full harbour and the water show from your room** → the name must say Harbor View.
+- **You want to stand outside and look at the harbour** → a Balcony Room or a Terrace Room. An ordinary Harbor View window does not open.
+</Callout>
+
+## What watching a water show from your room really buys
+
+Harbor View puts the whole water surface inside your window frame, but it does not turn the room into the best viewing area in the park.
+
+The angle depends on floor and room number: some positions lean towards the American Waterfront, others towards Zambini Brothers. Fixed glass, reflections and the room's own lighting all show up in photographs. An ordinary room cannot be opened, so the live sound and the crowd's energy simply are not reproducible.
+
+So the sensible use is not saving one viewing inside the park, but adding a second one. Watch the show properly from the park once, then watch it again from the window on the night you stay — or let a child who is finished for the day rest instead. What Harbor View really has no substitute for is everything outside the scheduled show: boats being tested, performers moving into position, the empty harbour before opening, the street going dark one lamp at a time after it closes.
+
+If you will only open the curtain for the thirty minutes of the official show, an ¥18,000 upgrade sees very little use. If you were already planning to spend half a day at the hotel, that is when the harbour stops being one photograph and becomes an evening.
+
+## 37 types, built from a handful of parts
+
+Learn the recurring words and there is no need to memorise long names.
+
+- **Superior Room**: the base plan, usually 37 m² for three guests; the four-guest version is 40 m² with a cruise bed added.
+- **Triple Room**: 43 m² with three 120 cm regular beds, so three adults means nobody on a low trundle bed.
+- **Palazzo Patio Room**: Venezia Side ground floor, 37 m², private patio, sleeps four.
+- **Balcony Room**: floors 2–3, with outdoor access. The Venice version is not Speciale; the Porto version is.
+- **Terrace Room**: all on the fifth floor, 43 m² inside plus about 30 m² of terrace, one 160 cm double, sleeps two.
+- **Harbor Room**: 60 m², two large windows, sleeps four. This is a layout name — read the bracket after it for the view.
+- **Suites**: Porto Paradiso Suite 81 m², MiraCosta Suite 87 m², Il Magnifico Suite 199 m². “Porto Paradiso” in the name does not mean the window holds the whole harbour.
+
+Official layout drawings, areas, occupancies, beds, floors and month-by-month rates for all {ROOMS.length} types are in the <a href={localePath('en', '/hotels/tokyo-disneysea-hotel-miracosta')}>room database</a>, which splits the variants the official site keeps on one page.
+
+### The fourth bed is not a normal bed
+
+A four-guest room is usually two regular beds, a trundle bed and a cruise bed. The cruise bed is **84 × 182 cm**. An adult approaching 180 cm has almost nothing to spare at the foot.
+
+For three adults, a 43 m² Triple Room is far more comfortable than a 37 m² Superior and costs only about ¥5,500 more. For four adults, decide who takes the short, narrow fourth bed before discussing views at all. “Sleeps four” means the hotel will sell it to four people, not that there are four equal beds.
+
+Children aged 11 and under can share a bed: one per regular bed, two per 180 cm double. A Terrace Room's 160 cm double also takes two at most — a large terrace does not add sleeping space.
+
+## What the room numbers tell you, and what they do not
+
+The Japanese hotel-research site dhoteloo has gone through the Porto Paradiso side room by room, covering ordinary rooms, Speciale rooms and suites. **178 rooms** can be checked against it, and the rules are simple.
+
+- The first digit is the floor: 5353 is on five, 2343 on two.
+- The last three are the position, so 3125, 4125 and 5125 are the same spot on different floors.
+- Every number listed is odd. The survey does not say where the even numbers are, so they are not in this dataset.
+- Numbers fall into a 1xx run and a 3xx run. The 1xx run exists only on floors 3–5; the 3xx run is the only one with second-floor rooms — which matches the stated facts that the first floor has no Porto Paradiso rooms and the second floor only reaches partway along.
+- A position can change grade on the fifth floor: 3127 and 4127 are ordinary Harbor View rooms, while 5127 is the Speciale version with lounge access and breakfast.
+
+The limits matter as much. Toscana and Venezia have no comparable room-by-room survey. Porto's Partial View rooms appear on the position map without numbers. And the seven Speciale Balcony Rooms (Harbor View) are grouped by the survey by view level — four Harbor View and three of a Harbor *Grand* View level the hotel no longer sells — while the hotel now splits the same rooms by occupancy, into a 37 m² three-guest and a 40 m² four-guest version. **So those seven can be pinned to the room type but not to an occupancy.**
+
+That is why this site publishes **a floor-and-number index rather than a scale drawing.** Drawing a building without coordinates you can verify only makes an inference look measured. The searchable index of all 178 is in the <a href={localePath('en', '/hotels/tokyo-disneysea-hotel-miracosta#room-index')}>room database's Porto room numbers section</a>.
+
+<Callout type="warn" title="Room numbers are not a wish list">
+The hotel states plainly that it accepts no request for a specific location or floor. You can express a preference, but nothing is guaranteed. The index earns its keep once you have the key card: it tells you which view band you are in, and what is sold in the same position one floor up or down.
+</Callout>
+
+### Connecting rooms have to be decided before you book
+
+The same survey lists seven pairs of categories that can be connected on the Porto side: two Piazza View Superior Rooms, a Harbor View Superior Room with a Harbor Room (Harbor View), even the accessible Superior Room with a Porto Paradiso Suite. The last one is visible in the numbers — room 3103 sits between suites 3101 and 3105.
+
+But connecting is not an option in the booking form. **Both room types have to be reserved together, then the hotel telephoned with the request, and even then it is not guaranteed.** For three generations or two families travelling together, this is something to settle on the morning bookings open.
+
+## Balcony versus Terrace is not a translation quirk
+
+|  | Balcony Room | Terrace Room |
+| --- | --- | --- |
+| Floor | 2–3 | 5 |
+| Indoor area | 37–43 m² | 43 m² |
+| Sleeps | Up to 4 | 2 |
+| Outdoor space | A small balcony along the facade | About 30 m² of terrace |
+| Beds | Twin plus extra beds | One 160 cm double |
+| Speciale | Not on the Venice side; yes on the Porto side | Always |
+
+A low balcony puts you close to the street and the water, which is what makes it feel immediate. A fifth-floor terrace is large enough for a table and chairs and for room-service breakfast. Neither solves the same problem: **the weather.**
+
+One guest booked the new Venice Balcony Room and met a typhoon, retreating indoors in light rain without taking a single photograph, and only using the balcony properly once the rain stopped that night. Another, staying in January, found the sun strong enough to sit outside with a coffee in a coat. Terrace Rooms are no different: the chairs are wet the morning after rain, and midsummer sun can make breakfast outdoors unpleasant.
+
+The premium on outdoor space does not guarantee time outside — it buys the right to use it. In typhoon season, the rainy season or a cold snap, if the room itself and the view from indoors are not worth the price, do not stake a night's budget on a door.
+
+## The Speciale premium: put breakfast back in first
+
+Speciale Rooms & Suites guests can use the Salone dell'Amico on the fifth floor from 14:00 on the day of arrival until 12:00 on the day of departure, check in and out at a dedicated counter, help themselves to drinks, and have next-morning breakfast included.
+
+The cleanest comparison is a Harbor View Superior Room on both sides of the line.
+
+- Ordinary 37 m², three guests, Harbor View: from about ¥111,000.
+- Speciale 40 m², three guests, Harbor View: from about ¥130,000.
+
+That is ¥19,000 on paper. Two people who spend all day in the park and eat breakfast quickly will struggle to earn the lounge back. Three or four people counting breakfast, afternoon drinks and a skipped check-in queue will find the gap smaller than it looks.
+
+Breakfast is not freely chosen just because a room is Speciale. Ordinary Speciale Superior Rooms have the buffet at the BellaVista Lounge, and only **suites, Harbor Rooms and Terrace Rooms** may choose between the BellaVista Lounge and room service. Eating breakfast on your terrace requires the room type to allow it.
+
+Within the Speciale grade, the comparison worth making is the 60 m² Harbor Room against the 37 m² Balcony Room. A Harbor View Harbor Room starts around ¥152,000, below the Harbor View Balcony Room's ¥161,500. One gives you 20 m² more and two large windows; the other lets you step outside. That is a trade between indoor space and a door, not a ranking.
+
+## Getting around: a door in the hotel is not a morning route
+
+From beside Maihama Station, the Disney Resort Line runs to Tokyo DisneySea Station; leave through the gate at the front of the train and a walkway leads straight to the hotel's second floor. The monorail is a paid service and is not part of the room rate.
+
+The part that is easy to get wrong is the hotel's own gateway to the park.
+
+- **Leaving Tokyo DisneySea for the hotel: available all day.**
+- **Entering or re-entering the park from the hotel: only from one hour after normal opening.**
+- **Happy Entry in the morning: not through this door. Use the designated north security check.**
+
+The value of that door is therefore concentrated in the afternoon and evening; it does not save you the morning queue. Its best use is going back for a change of clothes or to drop shopping, then returning through the same door.
+
+### Happy Entry is no longer a flat 15 minutes
+
+MiraCosta guests get Happy Entry at both parks: 15 minutes at Tokyo Disneyland, and **5 to 15 minutes** at Tokyo DisneySea depending on the day, because of construction around the entrance. It does not apply on the first night, only on following days of the stay and on departure day. The pass handed over at check-in carries that day's start time, and you show the pass together with a valid park ticket.
+
+Five minutes sounds like nothing, but the point is not five more minutes of riding — it is joining a queue for a popular attraction or greeting before the general crowd arrives. You still have to clear security first, and the official pages recommend arriving early. A benefit you spend outside the security check is not a benefit.
+
+<Callout type="tip" title="Send the luggage ahead on arrival day">
+Between 7:30 and 16:00 you can hand luggage in on the second floor of the Tokyo Disney Resort Welcome Center in front of JR Maihama Station and have it delivered to the hotel free. Sending it back on departure day is a paid service: the hotel accepts bags from 7:00 to 12:30 and they can be collected from 13:00 to 21:00. Check-in is at 15:00, so there is no reason to visit the hotel first for the sake of a suitcase.
+</Callout>
+
+## Restaurants and the pool: which of these changes a day
+
+The three main restaurants have distinct jobs.
+
+- **BellaVista Lounge**: large windows facing Mediterranean Harbor, serving breakfast, lunch and dinner, with harbour shows visible from some seats at some times.
+- **Oceano**: Mediterranean food, buffet and course menus in parallel, the largest seating in the hotel. The official page says a show can be seen from the terrace at some times, though whether it opens depends on operations that day.
+- **Silk Road Garden**: Cantonese food, and the only one of the three with no breakfast service.
+
+All three are popular, and staying in the hotel does not guarantee a table on the day. Breakfast in particular competes with Happy Entry for the same minutes. If you want to be in the first group through the gate, do not plan a leisurely breakfast; if the hotel is the point of the trip, do not compress an included breakfast into twenty minutes for the sake of five to fifteen minutes of early entry.
+
+Terme Venezia is a spa and pool for hotel guests only, but it is **not a free benefit** — admission is bought by the day. The indoor main pool, warm pool, children's pool, jacuzzi and sauna run year-round; the outdoor pool is summer only. It closes for renovation from 4 November 2026 to 19 February 2027, so do not pick this hotel for the pool on those dates.
+
+## What the beautiful photograph leaves out
+
+The useful part of a stay report is not proof that somewhere looked lovely — it is the condition attached to each room type.
+
+Partial View can be gravel. A balcony can be rain. Harbor View goes unused if you are never in the room. The Harbor in Harbor Room describes a layout, not a window. Read a Harbor Grand View stay report and the longest passage is usually not the fireworks; it is the hours spent on the terrace with a coffee, looking at the night.
+
+In other words, every experience you saw in a video came with three preconditions: the weather, how the guest spent their time, and which room type they were in. Put those back and the photograph becomes something you can decide with.
+
+## Booking in practice: window, then beds, then service
+
+Room-only reservations usually open **four months before the stay, on the same date, at 11:00 Japan time**, for up to five nights and three rooms at once. When that month has no matching date, bookings open on the first of the following month.
+
+Do not start reading 37 names at the moment they open. Reduce the decision to three layers beforehand.
+
+1. **The window**: don't care, streets, part of the harbour, or all of it?
+2. **The beds**: a double for two, three regular beds for three adults, or four people accepting a cruise bed?
+3. **The service**: can the lounge and breakfast earn back the Speciale difference?
+
+Put the answers into the <a href={localePath('en', '/hotels/tokyo-disneysea-hotel-miracosta#room-explorer')}>room finder</a> and usually two or three types remain. Search the full official room name when booking opens rather than working out the difference between Piazza Grand and Harbor Grand on the spot.
+
+If you miss out, keep watching for cancellations. For a type with two rooms, like 5353 and 5357, the constraint is supply rather than budget; the ordinary Harbor View twin has 36 rooms, so the odds are still ordinary. Released inventory has no fixed hour, and what works is checking the official site regularly.
+
+## Construction and closures to avoid, 2026–2028
+
+Several dates change what is bookable or open.
+
+- **19 Aug – 1 Dec 2026**: lift replacement at the front end of Tokyo DisneySea Station. The walkway stays usable by stairs; wheelchairs, strollers and large luggage need the official alternative route.
+- **4 Nov 2026 – 19 Feb 2027**: Terme Venezia renovation closes the spa and both pools.
+- **From 13 Jan 2027, in stages**: the Venice Terrace Room, the Porto Terrace Rooms, the Speciale Superior Rooms, the Balcony Rooms and the Il Magnifico Suite come out of sale for room refurbishment, on different dates for each type.
+- **13 Apr 2027 – 10 Apr 2028**: both Toscana AquaSphere View types come out of sale for construction around the Tokyo DisneySea entrance.
+- **Entrance work runs into fiscal 2028**: the Happy Entry security check and early-entry window may keep changing.
+
+Every closure the hotel has published is noted on the relevant room card in the database. If your stay falls in 2027, open the official room page once more before paying.
+
+## Four lines to finish on
+
+**First visit, watching the budget**: Toscana with AquaSphere View, or Venezia with Palazzo Canals View. About ¥5,500 over the no-view version turns a lottery into a guarantee.
+
+**You want the water show from the room**: search for Harbor View directly, and do not be carried off by a side name, by Piazza Grand, or by the word Harbor in Harbor Room.
+
+**Three adults**: start with the Triple Room. Six square metres more, and a proper 120 cm bed each.
+
+**You want outdoor space**: decide between the immediacy of a low balcony and the size of a fifth-floor terrace, then price in the weather. Being able to step outside is hardware, not a guarantee of a clear evening.
+
+There is no room here that suits everyone, because the hotel sells four separate things: a location inside the park, a window, beds, and service. Pay for them separately and you will not end up in the room with the longest name and the highest rate that happens to suit you least.
