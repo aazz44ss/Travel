@@ -31,13 +31,20 @@ const TONE: Record<Tone, { fill: string; text: string; label: string; note: stri
 const CATEGORY = {
   standard: { fill: '#f3c9dc', text: '#7a4658', label: '標準房' },
   character: { fill: '#f7e491', text: '#6b5a12', label: '迪士尼明星房' },
-  concierge: { fill: '#b6dcec', text: '#1d5468', label: '禮賓房與套房' },
+  concierge: { fill: '#b6dcec', text: '#1d5468', label: '禮賓房' },
+  suite: { fill: '#4a90a8', text: '#ffffff', label: '套房' },
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY;
 
+/**
+ * Fallback for positions with no published room number on the selected floor.
+ * The plan's type label is floor-agnostic, so this can only ever describe the
+ * position's usual category.
+ */
 function categoryOf(type: string): CategoryKey {
-  if (type.startsWith('禮賓房') || type.includes('套房') || type.includes('塔樓')) return 'concierge';
+  if (type.includes('套房')) return 'suite';
+  if (type.startsWith('禮賓房') || type.includes('塔樓')) return 'concierge';
   if (type.startsWith('迪士尼')) return 'character';
   return 'standard';
 }
@@ -66,6 +73,18 @@ const cells = PLAN_ROOMS.map((room) => {
   const floors = [...(byCode.get(room.code)?.keys() ?? [])].sort((a, b) => a - b);
   const [cx, cy] = centroidOf(room.poly);
   const category = categoryOf(room.type);
+  /**
+   * A position changes category as it goes up: the same stack of park-grand-view
+   * rooms is sold as standard on the lower floors and as concierge on 7F and
+   * above, and the corner turret becomes a suite at the top. So resolve the
+   * category per floor from the room type actually sold there.
+   */
+  const categoryByFloor = Object.fromEntries(
+    [...(byCode.get(room.code)?.entries() ?? [])].map(([floor, id]) => [
+      floor,
+      roomById[id]?.category ?? category,
+    ]),
+  );
   return {
     ...room,
     cx: Math.round(cx * 10) / 10,
@@ -74,6 +93,7 @@ const cells = PLAN_ROOMS.map((room) => {
     area: Math.round(shoelace(room.poly)),
     floors,
     category,
+    categoryByFloor,
     points: room.poly.reduce<string[]>((acc, value, i) => {
       if (i % 2 === 0) acc.push(`${value},${room.poly[i + 1]}`);
       return acc;
@@ -97,7 +117,7 @@ for (const cell of cells) {
 }
 
 const LEGEND: Tone[] = ['grand', 'park', 'entrance', 'inner', 'turret'];
-const CAT_LEGEND = ['standard', 'character', 'concierge'] as const;
+const CAT_LEGEND = ['standard', 'character', 'concierge', 'suite'] as const;
 const FLOORS = [9, 8, 7, 6, 5, 4, 3, 2, 1];
 
 const payload = cells.map((cell, i) => ({
@@ -115,6 +135,17 @@ const payload = cells.map((cell, i) => ({
   catFill: CATEGORY[cell.category].fill,
   catText: CATEGORY[cell.category].text,
   catLabel: CATEGORY[cell.category].label,
+  /** Floor -> the swatch for the category actually sold on that floor. */
+  catByFloor: Object.fromEntries(
+    Object.entries(cell.categoryByFloor).map(([floor, key]) => [
+      floor,
+      {
+        fill: CATEGORY[key as CategoryKey].fill,
+        text: CATEGORY[key as CategoryKey].text,
+        label: CATEGORY[key as CategoryKey].label,
+      },
+    ]),
+  ),
 }));
 
 const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(cells.length / 2)]!;
@@ -182,7 +213,7 @@ const biggest = Math.max(...cells.map((c) => c.area));
           </li>
         ))
       }
-      <li class="text-xs text-ink-faint">與原始平面圖的粉／黃／藍配色一致</li>
+      <li class="text-xs text-ink-faint">選定樓層後，顏色是該樓層實際販售的分類</li>
     </ul>
 
     <div class="mt-5 flex flex-wrap items-center gap-2">
@@ -324,6 +355,18 @@ const biggest = Math.max(...cells.map((c) => c.area));
     };
     const onFloor = (cell, f) => f === null || cell.floors.includes(f);
 
+    /**
+     * With a floor selected, use the category sold on that floor. Viewing all
+     * floors at once, fall back to the position's usual category, since one
+     * cell cannot show several categories at the same time.
+     */
+    const catOf = (cell, f) =>
+      (f === null ? null : cell.catByFloor[String(f)]) ?? {
+        fill: cell.catFill,
+        text: cell.catText,
+        label: cell.catLabel,
+      };
+
     function paint() {
       const f = floor();
       const byCategory = mode() === 'category';
@@ -337,15 +380,16 @@ const biggest = Math.max(...cells.map((c) => c.area));
       nodes.forEach((node, i) => {
         const cell = payload[i];
         node.setAttribute('opacity', onFloor(cell, f) ? '1' : '0.13');
+        const cat = catOf(cell, f);
         const shape = node.querySelector('[data-shape]');
         if (shape) {
           const on = active === i;
-          shape.setAttribute('fill', byCategory ? cell.catFill : cell.toneFill);
+          shape.setAttribute('fill', byCategory ? cat.fill : cell.toneFill);
           shape.setAttribute('stroke', on ? '#15181d' : '#ffffff');
           shape.setAttribute('stroke-width', on ? '2.6' : '1.1');
         }
         const text = node.querySelector('text');
-        if (text) text.setAttribute('fill', byCategory ? cell.catText : cell.toneText);
+        if (text) text.setAttribute('fill', byCategory ? cat.text : cell.toneText);
       });
 
       if (active === null) {
@@ -362,9 +406,10 @@ const biggest = Math.max(...cells.map((c) => c.area));
       }
 
       const cell = payload[active];
-      const fill = byCategory ? cell.catFill : cell.toneFill;
-      const text = byCategory ? cell.catText : cell.toneText;
-      const badge = byCategory ? cell.catLabel : cell.toneLabel;
+      const cat = catOf(cell, f);
+      const fill = byCategory ? cat.fill : cell.toneFill;
+      const text = byCategory ? cat.text : cell.toneText;
+      const badge = byCategory ? cat.label : cell.toneLabel;
       const where =
         cell.facing === 'park'
           ? '窗戶在面向東京迪士尼樂園的那一側。'
