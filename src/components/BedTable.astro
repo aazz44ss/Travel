@@ -1,11 +1,19 @@
 ---
-import { BED_SPECS } from '~/data/tokyo-disneyland-hotel';
+import type { BedSpec } from '~/data/hotel-schema';
+
+interface Props {
+  specs: BedSpec[];
+  /** Screen-reader caption; name the hotel so the table stands alone. */
+  caption: string;
+}
+
+const { specs, caption } = Astro.props;
 ---
 
 <div class="not-prose my-8">
   <div class="table-scroll overflow-hidden rounded-xl border border-line bg-card">
     <table class="w-full min-w-[42rem] text-sm">
-      <caption class="sr-only">東京迪士尼樂園大飯店床型尺寸與可睡人數</caption>
+      <caption class="sr-only">{caption}</caption>
       <thead>
         <tr class="bg-paper-deep text-left">
           <th scope="col" class="px-4 py-3 font-bold text-ink">床型</th>
@@ -16,7 +24,7 @@ import { BED_SPECS } from '~/data/tokyo-disneyland-hotel';
       </thead>
       <tbody class="divide-y divide-line-soft">
         {
-          BED_SPECS.map((bed) => (
+          specs.map((bed) => (
             <tr class="align-top transition-colors hover:bg-paper-deep/40">
               <th scope="row" class="px-4 py-3.5 text-left font-bold text-ink">
                 {bed.name}

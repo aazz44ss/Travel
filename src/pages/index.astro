@@ -3,7 +3,8 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ArticleCard from '~/components/ArticleCard.astro';
 import { SITE, withBase } from '~/consts';
-import { CATEGORIES, HOTEL, ROOMS, roomsByCategory } from '~/data/tokyo-disneyland-hotel';
+import { CATEGORIES, HOTEL, ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { roomsByCategory } from '~/data/hotel-schema';
 
 const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
@@ -191,7 +192,7 @@ const schema = {
               <li class="bg-brand-deep/60 px-5 py-6 backdrop-blur-sm">
                 <p class="text-2xs tracking-[0.14em] uppercase opacity-70">{category.label}</p>
                 <p class="mt-1.5 font-serif text-xl font-bold">
-                  {roomsByCategory(category.key).length} 種
+                  {roomsByCategory(ROOMS, category.key).length} 種
                 </p>
               </li>
             ))

@@ -1,10 +1,16 @@
 ---
-import { BENEFITS } from '~/data/tokyo-disneyland-hotel';
+import type { Benefit } from '~/data/hotel-schema';
+
+interface Props {
+  benefits: Benefit[];
+}
+
+const { benefits } = Astro.props;
 ---
 
 <ol class="not-prose my-8 space-y-3">
   {
-    BENEFITS.map((benefit, index) => (
+    benefits.map((benefit, index) => (
       <li class="flex gap-4 rounded-xl border border-line bg-card p-5">
         <span
           class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft font-serif text-sm font-bold text-brand-deep"

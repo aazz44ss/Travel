@@ -1,10 +1,16 @@
 ---
-import { FAQS } from '~/data/tokyo-disneyland-hotel';
+import type { Faq } from '~/data/hotel-schema';
+
+interface Props {
+  faqs: Faq[];
+}
+
+const { faqs } = Astro.props;
 ---
 
 <div class="not-prose my-8 divide-y divide-line overflow-hidden rounded-xl border border-line bg-card">
   {
-    FAQS.map((faq, index) => (
+    faqs.map((faq, index) => (
       <details class="group" open={index === 0}>
         <summary class="flex cursor-pointer list-none items-start gap-3 px-5 py-4 transition-colors hover:bg-paper-deep/50">
           <span

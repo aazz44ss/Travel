@@ -11,53 +11,23 @@
  * gaps removed, so a floor can no longer be chosen at booking time.
  */
 
+import {
+  cheapestRoom,
+  formatYen,
+  type BedSpec,
+  type Benefit,
+  type Dining,
+  type Facility,
+  type Faq,
+  type HotelFact,
+  type Room,
+  type RoomCategory,
+  type RoomView,
+  type SocialInsight,
+} from '~/data/hotel-schema';
+
 export type ViewKey = 'grand' | 'park' | 'none';
 export type CategoryKey = 'standard' | 'character' | 'concierge' | 'suite';
-
-export interface RoomView {
-  key: ViewKey;
-  label: string;
-  labelJa: string;
-  labelEn: string;
-  summary: string;
-  detail: string;
-}
-
-export interface RoomCategory {
-  key: CategoryKey;
-  label: string;
-  labelEn: string;
-  summary: string;
-  perks: string[];
-}
-
-export interface Room {
-  id: string;
-  name: string;
-  nameJa: string;
-  category: CategoryKey;
-  view: ViewKey;
-  /** Maximum paying adults. */
-  capacity: number;
-  /** Additional children aged 11 or under who may share a bed free of charge. */
-  coSleepers: number;
-  beds: string;
-  /** Square metres, as a display string because a few types span a range. */
-  size: string;
-  /** Numeric size used for sorting and filtering. */
-  sizeValue: number;
-  /** Reference "from" rate in JPY per room per night. */
-  priceFrom: number;
-  floors?: string;
-  alcove: boolean;
-  balcony: boolean;
-  lounge: boolean;
-  breakfast: boolean;
-  accessible: boolean;
-  /** Short editorial verdict shown in the explorer. */
-  verdict: string;
-  note?: string;
-}
 
 export const HOTEL = {
   name: '東京迪士尼樂園大飯店',
@@ -71,8 +41,6 @@ export const HOTEL = {
   checkOut: '12:00',
   officialUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/tdh.html',
   roomsUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/tdh/room.html',
-  /** Yen per TWD, rounded, used only for rough conversions in the UI. */
-  jpyPerTwd: 4.7,
 } as const;
 
 export const VIEWS: RoomView[] = [
@@ -916,13 +884,6 @@ export const ROOMS: Room[] = [
   },
 ];
 
-export interface BedSpec {
-  name: string;
-  nameJa: string;
-  size: string;
-  capacity: string;
-  note?: string;
-}
 
 export const BED_SPECS: BedSpec[] = [
   {
@@ -983,14 +944,6 @@ export const BED_SPECS: BedSpec[] = [
   },
 ];
 
-export interface Facility {
-  name: string;
-  nameEn: string;
-  location: string;
-  description: string;
-  guestOnly?: boolean;
-  photoTip?: string;
-}
 
 export const FACILITIES: Facility[] = [
   {
@@ -1060,15 +1013,6 @@ export const FACILITIES: Facility[] = [
   },
 ];
 
-export interface Dining {
-  name: string;
-  nameEn: string;
-  type: string;
-  hours: string[];
-  seats?: string;
-  description: string;
-  reservation?: string;
-}
 
 export const DINING: Dining[] = [
   {
@@ -1102,11 +1046,6 @@ export const DINING: Dining[] = [
   },
 ];
 
-export interface Benefit {
-  title: string;
-  description: string;
-  caveat?: string;
-}
 
 export const BENEFITS: Benefit[] = [
   {
@@ -1142,12 +1081,6 @@ export const BENEFITS: Benefit[] = [
   },
 ];
 
-export interface SocialInsight {
-  platform: 'TikTok' | 'Instagram' | 'YouTube' | '部落格';
-  headline: string;
-  body: string;
-  verdict: string;
-}
 
 export const SOCIAL_INSIGHTS: SocialInsight[] = [
   {
@@ -1176,10 +1109,6 @@ export const SOCIAL_INSIGHTS: SocialInsight[] = [
   },
 ];
 
-export interface Faq {
-  question: string;
-  answer: string;
-}
 
 export const FAQS: Faq[] = [
   {
@@ -1223,18 +1152,16 @@ export const FAQS: Faq[] = [
 
 export const ROOM_COUNT = ROOMS.length;
 
-export function roomsByCategory(key: CategoryKey): Room[] {
-  return ROOMS.filter((room) => room.category === key);
-}
+export const FACTS: HotelFact[] = [
+  { label: '客房總數', value: `${HOTEL.totalRooms} 間`, sub: `${ROOMS.length} 種房型` },
+  { label: '到樂園正門', value: '步行 1 分鐘', sub: '4 座迪士尼飯店中最近' },
+  { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
+  { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
+  {
+    label: '最低參考價',
+    value: formatYen(cheapestRoom(ROOMS).priceFrom),
+    sub: '每室每晚・2 位大人',
+  },
+  { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
+];
 
-export function cheapestRoom(): Room {
-  return ROOMS.reduce((min, room) => (room.priceFrom < min.priceFrom ? room : min));
-}
-
-export function formatYen(value: number): string {
-  return `¥${value.toLocaleString('en-US')}`;
-}
-
-export function toTwd(yen: number): number {
-  return Math.round(yen / HOTEL.jpyPerTwd / 100) * 100;
-}
