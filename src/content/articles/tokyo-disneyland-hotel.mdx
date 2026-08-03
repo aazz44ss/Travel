@@ -175,7 +175,9 @@ import { withBase } from '~/consts';
 
 <PriceLadder />
 
-不過景觀只是價格的一個維度。同一間房在最便宜與最貴的日期之間往往差上四到六成，比升級景觀的價差還大。以底價看，最便宜的月份是 8、9 月，最貴的是 10 到 12 月，兩者差約三成；逐月的區間圖在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
+不過景觀只是價格的一個維度。同一間房在最便宜與最貴的日期之間往往差上四到六成，比升級景觀的價差還大。
+
+這裡有個容易看錯的地方：**7 到 9 月握有全年最便宜的日期，但它們不是淡季。** 這幾個月的底價是全年最低，最貴的日期卻能到 +44% 到 +61%——暑假就是這個形狀，連假與週末很貴，中間夾著幾個特別便宜的日子。真正整月都便宜的是**梅雨季的 6 月**，它最貴的日期只到 +33%，是全年最低的天花板。最該避開的是 **11、12 月**，兩端都高。10 月則是另一種難處：月內落差全年最小，但底價已經 +29%，等於沒有便宜的日子可挑。逐月的區間圖在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
 
 <Callout type="key" title="景觀的選擇邏輯">
 - **預算有限、又想看到樂園** → 選「樂園景觀」。多付約 6,000 日圓，這是全飯店投報率最高的一次加價。

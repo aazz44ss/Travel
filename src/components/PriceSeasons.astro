@@ -46,45 +46,41 @@ const defaultRoom = priced.find((room) => room.id === 'std-superior-pgv-double')
 const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.high) }));
 
 /**
- * Seasonality, averaged across every room type that has a full twelve months and
- * some variation. Each month's floor is indexed against that room's own cheapest
- * month, so room types of very different prices can be averaged together.
+ * Seasonality across room types. Both ends of each month are indexed against the
+ * same reference — the cheapest date of that room's whole year — so the floor and
+ * the ceiling sit on one comparable scale and room types at very different price
+ * points can be averaged together.
+ *
+ * Reading only the floor is misleading: July and August hold the year's cheapest
+ * dates while also carrying a ceiling well above June's, which is what a school
+ * holiday looks like in this data.
  */
 const twelve = priced.filter((room) => room.months.length === 12 && room.low !== room.high);
+const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
 const season = Array.from({ length: 12 }, (_, i) => {
   const month = i + 1;
   const samples = twelve.map((room) => {
     const entry = room.months.find((m) => m.month === month)!;
-    return { index: entry.low / room.low, spread: entry.high / entry.low };
+    return { floor: entry.low / room.low, ceiling: entry.high / room.low };
   });
-  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
-  return {
-    month,
-    index: mean(samples.map((s) => s.index)),
-    spread: mean(samples.map((s) => s.spread)),
-  };
+  const floor = mean(samples.map((s) => s.floor));
+  const ceiling = mean(samples.map((s) => s.ceiling));
+  return { month, floor, ceiling, spread: ceiling - floor };
 });
-const cheapestMonths = [...season].sort((a, b) => a.index - b.index).slice(0, 3);
-const dearestMonths = [...season].sort((a, b) => b.index - a.index).slice(0, 3);
-const peakPremium = Math.round(
-  (Math.max(...season.map((s) => s.index)) / Math.min(...season.map((s) => s.index)) - 1) * 100,
-);
-const widestMonth = [...season].sort((a, b) => b.spread - a.spread)[0]!;
-const tightestMonth = [...season].sort((a, b) => a.spread - b.spread)[0]!;
-const maxIndex = Math.max(...season.map((s) => s.index));
+const axisMax = Math.max(...season.map((s) => s.ceiling));
+const pct = (value: number) => Math.round((value - 1) * 100);
 
-/**
- * The month most room types individually bottom out and top out in. This is the
- * mode of each room's own cheapest/dearest month, which is not necessarily the
- * month with the lowest or highest averaged floor above.
- */
-const modeOf = (pick: (room: (typeof twelve)[number]) => number) => {
-  const tally = new Map<number, number>();
-  for (const room of twelve) tally.set(pick(room), (tally.get(pick(room)) ?? 0) + 1);
-  return [...tally.entries()].sort((a, b) => b[1] - a[1])[0]!;
-};
-const [cheapMonth, cheapAgree] = modeOf((room) => room.cheapest);
-const [dearMonth, dearAgree] = modeOf((room) => room.dearest);
+const byCeiling = [...season].sort((a, b) => a.ceiling - b.ceiling);
+const bySpread = [...season].sort((a, b) => a.spread - b.spread);
+const byFloor = [...season].sort((a, b) => a.floor - b.floor);
+const safestMonth = byCeiling[0]!;
+const worstMonth = byCeiling[byCeiling.length - 1]!;
+const flattestMonth = bySpread[0]!;
+const swingiestMonth = bySpread[bySpread.length - 1]!;
+/** Months whose floor is at the very bottom but whose ceiling is not. */
+const bargainMonths = season.filter(
+  (m) => m.floor <= byFloor[0]!.floor + 0.04 && m.ceiling > safestMonth.ceiling,
+);
 const monthLabel = (m: number) => `${m} 月`;
 ---
 
@@ -96,10 +92,10 @@ const monthLabel = (m: number) => `${m} 月`;
     </p>
 
     <div class="mt-6 rounded-xl border border-line bg-paper-deep/40 p-5">
-      <h3 class="font-serif text-base font-bold text-ink">淡旺季：整體看是哪幾個月</h3>
+      <h3 class="font-serif text-base font-bold text-ink">淡旺季：光看底價會看錯</h3>
       <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
-        把 {twelve.length} 種有完整十二個月資料的房型，各自以「自己最便宜的月份」為基準對齊之後平均。
-        長條是那個月的底價比全年最低高出多少。
+        {twelve.length} 種有完整十二個月資料的房型，各自以「自己全年最便宜的那一天」為 100
+        對齊後平均。每條棒子的左端是那個月最便宜的日期、右端是最貴的日期。棒子的高度看貴不貴，長度看挑日子有多重要。
       </p>
 
       <ul class="mt-4 space-y-1">
@@ -111,21 +107,20 @@ const monthLabel = (m: number) => `${m} 月`;
               </span>
               <span class="relative h-4 flex-1 rounded bg-paper">
                 <span
-                  class="absolute inset-y-0 left-0 rounded"
-                  style={`width:${Math.max(((entry.index - 1) / (maxIndex - 1)) * 100, 0.8)}%;background:${
-                    entry.index === Math.max(...season.map((s) => s.index))
+                  class="absolute inset-y-0 rounded"
+                  style={`left:${((entry.floor - 1) / (axisMax - 1)) * 100}%;right:${
+                    100 - ((entry.ceiling - 1) / (axisMax - 1)) * 100
+                  }%;background:${
+                    entry.ceiling === worstMonth.ceiling
                       ? '#8c2f4a'
-                      : entry.index === Math.min(...season.map((s) => s.index))
+                      : entry.ceiling === safestMonth.ceiling
                         ? '#0f4c5c'
                         : '#5b93a1'
                   }`}
                 />
               </span>
-              <span class="w-14 shrink-0 text-2xs text-ink-soft tabular-nums">
-                {entry.index === 1 ? '基準' : `+${Math.round((entry.index - 1) * 100)}%`}
-              </span>
-              <span class="hidden w-24 shrink-0 text-2xs text-ink-faint tabular-nums sm:block">
-                挑日子 {entry.spread.toFixed(2)} 倍
+              <span class="w-20 shrink-0 text-2xs text-ink-soft tabular-nums">
+                +{pct(entry.floor)}~{pct(entry.ceiling)}%
               </span>
             </li>
           ))
@@ -134,20 +129,21 @@ const monthLabel = (m: number) => `${m} 月`;
 
       <ul class="mt-4 space-y-2 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-ink-soft">
         <li>
-          <span class="font-bold text-ink">最便宜的月份是 {cheapestMonths.map((m) => monthLabel(m.month)).join('、')}</span>
-          ；最貴的是 {dearestMonths.map((m) => monthLabel(m.month)).join('、')}。旺季的底價比淡季高約
-          <span class="font-bold text-ink">{peakPremium}%</span>。
+          <span class="font-bold text-ink">
+            {bargainMonths.map((m) => monthLabel(m.month)).join('、')}有全年最便宜的日期，但不是淡季。
+          </span>
+          它們的底價是全年最低，天花板卻比 {monthLabel(safestMonth.month)} 高出不少——暑假就是這個形狀：連假與週末很貴，中間夾著幾個特別便宜的日子。
         </li>
         <li>
-          這個規律在各房型之間很一致：{twelve.length} 種房型裡，有 {cheapAgree} 種各自最便宜的月份都落在
-          {monthLabel(cheapMonth)}，{dearAgree} 種最貴的都落在 {monthLabel(dearMonth)}。
-          不是只有某幾個房型如此。
+          <span class="font-bold text-ink">真正整月都便宜的是 {monthLabel(safestMonth.month)}</span>
+          ，天花板全年最低（+{pct(safestMonth.ceiling)}%），也就是不太需要挑日子。最該避開的是
+          {monthLabel(worstMonth.month)}，最貴的日期到 +{pct(worstMonth.ceiling)}%。
         </li>
         <li>
-          「挑日子」的空間則反過來。{monthLabel(widestMonth.month)}
-          同一個月內最高是最低的 {widestMonth.spread.toFixed(2)} 倍，選對日期差很多；{
-            monthLabel(tightestMonth.month)
-          } 只有 {tightestMonth.spread.toFixed(2)} 倍，不管哪一天都貴。
+          <span class="font-bold text-ink">{monthLabel(flattestMonth.month)}是「怎麼選都一樣」的月份</span>
+          ，月內落差全年最小，底價卻已經是 +{pct(flattestMonth.floor)}%，等於沒有便宜的日子可挑；{
+            monthLabel(swingiestMonth.month)
+          }相反，落差全年最大，值得為了日期調整行程。
         </li>
       </ul>
     </div>
