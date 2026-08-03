@@ -1,0 +1,233 @@
+/**
+ * Room numbers for Tokyo DisneySea Hotel MiraCosta, keyed by the room type ids
+ * in `./tokyo-disneysea-hotel-miracosta`.
+ *
+ * Compiled from dhoteloo's room-by-room survey of the Porto Paradiso Side
+ * (https://dhoteloo.com, published 2022-04, last revised 2023-05). That article
+ * covers one of the hotel's three sides — the one facing Mediterranean Harbor,
+ * which is also the side where the number tells you the most, because a few
+ * metres along the corridor is the difference between the piazza and the whole
+ * harbour. The Toscana and Venezia sides have never been surveyed room by room,
+ * so their types carry no numbers here.
+ *
+ * Two things the survey makes visible that the official pages do not:
+ *
+ * - Every Porto Paradiso number is odd. The corridors are double-loaded and the
+ *   even side faces inland, so an even number means you are not on this side.
+ * - Floor 1 has no Porto Paradiso rooms at all and floor 2 only reaches part of
+ *   the way along, which is why the 1xx block starts on floor 3.
+ *
+ * The survey predates two changes. `スーペリアルーム（パーシャルビュー）` is the
+ * name it uses for what the Traditional Chinese pages now call 景隅景觀, and it
+ * splits the Speciale balcony rooms into a harbour view and a harbour *grand*
+ * view that the current official list no longer sells separately. Where that
+ * matters the entry says so. The building itself has not moved, so a number
+ * still identifies the same window.
+ */
+
+import type { RoomNumbers } from './hotel';
+
+export const ROOM_NUMBERS: RoomNumbers = {
+  'porto-superior-partial': {
+    numbers: [],
+    balcony: [],
+    complete: false,
+    note: '這是全海港區唯一沒有逐間列號的房型。原始調查的位置圖有標出這一類，但沒有列出房號。',
+  },
+  'porto-superior-piazza-double': {
+    numbers: ['2373', '2375', '3373', '3375', '4373', '4375', '5325'],
+    balcony: [],
+    complete: true,
+    note: '整個海港區只有這 7 間是一張雙人床。想要雙人床又想看廣場，機率大約是 7／502。',
+  },
+  'porto-superior-piazza-twin': {
+    numbers: [
+      '2325', '2337', '2339', '2341', '2349', '2351',
+      '3107', '3109', '3111', '3113', '3117', '3119', '3121',
+      '3325', '3337', '3339', '3341', '3349', '3351',
+      '4107', '4109', '4111', '4113', '4117', '4119', '4121',
+      '4325', '4337', '4339', '4341', '4349', '4351',
+      '5107', '5109', '5111', '5113', '5117', '5119', '5121',
+      '5337', '5339', '5341',
+    ],
+    balcony: [],
+    complete: true,
+  },
+  'porto-superior-piazza-quad': {
+    numbers: [
+      '2347', '3115', '3343', '3345', '3347', '4115', '4343', '4345', '4347', '5115', '5343',
+      '5345',
+    ],
+    balcony: [],
+    complete: true,
+  },
+  'porto-superior-piazza-accessible': {
+    numbers: ['3103', '4103'],
+    balcony: [],
+    complete: true,
+    note: '只有 2 間，而且都在 1xx 段最靠近海港套房的位置。',
+  },
+  'porto-superior-piazza-grand-twin': {
+    numbers: ['2353', '3143', '3353', '4143', '4353'],
+    balcony: [],
+    complete: true,
+  },
+  'porto-superior-piazza-grand-quad': {
+    numbers: ['2355', '2357', '3145', '3355', '3357', '4145', '4355', '4357'],
+    balcony: [],
+    complete: true,
+  },
+  'porto-superior-harbour-twin': {
+    numbers: [
+      '2359', '2361', '2363', '2365', '2367',
+      '3127', '3133', '3135', '3137', '3139', '3141',
+      '3313', '3315', '3359', '3361', '3363', '3365', '3367',
+      '4127', '4133', '4135', '4137', '4139', '4141',
+      '4303', '4305', '4307', '4309', '4311', '4313', '4315',
+      '4359', '4361', '4363', '4365', '4367',
+    ],
+    balcony: [],
+    complete: true,
+    note: '36 間，是海港區裡港灣景觀數量最多的一格。5 樓的同一批位置歸到尊榮客房層級，價格差一截。',
+  },
+  'porto-superior-harbour-quad': {
+    numbers: [
+      '3129', '3131', '3317', '3319', '3321', '3323',
+      '4129', '4131', '4301', '4317', '4319', '4321', '4323',
+    ],
+    balcony: [],
+    complete: true,
+  },
+  'porto-triple-piazza': {
+    numbers: ['2335', '3335', '4335', '5335'],
+    balcony: [],
+    complete: true,
+    note: '一層只有一間，四層共 4 間。三張正規床又要看廣場的話，這是唯一的選擇。',
+  },
+
+  // ── スペチアーレ・ルーム＆スイート ──────────────────────────────────────
+  'spec-superior-harbour-triple': {
+    numbers: ['5127', '5133', '5135', '5137', '5313', '5315'],
+    balcony: [],
+    complete: true,
+    note: '全部在 5 樓。3–4 樓同一個位置賣的是不含貴賓室的港灣景觀精緻客房。',
+  },
+  'spec-superior-harbour-quad': {
+    numbers: ['5129', '5131', '5301', '5317', '5319', '5321', '5323'],
+    balcony: [],
+    complete: true,
+  },
+  'spec-harbour-room-piazza': {
+    numbers: ['3123', '4123', '5123'],
+    balcony: [],
+    complete: true,
+    note: '3、4、5 樓各一間，位置垂直重疊，就在海港套房與港灣景觀之間的轉角。',
+  },
+  'spec-harbour-room-harbour': {
+    numbers: ['3125', '4125', '5125'],
+    balcony: [],
+    complete: true,
+    note: '和廣場景觀版本門對門（3123／3125），只差一間房的距離，窗外從廣場變成整片港灣。',
+  },
+  'spec-balcony-piazza': {
+    numbers: ['2343'],
+    balcony: ['2343'],
+    complete: true,
+    note: '全飯店只有這一間。開賣即消失的房型，指的就是它。',
+  },
+  'spec-balcony-harbour-triple': {
+    numbers: ['2345', '3301', '3307', '3309'],
+    balcony: ['2345', '3301', '3307', '3309'],
+    complete: true,
+  },
+  'spec-balcony-harbour-quad': {
+    numbers: ['3303', '3305', '3311'],
+    balcony: ['3303', '3305', '3311'],
+    complete: true,
+    note: '2022 年的調查把這 3 間列為獨立的「陽台客房（港灣全景觀）」等級，現在的官方客房一覽已經沒有這一級。',
+  },
+  'spec-terrace-piazza': {
+    numbers: ['5149', '5153'],
+    balcony: ['5149', '5153'],
+    complete: true,
+  },
+  'spec-terrace-harbour': {
+    numbers: ['5141', '5145', '5349', '5361', '5365'],
+    balcony: ['5141', '5145', '5349', '5361', '5365'],
+    complete: true,
+  },
+  'spec-terrace-harbour-grand': {
+    numbers: ['5353', '5357'],
+    balcony: ['5353', '5357'],
+    complete: true,
+    note: '全飯店只有 2 間，是日本粉絲口中的「ハバグラ」。',
+  },
+  'spec-porto-suite': {
+    numbers: ['3101', '3105', '4101', '4105'],
+    balcony: [],
+    complete: true,
+    note: '在 1xx 段的盡頭，鄰居是無障礙客房（3103）。這一段的窗戶對著廣場那一側，不是整片港灣。',
+  },
+  'spec-miracosta-suite': {
+    numbers: ['2369', '2371', '3369', '3371', '4369', '4371', '5369', '5371'],
+    balcony: [],
+    complete: true,
+    note: '8 間全部在 3xx 段的末端，也就是建築轉角，兩面開窗。',
+  },
+  'spec-ilmagnifico-suite': {
+    numbers: ['5303'],
+    balcony: [],
+    complete: true,
+    note: '全飯店唯一一間，5 樓。旁邊的 5301 是尊榮客房層級的港灣景觀精緻客房。',
+  },
+};
+
+export interface RoomNumberHit {
+  number: string;
+  floor: number;
+  /** The three digits after the floor; the same position on every floor. */
+  code: string;
+  roomId: string;
+  balcony: boolean;
+}
+
+const INDEX: Map<string, RoomNumberHit> = new Map(
+  Object.entries(ROOM_NUMBERS).flatMap(([roomId, entry]) =>
+    entry.numbers.map((number): [string, RoomNumberHit] => [
+      number,
+      {
+        number,
+        floor: Number(number[0]),
+        code: number.slice(1),
+        roomId,
+        balcony: entry.balcony.includes(number),
+      },
+    ]),
+  ),
+);
+
+export const KNOWN_ROOM_NUMBERS: RoomNumberHit[] = [...INDEX.values()].sort((a, b) =>
+  a.number.localeCompare(b.number),
+);
+
+/** Floors the survey reaches, highest first, as the building is read from the top. */
+export const SURVEYED_FLOORS: number[] = [
+  ...new Set(KNOWN_ROOM_NUMBERS.map((hit) => hit.floor)),
+].sort((a, b) => b - a);
+
+/**
+ * The Porto Paradiso side is two runs of corridor, one numbered 1xx and one 3xx.
+ * Numbers rise along each run, so sorting them is the same as walking it.
+ */
+export const NUMBER_BLOCKS = [
+  {
+    key: '1',
+    label: '1xx 段',
+    summary: '從海港套房開始，沿著廣場往港灣走',
+  },
+  {
+    key: '3',
+    label: '3xx 段',
+    summary: '較長的一段，末端是建築轉角的觀海景套房',
+  },
+] as const;
