@@ -12,14 +12,37 @@ import BenefitList from '~/components/BenefitList.astro';
 import FaqList from '~/components/FaqList.astro';
 import { withBase } from '~/consts';
 import {
+  BED_SPECS,
+  BENEFITS,
   CATEGORIES,
+  DINING,
+  FACILITIES,
   FAQS,
+  FLAGS,
   HOTEL,
+  HOTEL_FACTS,
   ROOMS,
   VIEWS,
   roomsByCategory,
 } from '~/data/tokyo-disneyland-hotel';
+import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/tdh-rates';
+import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import { LAYOUTS } from '~/data/tdh-room-layouts';
 import { PLAN_ROOMS } from '~/data/tdh-plan';
+
+/** Darkest tone for the view that actually sells the hotel. */
+const viewStyle = {
+  grand: 'bg-brand text-white',
+  park: 'bg-brand-soft text-brand-deep',
+  none: 'bg-paper-deep text-ink-faint',
+};
+
+const categoryStyle = {
+  standard: 'border-line text-ink-soft',
+  character: 'border-berry/30 text-berry',
+  concierge: 'border-gold/40 text-gold',
+  suite: 'border-brand/30 text-brand',
+};
 
 const article = await getEntry('articles', 'tokyo-disneyland-hotel');
 
@@ -54,8 +77,8 @@ const schema = [
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'JP',
-      addressRegion: '千葉縣',
-      addressLocality: '浦安市',
+      addressRegion: HOTEL.region,
+      addressLocality: HOTEL.locality,
     },
   },
   {
@@ -128,7 +151,7 @@ const schema = [
   <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
     <section id="overview" class="scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">基本資料</h2>
-      <HotelFacts />
+      <HotelFacts facts={HOTEL_FACTS} />
       <p class="text-sm leading-relaxed text-ink-faint">
         房型、面積與床型取自官方繁體中文客房頁；價格是每室每晚、2
         位大人的參考起價，來自公開費率表的二手整理。實際金額依日期大幅浮動，請以官方訂房系統為準。
@@ -200,11 +223,32 @@ const schema = [
     </section>
 
     <section class="mt-20">
-      <RoomExplorer />
+      <RoomExplorer
+        rooms={ROOMS}
+        categories={CATEGORIES}
+        views={VIEWS}
+        flags={FLAGS}
+        rates={MONTHLY_RATES}
+        roomNumbers={ROOM_NUMBERS}
+        layouts={LAYOUTS}
+        jpyPerTwd={HOTEL.jpyPerTwd}
+        viewStyle={viewStyle}
+        categoryStyle={categoryStyle}
+        provenance="名稱依官方繁中頁，「・」之後是本站為區分床型或人數所加。房號收錄 {numbered} 間，最基本的幾種標準房型來源沒有逐間列號。"
+      />
     </section>
 
     <section class="mt-20">
-      <PriceSeasons />
+      <PriceSeasons
+        rooms={ROOMS}
+        categories={CATEGORIES}
+        rates={MONTHLY_RATES}
+        currentYearMonths={RATE_YEAR_2026_MONTHS}
+        years={{ current: '2026', carried: '2025' }}
+        defaultRoomId="std-superior-pgv-double"
+        source={{ label: 'CASTEL 的逐月費率表', url: 'https://castel.jp/p/4155' }}
+        bargainNote="暑假就是這個形狀：連假與週末很貴，中間夾著幾個特別便宜的日子。"
+      />
     </section>
 
     <section id="beds" class="mt-20 scroll-mt-32">
@@ -212,27 +256,27 @@ const schema = [
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
         日本飯店的「標準床」寬度只有 120 公分，比台灣的單人床寬、離雙人床還很遠。訂房前先看這張表，比看房型名稱有用。
       </p>
-      <BedTable />
+      <BedTable beds={BED_SPECS} caption={`${HOTEL.name}床型尺寸與可睡人數`} />
     </section>
 
     <section id="facilities" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">設施與拍照點</h2>
-      <FacilityGrid />
+      <FacilityGrid facilities={FACILITIES} />
     </section>
 
     <section id="dining" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">餐廳</h2>
-      <DiningList />
+      <DiningList dining={DINING} />
     </section>
 
     <section id="benefits" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">住宿禮遇</h2>
-      <BenefitList />
+      <BenefitList benefits={BENEFITS} />
     </section>
 
     <section id="faq" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">常見問題</h2>
-      <FaqList />
+      <FaqList faqs={FAQS} />
     </section>
 
     {

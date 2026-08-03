@@ -1,6 +1,36 @@
 ---
-import { CATEGORIES, ROOMS } from '~/data/tokyo-disneyland-hotel';
-import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-rates';
+import type { MonthlyRates, Room, RoomCategory } from '~/data/hotel';
+import { annualRangeOf } from '~/data/hotel';
+
+interface Props {
+  rooms: Room[];
+  categories: RoomCategory[];
+  rates: MonthlyRates;
+  /** Months carrying `years.current` rates; the rest carry `years.carried`. */
+  currentYearMonths: readonly number[];
+  years: { current: string; carried: string };
+  /** Room type the chart opens on. */
+  defaultRoomId: string;
+  source: { label: string; url: string };
+  /** Why the cheap-floor months are not actually a low season. */
+  bargainNote: string;
+}
+
+const {
+  rooms,
+  categories,
+  rates,
+  currentYearMonths,
+  years,
+  defaultRoomId,
+  source,
+  bargainNote,
+} = Astro.props;
+
+/** Months the source could only fill from the previous year's prices. */
+const carriedOver = Array.from({ length: 12 }, (_, i) => i + 1).filter(
+  (month) => !currentYearMonths.includes(month),
+);
 
 /**
  * Month-by-month rate ranges. Each bar spans that month's lowest to highest
@@ -9,11 +39,11 @@ import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-ra
  * attributed to weekends specifically.
  */
 
-const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
+const categoryLabel = Object.fromEntries(categories.map((c) => [c.key, c.label]));
 
-const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
-  const months = MONTHLY_RATES[room.id]!;
-  const range = annualRange(room.id)!;
+const priced = rooms.filter((room) => rates[room.id]).map((room) => {
+  const months = rates[room.id]!;
+  const range = annualRangeOf(rates, room.id)!;
   const entries = Object.entries(months)
     .map(([month, value]) => ({ month: Number(month), low: value![0], high: value![1] }))
     .sort((a, b) => a.month - b.month);
@@ -29,12 +59,12 @@ const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
     months: entries,
     cheapest: cheapest.month,
     dearest: dearest.month,
-    /** True when the source only publishes April to September. */
+    /** True when the source does not publish all twelve months. */
     partial: entries.length < 12,
   };
 });
 
-const unpriced = ROOMS.filter((room) => !MONTHLY_RATES[room.id]);
+const unpriced = rooms.filter((room) => !rates[room.id]);
 
 /** Shared scale so bars are comparable when switching room type. */
 const scaleFor = (low: number, high: number) => {
@@ -42,7 +72,7 @@ const scaleFor = (low: number, high: number) => {
   return { min: low - pad, max: high + pad };
 };
 
-const defaultRoom = priced.find((room) => room.id === 'std-superior-pgv-double') ?? priced[0]!;
+const defaultRoom = priced.find((room) => room.id === defaultRoomId) ?? priced[0]!;
 const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.high) }));
 
 /**
@@ -132,7 +162,7 @@ const monthLabel = (m: number) => `${m} 月`;
           <span class="font-bold text-ink">
             {bargainMonths.map((m) => monthLabel(m.month)).join('、')}有全年最便宜的日期，但不是淡季。
           </span>
-          它們的底價是全年最低，天花板卻比 {monthLabel(safestMonth.month)} 高出不少——暑假就是這個形狀：連假與週末很貴，中間夾著幾個特別便宜的日子。
+          它們的底價是全年最低，天花板卻比 {monthLabel(safestMonth.month)} 高出不少——{bargainNote}
         </li>
         <li>
           <span class="font-bold text-ink">真正整月都便宜的是 {monthLabel(safestMonth.month)}</span>
@@ -156,7 +186,7 @@ const monthLabel = (m: number) => `${m} 月`;
           class="max-w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {
-            CATEGORIES.map((category) => (
+            categories.map((category) => (
               <optgroup label={category.label}>
                 {priced
                   .filter((room) => room.category === category.label)
@@ -205,20 +235,28 @@ const monthLabel = (m: number) => `${m} 月`;
       <p>
         每室每晚、2 位大人。整理自
         <a
-          href="https://castel.jp/p/4155"
+          href={source.url}
           rel="noopener nofollow"
           target="_blank"
           class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >CASTEL 的逐月費率表</a
-        >，是二手來源；官方只逐日標價，沒有發布月費率。10 到 12 月為 2025 年價格。另有 {
-          unpriced.length
-        } 種房型只公布起價。
+          >{source.label}</a
+        >，是二手來源；官方只逐日標價，沒有發布月費率。{carriedOver.length > 0 && `${carriedOver.join('、')} 月為前一年價格。`}{
+          unpriced.length > 0 && `另有 ${unpriced.length} 種房型只公布起價。`
+        }
       </p>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload, months2026: RATE_YEAR_2026_MONTHS }}>
+<script
+  is:inline
+  define:vars={{
+    payload,
+    currentYearMonths,
+    labelCurrent: years.current,
+    labelCarried: years.carried,
+  }}
+>
   (() => {
     const root = document.querySelector('#price-seasons');
     if (!root) return;
@@ -229,7 +267,7 @@ const monthLabel = (m: number) => `${m} 月`;
 
     const rooms = new Map(payload.map((room) => [room.id, room]));
     const yen = (n) => `¥${n.toLocaleString('en-US')}`;
-    const set2026 = new Set(months2026);
+    const currentYear = new Set(currentYearMonths);
 
     function render() {
       const room = rooms.get(select.value);
@@ -259,7 +297,7 @@ const monthLabel = (m: number) => `${m} 月`;
           const cheapest = m.month === room.cheapest;
           const dearest = m.month === room.dearest;
           const tone = dearest ? '#8c2f4a' : cheapest ? '#0f4c5c' : '#5b93a1';
-          const year = set2026.has(m.month) ? '2026' : '2025';
+          const year = currentYear.has(m.month) ? labelCurrent : labelCarried;
           return `<li class="flex items-center gap-2">
             <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${m.month} 月</span>
             <span class="relative h-5 flex-1 rounded bg-paper-deep/70">

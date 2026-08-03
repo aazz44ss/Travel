@@ -16,14 +16,7 @@
  * than one.
  */
 
-export interface RoomLayoutRef {
-  /** Slug of the official room detail page, under /tc/hotel/tdh/room/detail/. */
-  slug: string;
-  /** Numeric id the CDN uses for this page's assets. */
-  imageId: number;
-  /** Which plan image on the page, for the one page that has two. */
-  layout?: number;
-}
+import type { RoomLayoutRef, RoomLayoutSet } from './hotel';
 
 const page = (slug: string, imageId: number, layout?: number): RoomLayoutRef => ({
   slug,
@@ -79,11 +72,11 @@ export const ROOM_LAYOUTS: Record<string, RoomLayoutRef> = {
   'suite-walt-disney': page('suite_walt', 2458),
 };
 
-export const layoutImageUrl = (ref: RoomLayoutRef): string =>
-  `https://media1.tokyodisneyresort.jp/images/adventure/dh_room/${ref.imageId}_layout_image_${ref.layout ?? 1}.jpg`;
-
-export const layoutPageUrl = (ref: RoomLayoutRef): string =>
-  `https://www.tokyodisneyresort.jp/tc/hotel/tdh/room/detail/${ref.slug}/`;
-
-/** Native size of every plan image, used to reserve space before it loads. */
-export const LAYOUT_IMAGE_SIZE = { width: 910, height: 400 } as const;
+export const LAYOUTS: RoomLayoutSet = {
+  refs: ROOM_LAYOUTS,
+  imageUrl: (ref) =>
+    `https://media1.tokyodisneyresort.jp/images/adventure/dh_room/${ref.imageId}_layout_image_${ref.layout ?? 1}.jpg`,
+  pageUrl: (ref) => `https://www.tokyodisneyresort.jp/tc/hotel/tdh/room/detail/${ref.slug}/`,
+  /** Native size of every plan image, used to reserve space before it loads. */
+  imageSize: { width: 910, height: 400 },
+};
