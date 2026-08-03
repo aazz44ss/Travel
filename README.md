@@ -27,7 +27,11 @@ npm install
 npm run dev      # http://localhost:4321
 npm run build    # 輸出到 dist/
 npm run preview  # 預覽 build 結果
+npm run check    # 型別檢查
+npm run audit    # 檢查 build 出來的 HTML（需要先 build）
 ```
+
+`npm run audit` 讀 `dist/` 底下的成品，檢查的是型別檢查看不到的東西：每一條內部連結都指得到頁面、Markdown 沒有留下沒被解析的 `**`、頁面上標示的間數和實際渲染出來的格子數一致（兩個數字都從頁面自己讀出來比對，不在腳本裡寫死答案）、同一間飯店的文章與資料庫頁沒有重複的句子，以及兩邊的實際字數。
 
 ## 專案結構
 
