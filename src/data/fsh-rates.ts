@@ -82,8 +82,9 @@ export const WEEKEND = [
  */
 export const AVAILABILITY_SOURCE = {
   url: 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu.html',
-  /** Timestamp printed on the calendar itself, Japan time. */
+  /** Date printed on the calendar itself, Japan time. */
   snapshot: '2026-08-04',
+  snapshotLabel: '2026 年 8 月 4 日',
 } as const;
 
 export const AVAILABILITY = [

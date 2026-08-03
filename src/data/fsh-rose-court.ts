@@ -50,7 +50,7 @@ export const ELEVATIONS: ElevationFace[] = [
     key: 'park',
     label: '朝夢幻泉鄉的一面',
     numberBand: '1xx',
-    outlook: '正對園區，普羅米修斯火山在正中間。越往右，豪華館的外牆越擠進畫面。',
+    outlook: '隔著中庭正對園區，普羅米修斯火山在正中間。越往右，豪華館的外牆越擠進畫面。',
     columns: [
       { position: 101, floors: [9, 8, 7, 6, 5, 4, 3], category: 'superior', parkView: [9, 8, 7, 6] },
       { position: 103, floors: [9, 8, 7, 6, 5, 4, 3], category: 'alcove', parkView: [9, 8, 7, 6] },
