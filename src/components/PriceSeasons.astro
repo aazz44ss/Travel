@@ -47,9 +47,9 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
 
 <section id="price-seasons" class="not-prose scroll-mt-32">
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
-    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">平假日與淡旺季價格</h2>
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">逐月價格區間</h2>
     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-      每一條橫棒是那個月的價格區間。棒子的位置看淡旺季，棒子的長度看平假日——同一個月裡下限落在一般平日，上限落在週末、連假與旺季日期。選一個房型看它整年的樣子。
+      每一條橫棒是那個月「最便宜的日期」到「最貴的日期」。棒子的位置看淡旺季，棒子的長度看同一個月裡日期的影響有多大。選一個房型看它整年的樣子。
     </p>
 
     <div class="mt-5">
@@ -79,8 +79,8 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
     <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4">
       {
         [
-          { key: 'low', label: '全年最低', sub: '淡季平日' },
-          { key: 'high', label: '全年最高', sub: '旺季或週末' },
+          { key: 'low', label: '全年最低', sub: '最便宜的日期' },
+          { key: 'high', label: '全年最高', sub: '最貴的日期' },
           { key: 'ratio', label: '最高／最低', sub: '同一間房的倍數' },
           { key: 'season', label: '最便宜／最貴', sub: '以月份看' },
         ].map((item) => (
@@ -105,7 +105,18 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
       <p class="mt-3 text-xs text-ink-faint" data-rate-note></p>
     </div>
 
-    <div class="mt-6 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
+    <div class="mt-6 space-y-2 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
+      <p>
+        <span class="font-bold text-ink-soft">這張圖不是平假日對照表。</span>
+        來源只公布每個月的最低與最高，沒有逐日的細分。區間的下限通常出現在該月的一般平日，上限出現在週末、連假或活動期間的特定日期——但不代表「每個週末都是上限」，一般週末多半落在中間。要知道某一天的實際金額，只能查官方訂房頁的
+        <a
+          href="https://www.tokyodisneyresort.jp/hotel/tdh.html"
+          rel="noopener nofollow"
+          target="_blank"
+          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+          >空室狀況／客房價格表</a
+        >，那裡是逐日標價的。
+      </p>
       <p>
         資料整理自公開的 2026 年費率表，1 到 9 月是 2026 年的價格，10 到 12
         月沿用 2025 年的，因為來源只公布到那裡。金額為每室每晚、2 位大人，小學生以下 2 名同價。
@@ -144,7 +155,7 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
       stat('high', yen(room.high));
       const flat = room.low === room.high;
       stat('ratio', flat ? '全年同價' : `${room.ratio.toFixed(2)} 倍`);
-      stat('season', flat ? '無淡旺季' : `${room.cheapest} 月／${room.dearest} 月`);
+      stat('season', flat ? '全年一價' : `${room.cheapest} 月／${room.dearest} 月`);
 
       const axisMin = root.querySelector('[data-rate-axis-min]');
       const axisMax = root.querySelector('[data-rate-axis-max]');
@@ -174,7 +185,7 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
         ? `這個房型的來源只公布 ${room.months[0].month} 到 ${room.months[room.months.length - 1].month} 月。`
         : '';
       note.textContent = flat
-        ? `${coverage}這個房型不分平假日與季節，全年一價。`
+        ? `${coverage}這個房型全年一價，不分日期與季節。`
         : `${coverage}深色是最便宜的月份，紅色是最貴的。`;
     }
 

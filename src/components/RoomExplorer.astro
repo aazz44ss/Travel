@@ -50,7 +50,7 @@ function features(room: Room): string[] {
       <div>
         <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
-          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高——下限落在淡季平日，上限落在旺季的週末與連假。
+          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
         </p>
       </div>
       <p
@@ -273,7 +273,7 @@ function features(room: Room): string[] {
 
 
           <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            淡季平日約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元起／每室每晚
+            最低約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚
           </p>
         </li>
       ))
