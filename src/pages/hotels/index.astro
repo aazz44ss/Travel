@@ -1,0 +1,98 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { withBase } from '~/consts';
+import { HOTEL as TDH, ROOMS as TDH_ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { PLAN_ROOMS } from '~/data/tdh-plan';
+import { HOTEL as FSH, ROOMS as FSH_ROOMS } from '~/data/fantasy-springs-hotel';
+import { ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
+
+const hotels = [
+  {
+    name: FSH.name,
+    nameEn: FSH.nameEn,
+    href: '/hotels/fantasy-springs-hotel',
+    articleHref: '/articles/fantasy-springs-hotel',
+    summary:
+      '開在東京迪士尼海洋園區裡的飯店，有專用的園區入口。難的不是選房，是訂到房——官方日曆上還有空房的日期只剩一成。',
+    facts: [
+      `${FSH_ROOMS.length} 種房型`,
+      `${FSH.totalRooms} 間客房`,
+      `玫瑰庭區 ${ROSE_ROOM_COUNT} 間逐間定位`,
+    ],
+    accent: 'from-berry to-brand-deep',
+  },
+  {
+    name: TDH.name,
+    nameEn: TDH.nameEn,
+    href: '/hotels/tokyo-disneyland-hotel',
+    articleHref: '/articles/tokyo-disneyland-hotel',
+    summary:
+      '離東京迪士尼樂園正門步行一分鐘，四座迪士尼飯店中最近的一間。景觀分級與明星主題房不能同時擁有。',
+    facts: [
+      `${TDH_ROOMS.length} 種房型`,
+      `${TDH.totalRooms} 間客房`,
+      `${PLAN_ROOMS.length} 個位置照比例描繪`,
+    ],
+    accent: 'from-brand-deep to-brand',
+  },
+];
+
+const title = '飯店資料庫';
+const description =
+  '把每一間飯店的房型規格、景觀分級、參考價與房號位置整理成可以查的資料。訂房頁面開著的時候放在旁邊對照。';
+---
+
+<BaseLayout title={title} description={description}>
+  <header class="border-b border-line bg-paper-deep/60">
+    <div class="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label="麵包屑">
+        <a href={withBase('/')} class="transition-colors hover:text-ink">首頁</a>
+        <span aria-hidden="true">/</span>
+        <span>飯店資料庫</span>
+      </nav>
+      <h1 class="mt-6 font-serif text-3xl leading-tight font-bold text-ink sm:text-[2.5rem]">
+        飯店資料庫
+      </h1>
+      <p class="mt-5 max-w-2xl text-[0.9375rem] leading-[1.9] text-ink-soft">{description}</p>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-16">
+    <ul class="grid gap-6 md:grid-cols-2">
+      {
+        hotels.map((hotel) => (
+          <li class="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-card transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5">
+            <div class:list={['bg-gradient-to-br px-6 py-8 text-white', hotel.accent]}>
+              <h2 class="font-serif text-xl leading-snug font-bold">{hotel.name}</h2>
+              <p class="mt-1.5 text-xs opacity-80">{hotel.nameEn}</p>
+            </div>
+            <div class="flex flex-1 flex-col p-6">
+              <p class="text-[0.9375rem] leading-[1.9] text-ink-soft">{hotel.summary}</p>
+              <ul class="mt-4 flex flex-wrap gap-1.5">
+                {hotel.facts.map((fact) => (
+                  <li class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+              <div class="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-6">
+                <a
+                  href={withBase(hotel.href)}
+                  class="inline-flex items-center gap-1.5 text-sm font-medium text-brand transition-colors hover:text-gold"
+                >
+                  房型資料庫 <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href={withBase(hotel.articleHref)}
+                  class="inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
+                >
+                  完整攻略
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>

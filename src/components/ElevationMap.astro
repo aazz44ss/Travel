@@ -1,0 +1,219 @@
+---
+import {
+  ELEVATIONS,
+  ROSE_CATEGORY_LABEL,
+  ROSE_ROOMS,
+  ROSE_ROOM_COUNT,
+  categoryAt,
+  roseCourtTally,
+  type RoseCategory,
+} from '~/data/fsh-rose-court';
+import { ROOMS } from '~/data/fantasy-springs-hotel';
+
+/**
+ * The Rose Court Side drawn the way its source records it: three elevations, one
+ * cell per window. An elevation is the honest shape here — the source marked up
+ * photographs of the three facades, not floor plans — and it happens to be the
+ * shape the reader needs, because on this side the room number is a coordinate:
+ * the leading digit is the floor and the last three fix the column.
+ *
+ * Every cell keeps its real column and its real floor. Columns that stop lower
+ * than their neighbours are drawn stopping there, because that is a fact about
+ * the building rather than a gap in the data.
+ */
+
+const roomName = new Map(ROOMS.map((room) => [room.id, room.name]));
+
+const tally = roseCourtTally();
+
+const CATEGORY_TONE: Record<RoseCategory, string> = {
+  superior: 'bg-brand-soft text-brand-deep',
+  alcove: 'bg-paper-deep text-ink-soft',
+  deluxe: 'bg-gold-soft text-gold',
+  accessible: 'bg-berry-soft text-berry',
+};
+
+const faces = ELEVATIONS.map((face) => {
+  const floors = [...new Set(face.columns.flatMap((c) => c.floors))].sort((a, b) => b - a);
+  return {
+    ...face,
+    floors,
+    grid: floors.map((floor) => ({
+      floor,
+      cells: face.columns.map((column) => {
+        if (!column.floors.includes(floor)) return null;
+        const room = ROSE_ROOMS.find(
+          (r) => r.face === face.key && r.position === column.position && r.floor === floor,
+        )!;
+        return {
+          number: room.number,
+          category: categoryAt(column, floor),
+          parkView: room.parkView,
+          typeName: room.roomType ? roomName.get(room.roomType) : undefined,
+        };
+      }),
+    })),
+  };
+});
+---
+
+<section id="rose-court" class="not-prose scroll-mt-32" data-elevation>
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="font-serif text-2xl font-bold text-ink">玫瑰庭區 {ROSE_ROOM_COUNT} 間客房的位置</h2>
+      <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以
+        9103 和 3103 是同一個窗戶，差七層樓。點任何一格看它的房型。
+      </p>
+    </div>
+  </div>
+
+  <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+    {
+      (Object.keys(ROSE_CATEGORY_LABEL) as RoseCategory[]).map((key) => (
+        <li class="flex items-center gap-1.5">
+          <span class:list={['h-3.5 w-3.5 rounded-sm', CATEGORY_TONE[key].split(' ')[0]]} />
+          <span class="text-ink-soft">{ROSE_CATEGORY_LABEL[key]}</span>
+          <span class="text-ink-faint">
+            {tally.filter((t) => t.category === key).reduce((n, t) => n + t.count, 0)} 間
+          </span>
+        </li>
+      ))
+    }
+    <li class="flex items-center gap-1.5">
+      <span
+        class="h-3.5 w-3.5 rounded-sm bg-paper-deep ring-2 ring-brand ring-inset"
+        aria-hidden="true"></span>
+      <span class="text-ink-soft">樂園景觀</span>
+      <span class="text-ink-faint">
+        {tally.filter((t) => t.parkView).reduce((n, t) => n + t.count, 0)} 間
+      </span>
+    </li>
+  </ul>
+
+  <div class="mt-7 space-y-8">
+    {
+      faces.map((face) => (
+        <figure class="overflow-hidden rounded-2xl border border-line bg-card">
+          <figcaption class="border-b border-line bg-paper-deep/50 px-4 py-3 sm:px-5">
+            <h3 class="flex flex-wrap items-baseline gap-x-2.5 font-serif text-base font-bold text-ink">
+              {face.label}
+              <span class="font-sans text-2xs font-medium tracking-wider text-ink-faint">
+                房號 {face.numberBand}
+              </span>
+            </h3>
+            <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">{face.outlook}</p>
+          </figcaption>
+
+          <div class="table-scroll px-4 py-5 sm:px-5">
+            <table class="w-full min-w-max border-separate border-spacing-1 text-center">
+              <caption class="sr-only">
+                {face.label}的客房位置，橫向是房號位置、縱向是樓層
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="sr-only">
+                    樓層
+                  </th>
+                  {face.columns.map((column) => (
+                    <th
+                      scope="col"
+                      class="px-1 pb-1 text-2xs font-medium text-ink-faint tabular-nums"
+                    >
+                      {column.position}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {face.grid.map((row) => (
+                  <tr>
+                    <th
+                      scope="row"
+                      class="pr-2 text-right text-2xs font-medium whitespace-nowrap text-ink-faint"
+                    >
+                      {row.floor} 樓
+                    </th>
+                    {row.cells.map((cell) =>
+                      cell ? (
+                        <td class="p-0">
+                          <button
+                            type="button"
+                            data-cell
+                            data-number={cell.number}
+                            data-category={ROSE_CATEGORY_LABEL[cell.category]}
+                            data-park={String(cell.parkView)}
+                            data-type={cell.typeName ?? ''}
+                            class:list={[
+                              'block w-11 rounded-sm px-1 py-1.5 text-2xs tabular-nums transition-shadow duration-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-12',
+                              CATEGORY_TONE[cell.category],
+                              cell.parkView && 'ring-2 ring-brand ring-inset font-bold',
+                            ]}
+                            aria-label={`${cell.number} 號房，${ROSE_CATEGORY_LABEL[cell.category]}${cell.parkView ? '，樂園景觀' : ''}`}
+                          >
+                            {cell.number}
+                          </button>
+                        </td>
+                      ) : (
+                        <td class="p-0">
+                          <span class="block w-11 py-1.5 text-2xs text-line sm:w-12" aria-hidden="true">
+                            ·
+                          </span>
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </figure>
+      ))
+    }
+  </div>
+
+  <div
+    class="mt-6 rounded-xl border border-brand/30 bg-brand-soft/40 px-5 py-4"
+    data-detail
+    aria-live="polite"
+  >
+    <p class="text-sm text-ink-soft" data-detail-empty>點上面任何一格房號，這裡會顯示它的房型。</p>
+    <div class="hidden" data-detail-body>
+      <p class="font-serif text-lg font-bold text-ink" data-detail-number></p>
+      <p class="mt-1 text-sm text-ink-soft" data-detail-meta></p>
+      <p class="mt-2 text-sm text-brand-deep" data-detail-type></p>
+    </div>
+  </div>
+
+  <p class="mt-5 text-xs leading-relaxed text-ink-faint">
+    位置與分類來自 fukufukusatoka 的逐間調查，該文說明其中包含作者的推測。可以信任的理由是它對得起來：上面
+    {ROSE_ROOM_COUNT} 個位置拆成六種分類的間數，和飯店公布的間數完全一致，任何一格標錯都會讓總數對不上。
+    唯一沒有歸屬的是 8301——官方的精緻客房樓層區間只到 7 樓，沒有說明 8 樓的那一間怎麼賣。
+  </p>
+</section>
+
+<script>
+  function initElevation(root: HTMLElement) {
+    const empty = root.querySelector<HTMLElement>('[data-detail-empty]');
+    const body = root.querySelector<HTMLElement>('[data-detail-body]');
+    const number = root.querySelector<HTMLElement>('[data-detail-number]');
+    const meta = root.querySelector<HTMLElement>('[data-detail-meta]');
+    const type = root.querySelector<HTMLElement>('[data-detail-type]');
+    if (!empty || !body || !number || !meta || !type) return;
+
+    root.querySelectorAll<HTMLButtonElement>('[data-cell]').forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const parkView = cell.dataset.park === 'true';
+        number.textContent = `${cell.dataset.number} 號房`;
+        meta.textContent = [cell.dataset.category, parkView ? '樂園景觀' : '無景觀指定'].join('・');
+        type.textContent = cell.dataset.type
+          ? `訂房時的分類：${cell.dataset.type}`
+          : '官方公布的樓層區間沒有涵蓋這個位置。';
+        empty.classList.add('hidden');
+        body.classList.remove('hidden');
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-elevation]').forEach((root) => initElevation(root));
+</script>

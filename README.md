@@ -8,6 +8,8 @@
 
 | 內容 | 路徑 |
 | --- | --- |
+| 東京迪士尼海洋夢幻泉鄉大飯店完全指南 | `/articles/fantasy-springs-hotel` |
+| 夢幻泉鄉大飯店房型資料庫（31 種房型＋玫瑰庭區 147 間客房位置圖） | `/hotels/fantasy-springs-hotel` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
 | 東京迪士尼樂園大飯店房型資料庫（38 種房型，可篩選） | `/hotels/tokyo-disneyland-hotel` |
 
@@ -36,6 +38,8 @@ src/
 │   └── articles/     文章（MDX，可直接嵌入元件）
 ├── content.config.ts 文章的 schema 定義
 ├── data/             結構化資料集，與文章分離維護
+│   ├── hotel-schema.ts        所有飯店共用的型別與換算
+│   ├── fantasy-springs-hotel.ts
 │   └── tokyo-disneyland-hotel.ts
 ├── layouts/          BaseLayout / ArticleLayout
 ├── pages/            路由
@@ -46,6 +50,8 @@ src/
 ### 為什麼資料要和文章分開
 
 旅遊內容最大的敵人是過期。房型改名、價格調整、制度變動的時候，如果資料寫死在文章裡就得整篇重寫；抽出來放在 `src/data/` 之後，改一個檔案，文章內文、房型探索器、資料庫頁面與結構化資料會一起更新。
+
+型別放在 `src/data/hotel-schema.ts`，每一間飯店一個資料檔；`src/components/` 底下的元件都以 props 接收資料，不直接 import 某一間飯店。新增飯店時要寫的是資料，不是元件。
 
 ## 新增一篇文章
 
