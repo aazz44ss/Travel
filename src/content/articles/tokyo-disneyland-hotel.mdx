@@ -1,12 +1,12 @@
 ---
 title: 東京迪士尼樂園大飯店完全指南：38 種房型、景觀差異與訂房實戰
 cardTitle: 東京迪士尼樂園大飯店完全指南
-description: 從官方客房資料、日本在地部落格到 TikTok 與 Instagram 上的第一手分享，把這間飯店的 38 種房型、三種景觀的真實差異、四種明星主題房與訂房眉角一次講完。含 2026 年 4 月客房分類改版後的最新狀況。
+description: 從官方客房資料、日本在地部落格到 TikTok 與 Instagram 上的第一手分享，把這間飯店的 38 種房型、三種景觀的真實差異、四種明星主題房與訂房眉角一次講完。含 331 個房號的位置查詢，以及 2026 年 4 月客房分類改版後的最新狀況。
 destination: 東京迪士尼度假區
 country: 日本・千葉縣浦安市
 heroKicker: 住宿深度解析
 publishedAt: 2026-08-02
-readingMinutes: 24
+readingMinutes: 28
 featured: true
 accent: teal
 tags:
@@ -15,12 +15,14 @@ tags:
   - 親子旅行
   - 日本住宿
   - 房型比較
+  - 房號查詢
 takeaways:
   - 想在房間看到樂園，只有房名寫著「樂園景觀」或「樂園全景觀」的房型才算數；沒有標註景觀的房間窗外是中庭或正門，完全看不到。
   - 2026 年 4 月 1 日起飯店取消了依樓層區分的客房分類，價格也一律化。好處是低樓層不用再多付錢，代價是你再也不能指定樓層，視野變成抽卡。
   - 四種迪士尼明星房全部面向飯店正門側，看不到樂園。主題房和景觀在這間飯店無法同時擁有，只能二選一。
   - 從無景觀升到樂園景觀只要約 6,000 日圓，這是全飯店最划算的一次加價。再往上到正面景則要多付約 8,500 日圓，才是真正需要斟酌的部分。
   - 純住宿的訂房在住宿日的 4 個月前同日上午 11:00（日本時間）開放，一次最多 5 晚、3 間房。沒搶到就每天回官網撿取消房，這不是偏方而是常識。
+  - 房號的第一碼就是樓層，後三碼決定位置與視野。收錄 331 個房號的查詢工具在文章中段，拿到房卡就能知道窗外是什麼。
 sources:
   - label: 東京迪士尼樂園大飯店 客房簡介（官方繁體中文）
     url: https://www.tokyodisneyresort.jp/tc/hotel/tdh/room.html
@@ -49,8 +51,11 @@ sources:
   - label: 【2026/4〜】ディズニーランドホテル客室の種類一覧＆値段まとめ（CASTEL）
     url: https://castel.jp/p/4155
     kind: media
-  - label: ディズニーホテル大図鑑 dhoteloo：逐間客房資料庫
-    url: https://dhoteloo.com/
+  - label: dhoteloo：全客室位置図【ディズニーランドホテル】（房號與位置的主要來源）
+    url: https://dhoteloo.com/%e5%85%a8%e5%ae%a2%e5%ae%a4%e4%bd%8d%e7%bd%ae%e5%9b%b3%e3%80%90%e3%83%87%e3%82%a3%e3%82%ba%e3%83%8b%e3%83%bc%e3%83%a9%e3%83%b3%e3%83%89%e3%83%9b%e3%83%86%e3%83%ab%e3%80%91/
+    kind: blog
+  - label: dhoteloo：全54種類の客室【ディズニーランドホテル】（改版前的房型索引）
+    url: https://dhoteloo.com/%e5%85%a854%e7%a8%ae%e9%a1%9e%e3%81%ae%e5%ae%a2%e5%ae%a4%e3%80%90%e3%83%87%e3%82%a3%e3%82%ba%e3%83%8b%e3%83%bc%e3%83%a9%e3%83%b3%e3%83%89%e3%83%9b%e3%83%86%e3%83%ab%e3%80%91/
     kind: blog
   - label: 【体験談】パークグランドビューは買い？リーチは部屋から見える？（梅酢ブログ）
     url: https://umezu0505.com/disneyland-hotel-park-grand-view/
@@ -93,6 +98,7 @@ import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
 import BenefitList from '~/components/BenefitList.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
+import RoomNumberLookup from '~/components/RoomNumberLookup.astro';
 import SocialWall from '~/components/SocialWall.astro';
 import FaqList from '~/components/FaqList.astro';
 import { withBase } from '~/consts';
@@ -219,6 +225,34 @@ import { withBase } from '~/consts';
 <p class="not-prose mt-8 text-sm leading-relaxed text-ink-soft">
   同一份資料另有<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">獨立的房型資料庫頁面</a>，那裡還放了床型尺寸、餐廳與設施的完整清單，適合訂房時開著對照。
 </p>
+
+## 房號：入住當下就能知道窗外是什麼
+
+前面說過 2026 年 4 月起不能指定樓層，視野變成抽卡。但抽完卡之後，你會拿到一個四位數的房號——而那個號碼把答案全部寫在上面了。
+
+日本有人把這間飯店逐間走過一遍，記錄下每一種房型對應哪些房號。整理之後可以還原出這棟建築的規則：
+
+- **第一碼就是樓層。** 6222 在 6 樓，9215 在 9 樓，沒有例外。
+- **後三碼是位置。** 同一組後三碼在不同樓層是垂直堆疊的同一個位置。所以 5222、6222、7222、8222 是同一面窗戶，只是高度不同。
+- **後三碼決定景觀。** 216 到 222、401 到 407、516 到 522 這幾組全部是正面景；105 到 107 是側面的樂園景觀；600 開頭的整批是迪士尼明星房，面向飯店正門。
+
+<RoomNumberLookup />
+
+### 這份資料揭露的三件事
+
+**第一，套房蓋在角塔的頂端。** 房號結尾 215 和 515 這兩欄，由下往上是：3 樓景隅客房、4 到 7 樓塔樓客房、8 樓與 9 樓就是套房。也就是說華特・迪士尼套房（9215）和迪士尼魔法王國套房（8215、8515、9515）是同一座塔的最上層。這也解釋了為什麼官方沒有給套房景觀分類——它們在正面兩側的轉角，窗戶同時朝正面和側面，不屬於「正面景」那條規則。
+
+順帶一提，這代表禮賓房的塔樓客房（4215 到 7515）就住在套房的正下方，用大約六分之一的價格。
+
+**第二，能走到戶外陽台的房間，可考的只有 16 間。** 其中 7 間是房名直接寫著「陽台」的禮賓房（8401 到 8407），2 間是套房（9215、9515），剩下 7 間是 9 樓的明星房——愛麗絲房的 9302、9303、9311、9312 和小仙子房的 9306、9307、9308。最後這一組從房型名稱上完全看不出來，是純粹的運氣。
+
+**第三，正面景的房間比想像中少。** 目前可考的 331 個房號裡，正對樂園的只有 67 間，另有 37 間是側面的樂園景觀。以 706 間客房的規模來說，這就是為什麼樂園全景觀一開賣就消失。
+
+<Callout type="warn" title="這份房號資料的限制">
+- **來源是 2022 年的調查。** 2026 年 4 月改的是「怎麼賣」，不是「怎麼蓋」，所以房號對應的位置和窗戶方向沒有變。但房型的分類名稱已經和當時不同，本站是把舊分類重新對應到現行的房型之後才收錄的。
+- **不是全部的房號都查得到。** 精緻客房、精緻客房（樂園景觀）、精緻凹室客房（樂園景觀）這幾個類別各有數十間房，原始調查只用平面圖標出範圍，沒有逐間列號。這也是最多人會住到的類別，查不到很正常。
+- **訂房時無法指定房號。** 官方不接受指定，這份資料是給你「拿到房卡之後」用的，不是用來許願的。
+</Callout>
 
 ### 床的尺寸，比房型名稱更值得看
 
