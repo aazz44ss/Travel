@@ -1,6 +1,7 @@
 ---
 import { ROOMS, VIEWS, CATEGORIES } from '~/data/tokyo-disneyland-hotel';
-import { KNOWN_ROOM_NUMBERS, ROOM_NUMBERS, ROOM_NUMBER_COUNT } from '~/data/tdh-room-numbers';
+import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import { PLAN_ROOMS } from '~/data/tdh-plan';
 
 const roomById = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
 const viewByKey = Object.fromEntries(VIEWS.map((view) => [view.key, view]));
@@ -49,10 +50,59 @@ const index = KNOWN_ROOM_NUMBERS.map((hit) => {
   };
 });
 
+/**
+ * The floor plan covers every position in the building, but the per-room survey
+ * only published exact numbers for the smaller categories. Fill the gap so that
+ * a number visible on the plan never comes back as "not found": the position is
+ * answered from the plan, and the panel says the per-floor room type is not
+ * published for it.
+ */
+const exact = new Set(index.map((entry) => entry.number));
+const floorsByGroup = new Map<string, Set<number>>();
+for (const hit of KNOWN_ROOM_NUMBERS) {
+  const group = hit.number[1]!;
+  if (!floorsByGroup.has(group)) floorsByGroup.set(group, new Set());
+  floorsByGroup.get(group)!.add(hit.floor);
+}
+
+const PLAN_TONE_VIEW: Record<string, string> = {
+  grand: 'grand',
+  park: 'park',
+  entrance: 'none',
+  inner: 'none',
+  turret: 'none',
+};
+
+const fromPlan = PLAN_ROOMS.flatMap((room) => {
+  const floors = [...(floorsByGroup.get(room.code[0]!) ?? [])].sort((a, b) => a - b);
+  return floors
+    .map((floor) => `${floor}${room.code}`)
+    .filter((number) => !exact.has(number))
+    .map((number) => {
+      const view = PLAN_TONE_VIEW[room.tone] ?? 'none';
+      const look = outlookFor(view, room.tone === 'entrance');
+      return {
+        number,
+        floor: Number(number[0]),
+        balcony: false,
+        view,
+        name: room.type,
+        category: '',
+        size: '',
+        capacity: 0,
+        castle: look.castle,
+        headline: look.headline,
+        note: '這個房號沒有出現在逐間調查的名單裡，所以本站只能給出這個位置的房型，無法確認該樓層的官方房型名稱。',
+        approximate: true,
+      };
+    });
+});
+
+const allEntries = [...index.map((entry) => ({ ...entry, approximate: false })), ...fromPlan];
+
 const grandCount = index.filter((entry) => entry.view === 'grand').length;
 const parkCount = index.filter((entry) => entry.view === 'park').length;
 const balconyCount = index.filter((entry) => entry.balcony).length;
-const incomplete = Object.values(ROOM_NUMBERS).filter((entry) => !entry.complete).length;
 
 void categoryByKey;
 void viewByKey;
@@ -64,7 +114,7 @@ void viewByKey;
       <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房號查詢</h2>
       <p class="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
         辦好入住、拿到房卡之後，把房號打進去，就知道等一下拉開窗簾會看到什麼。目前收錄
-        {ROOM_NUMBER_COUNT} 個房號，其中 {grandCount} 間正對樂園、{parkCount} 間看得到樂園、{
+        {allEntries.length} 個房號，其中 {grandCount} 間確認正對樂園、{parkCount} 間看得到樂園、{
           balconyCount
         } 間可以走到戶外陽台。
       </p>
@@ -105,8 +155,7 @@ void viewByKey;
       <p class="text-sm text-ink-faint" data-lookup-idle>輸入四位數房號後，結果會顯示在這裡。</p>
 
       <p class="hidden rounded-xl border border-dashed border-line bg-paper-deep/40 px-4 py-5 text-sm text-ink-soft" data-lookup-miss>
-        資料裡沒有這個房號。原始調查對房間數量特別多的類別（精緻客房、精緻客房樂園景觀、精緻凹室客房樂園景觀）只用平面圖標示範圍，沒有逐間列出，共有
-        {incomplete} 個類別屬於這種情況。如果你的房號查不到，很可能就是其中之一。
+        資料裡沒有這個房號。第一碼必須是樓層（1 到 9），後三碼要對應建築上實際存在的位置——可以先看下面的平面圖確認。
       </p>
 
       <div class="hidden" data-lookup-hit>
@@ -150,7 +199,7 @@ void viewByKey;
   </div>
 </section>
 
-<script is:inline define:vars={{ index }}>
+<script is:inline define:vars={{ index: allEntries }}>
   (() => {
     const root = document.querySelector('[data-room-lookup]');
     if (!root) return;
