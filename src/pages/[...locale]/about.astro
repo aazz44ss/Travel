@@ -1,0 +1,99 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { withBase } from '~/consts';
+import { localeParams, localePath } from '~/i18n/config';
+import { t } from '~/i18n/ui';
+import { page } from '~/i18n/pages';
+
+export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props;
+const ui = t(locale);
+const copy = page(locale).about;
+
+const workflow = copy.process;
+---
+
+<BaseLayout
+  title={copy.heading}
+  description={copy.lead}
+  locale={locale}
+  path="/about"
+>
+  <section class="border-b border-line bg-paper-deep/40">
+    <div class="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label={ui.common.breadcrumb}>
+        <a href={localePath(locale, '/')} class="transition-colors hover:text-brand">{ui.common.home}</a>
+        <span aria-hidden="true">/</span>
+        <span>{copy.heading}</span>
+      </nav>
+      <h1 class="mt-6 font-serif text-3xl font-bold text-ink sm:text-4xl">{copy.heading}</h1>
+      <p class="mt-5 text-base leading-[1.95] text-ink-soft">
+        {copy.lead}
+      </p>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-16">
+    <section>
+      <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{copy.whyHeading}</h2>
+      <div class="mt-5 space-y-5 text-[0.9375rem] leading-[1.95] text-ink-soft">
+      {copy.why.map((para) => <p>{para}</p>)}
+
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{copy.processHeading}</h2>
+      <ol class="mt-6 space-y-4">
+        {
+          workflow.map((item, index) => (
+            <li class="flex gap-4 rounded-xl border border-line bg-card p-5">
+              <span
+                class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft font-serif text-sm font-bold text-brand-deep"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </span>
+              <div>
+                <h3 class="font-serif text-[0.9375rem] font-bold text-ink">{item.title}</h3>
+                <p class="mt-1.5 text-[0.875rem] leading-[1.9] text-ink-soft">{item.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="mt-16 rounded-2xl border border-line bg-paper-deep/50 p-6 sm:p-8">
+      <h2 class="font-serif text-lg font-bold text-ink">{copy.disclosureHeading}</h2>
+      <ul class="mt-4 space-y-3 text-[0.875rem] leading-[1.9] text-ink-soft">
+        {
+          copy.disclosures.map((item) => (
+            <li>
+              <strong class="text-ink">{item.title}</strong>
+              {item.body}
+            </li>
+          ))
+        }
+
+      </ul>
+    </section>
+
+    <div class="mt-12 flex flex-wrap gap-3">
+      <a
+        href={localePath(locale, '/articles')}
+        class="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+      >
+        {copy.ctaArticles} <span aria-hidden="true">→</span>
+      </a>
+      <a
+        href={withBase('/rss.xml')}
+        class="inline-flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
+      >
+        {copy.ctaRss}
+      </a>
+    </div>
+  </div>
+</BaseLayout>
