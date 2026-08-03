@@ -4,8 +4,9 @@ import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-ra
 
 /**
  * Month-by-month rate ranges. Each bar spans that month's lowest to highest
- * rate, so its position shows the season and its width shows the weekday to
- * weekend spread within the month.
+ * rate, so its position shows the season and its width shows how much the date
+ * matters. The source has no day-of-week breakdown, so the spread cannot be
+ * attributed to weekends specifically.
  */
 
 const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
@@ -43,6 +44,48 @@ const scaleFor = (low: number, high: number) => {
 
 const defaultRoom = priced.find((room) => room.id === 'std-superior-pgv-double') ?? priced[0]!;
 const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.high) }));
+
+/**
+ * Seasonality, averaged across every room type that has a full twelve months and
+ * some variation. Each month's floor is indexed against that room's own cheapest
+ * month, so room types of very different prices can be averaged together.
+ */
+const twelve = priced.filter((room) => room.months.length === 12 && room.low !== room.high);
+const season = Array.from({ length: 12 }, (_, i) => {
+  const month = i + 1;
+  const samples = twelve.map((room) => {
+    const entry = room.months.find((m) => m.month === month)!;
+    return { index: entry.low / room.low, spread: entry.high / entry.low };
+  });
+  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+  return {
+    month,
+    index: mean(samples.map((s) => s.index)),
+    spread: mean(samples.map((s) => s.spread)),
+  };
+});
+const cheapestMonths = [...season].sort((a, b) => a.index - b.index).slice(0, 3);
+const dearestMonths = [...season].sort((a, b) => b.index - a.index).slice(0, 3);
+const peakPremium = Math.round(
+  (Math.max(...season.map((s) => s.index)) / Math.min(...season.map((s) => s.index)) - 1) * 100,
+);
+const widestMonth = [...season].sort((a, b) => b.spread - a.spread)[0]!;
+const tightestMonth = [...season].sort((a, b) => a.spread - b.spread)[0]!;
+const maxIndex = Math.max(...season.map((s) => s.index));
+
+/**
+ * The month most room types individually bottom out and top out in. This is the
+ * mode of each room's own cheapest/dearest month, which is not necessarily the
+ * month with the lowest or highest averaged floor above.
+ */
+const modeOf = (pick: (room: (typeof twelve)[number]) => number) => {
+  const tally = new Map<number, number>();
+  for (const room of twelve) tally.set(pick(room), (tally.get(pick(room)) ?? 0) + 1);
+  return [...tally.entries()].sort((a, b) => b[1] - a[1])[0]!;
+};
+const [cheapMonth, cheapAgree] = modeOf((room) => room.cheapest);
+const [dearMonth, dearAgree] = modeOf((room) => room.dearest);
+const monthLabel = (m: number) => `${m} 月`;
 ---
 
 <section id="price-seasons" class="not-prose scroll-mt-32">
@@ -52,7 +95,64 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
       每一條橫棒是那個月「最便宜的日期」到「最貴的日期」。棒子的位置看淡旺季，棒子的長度看同一個月裡日期的影響有多大。選一個房型看它整年的樣子。
     </p>
 
-    <div class="mt-5">
+    <div class="mt-6 rounded-xl border border-line bg-paper-deep/40 p-5">
+      <h3 class="font-serif text-base font-bold text-ink">淡旺季：整體看是哪幾個月</h3>
+      <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+        把 {twelve.length} 種有完整十二個月資料的房型，各自以「自己最便宜的月份」為基準對齊之後平均。
+        長條是那個月的底價比全年最低高出多少。
+      </p>
+
+      <ul class="mt-4 space-y-1">
+        {
+          season.map((entry) => (
+            <li class="flex items-center gap-2">
+              <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">
+                {monthLabel(entry.month)}
+              </span>
+              <span class="relative h-4 flex-1 rounded bg-paper">
+                <span
+                  class="absolute inset-y-0 left-0 rounded"
+                  style={`width:${Math.max(((entry.index - 1) / (maxIndex - 1)) * 100, 0.8)}%;background:${
+                    entry.index === Math.max(...season.map((s) => s.index))
+                      ? '#8c2f4a'
+                      : entry.index === Math.min(...season.map((s) => s.index))
+                        ? '#0f4c5c'
+                        : '#5b93a1'
+                  }`}
+                />
+              </span>
+              <span class="w-14 shrink-0 text-2xs text-ink-soft tabular-nums">
+                {entry.index === 1 ? '基準' : `+${Math.round((entry.index - 1) * 100)}%`}
+              </span>
+              <span class="hidden w-24 shrink-0 text-2xs text-ink-faint tabular-nums sm:block">
+                挑日子 {entry.spread.toFixed(2)} 倍
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <ul class="mt-4 space-y-2 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-ink-soft">
+        <li>
+          <span class="font-bold text-ink">最便宜的月份是 {cheapestMonths.map((m) => monthLabel(m.month)).join('、')}</span>
+          ；最貴的是 {dearestMonths.map((m) => monthLabel(m.month)).join('、')}。旺季的底價比淡季高約
+          <span class="font-bold text-ink">{peakPremium}%</span>。
+        </li>
+        <li>
+          這個規律在各房型之間很一致：{twelve.length} 種房型裡，有 {cheapAgree} 種各自最便宜的月份都落在
+          {monthLabel(cheapMonth)}，{dearAgree} 種最貴的都落在 {monthLabel(dearMonth)}。
+          不是只有某幾個房型如此。
+        </li>
+        <li>
+          「挑日子」的空間則反過來。{monthLabel(widestMonth.month)}
+          同一個月內最高是最低的 {widestMonth.spread.toFixed(2)} 倍，選對日期差很多；{
+            monthLabel(tightestMonth.month)
+          } 只有 {tightestMonth.spread.toFixed(2)} 倍，不管哪一天都貴。
+        </li>
+      </ul>
+    </div>
+
+    <div class="mt-6">
       <label class="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
         房型
         <select
@@ -118,8 +218,12 @@ const payload = priced.map((room) => ({ ...room, scale: scaleFor(room.low, room.
         >，那裡是逐日標價的。
       </p>
       <p>
-        資料整理自公開的 2026 年費率表，1 到 9 月是 2026 年的價格，10 到 12
-        月沿用 2025 年的，因為來源只公布到那裡。金額為每室每晚、2 位大人，小學生以下 2 名同價。
+        <span class="font-bold text-ink-soft">跨年份的注意事項。</span>
+        1 到 9 月是 2026 年的價格，10 到 12 月沿用 2025 年的，因為來源只公布到那裡。所以 10 到 12
+        月偏高的部分，可能混了一點年度調價而不是純粹的季節因素。
+      </p>
+      <p>
+        資料整理自公開的 2026 年費率表。金額為每室每晚、2 位大人，小學生以下 2 名同價。
         {unpriced.length} 種房型只有起價、沒有逐月資料：{
           unpriced.map((room) => room.name).join('、')
         }。
