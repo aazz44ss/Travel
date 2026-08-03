@@ -1,0 +1,461 @@
+---
+import type { ConnectingPair, Room, RoomNumbers, RoomView } from '~/data/hotel';
+
+interface Props {
+  rooms: Room[];
+  views: RoomView[];
+  roomNumbers: RoomNumbers;
+  /** Runs of corridor the numbering splits into, in reading order. */
+  blocks: readonly { key: string; label: string; summary: string }[];
+  connecting: ConnectingPair[];
+  sourceUrl: string;
+}
+
+const { rooms, views, roomNumbers, blocks, connecting, sourceUrl } = Astro.props;
+
+const roomById = Object.fromEntries(rooms.map((room) => [room.id, room]));
+const viewByKey = Object.fromEntries(views.map((view) => [view.key, view]));
+
+/**
+ * Occupancy is part of the room name, so a number the source could only pin to a
+ * group of types has to be described by the whole group rather than by one name.
+ */
+const siblingsOf = (roomId: string): Room[] =>
+  (roomNumbers[roomId]?.ambiguousWith ?? [])
+    .map((id) => roomById[id])
+    .filter((room): room is Room => Boolean(room));
+
+/** Names are `格局・定員`, so a group keeps one格局 and lists every定員. */
+const groupLabel = (room: Room, siblings: Room[]): string => {
+  if (siblings.length === 0) return room.name;
+  const [layout, ...tail] = room.name.split('・');
+  const occupancies = [tail.join('・'), ...siblings.map((s) => s.name.split('・').slice(1).join('・'))]
+    .filter(Boolean);
+  return occupancies.length > 0 ? `${layout}・${occupancies.join('或 ')}` : layout!;
+};
+
+const hits = Object.entries(roomNumbers)
+  .flatMap(([roomId, entry]) =>
+    entry.numbers.map((number) => {
+      const room = roomById[roomId]!;
+      const siblings = siblingsOf(roomId);
+      return {
+        number,
+        roomId,
+        floor: Number(number[0]),
+        code: number.slice(1),
+        block: number[1],
+        balcony: entry.balcony.includes(number),
+        room,
+        siblings,
+        label: groupLabel(room, siblings),
+      };
+    }),
+  )
+  .sort((a, b) => a.number.localeCompare(b.number));
+
+const floors = [...new Set(hits.map((hit) => hit.floor))].sort((a, b) => b - a);
+const numberedTypes = Object.values(roomNumbers).filter((entry) => entry.numbers.length > 0).length;
+
+const viewTone: Record<string, string> = {
+  partial: 'border-ink-faint/30 bg-paper-deep text-ink-soft',
+  piazza: 'border-gold/35 bg-gold-soft text-[#6f4e18]',
+  'piazza-grand': 'border-brand/25 bg-brand-soft text-brand-deep',
+  harbour: 'border-brand bg-brand/80 text-white',
+  'harbour-grand': 'border-brand-deep bg-brand-deep text-white',
+};
+
+const indexedViews = views.filter((view) => hits.some((hit) => hit.room.view === view.key));
+
+const payload = hits.map((hit) => {
+  const group = [hit.room, ...hit.siblings];
+  return {
+    number: hit.number,
+    floor: hit.floor,
+    block: `${hit.block}xx 段`,
+    roomName: hit.label,
+    ambiguous: hit.siblings.length > 0,
+    view: viewByKey[hit.room.view]?.label ?? '景觀未指定',
+    viewKey: hit.room.view,
+    size: `${[...new Set(group.map((room) => room.size))].join(' 或 ')} m²`,
+    capacity:
+      hit.siblings.length > 0
+        ? `${group.map((room) => room.capacity).join(' 或 ')} 位大人`
+        : `${hit.room.capacity} 位大人＋最多 ${hit.room.coSleepers} 位不佔床孩童`,
+    category: hit.room.category === 'speciale' ? '尊榮客房＆套房' : '一般客房',
+    balcony: hit.balcony,
+  };
+});
+
+const connectingPairs = connecting
+  .map((pair) => ({
+    rooms: pair.types.map((id) => roomById[id]).filter((room): room is Room => Boolean(room)),
+    note: pair.note,
+  }))
+  .filter((pair) => pair.rooms.length === 2);
+---
+
+<section id="room-index" class="not-prose scroll-mt-32" data-miracosta-index>
+  <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">海港區房號索引</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
+          收錄海港區 {hits.length} 間已知客房，分布在 {floors.length} 個樓層、{`${numberedTypes} 種房型`}。輸入拿到的房號，或按樓層與景觀往下查。
+        </p>
+      </div>
+      <p
+        class="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-medium text-brand-deep"
+        data-index-count
+        aria-live="polite"
+      >
+        {hits.length} 間
+      </p>
+    </div>
+
+    <div class="mt-6 rounded-xl border border-gold/30 bg-gold-soft/60 p-4 sm:p-5">
+      <p class="text-sm font-bold text-ink">這是編號順序索引，不是建築平面圖</p>
+      <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+        格子只按房號由小到大排列；同樣寬度不代表房間大小，格子間距也不代表實際距離。來源的位置圖足以核對房號、樓層與兩段走廊順序，卻沒有可用座標讓本站誠實重建比例，因此不畫一張看似精確的示意圖。
+      </p>
+    </div>
+
+    <div class="mt-6 grid gap-5 border-t border-line-soft pt-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="space-y-5">
+        <form class="rounded-xl border border-line bg-paper-deep/35 p-4" data-room-lookup>
+          <label for="miracosta-room-number" class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
+            查 4 位房號
+          </label>
+          <div class="mt-2 flex gap-2">
+            <input
+              id="miracosta-room-number"
+              name="room-number"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{4}"
+              maxlength="4"
+              autocomplete="off"
+              placeholder="例如 5353"
+              class="min-w-0 flex-1 rounded-lg border border-line bg-card px-3.5 py-2.5 text-sm text-ink tabular-nums placeholder:text-ink-faint focus-visible:outline-brand"
+            />
+            <button
+              type="submit"
+              class="shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+            >
+              找房間
+            </button>
+          </div>
+          <p class="mt-2 min-h-5 text-xs leading-relaxed text-ink-faint" data-lookup-status aria-live="polite">
+            第一碼是樓層；本站只收錄來源逐間列出的海港區房號。
+          </p>
+        </form>
+
+        <fieldset>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">樓層</legend>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            {
+              ['all', ...floors].map((floor, index) => (
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="index-floor"
+                    value={floor}
+                    checked={index === 0}
+                    class="peer sr-only"
+                  />
+                  <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft tabular-nums transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                    {floor === 'all' ? '全部' : `${floor}F`}
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            {
+              [{ key: 'all', label: '全部' }, ...indexedViews].map((view, index) => (
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="index-view"
+                    value={view.key}
+                    checked={index === 0}
+                    class="peer sr-only"
+                  />
+                  <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                    {view.label}
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+      </div>
+
+      <aside class="rounded-xl border border-line bg-paper-deep/40 p-5" data-index-detail>
+        <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-detail-kicker>
+          房號怎麼讀
+        </p>
+        <h3 class="mt-2 font-serif text-lg leading-snug font-bold text-ink" data-detail-name>
+          第一碼樓層，後三碼位置
+        </h3>
+        <p class="mt-2 text-[0.8125rem] leading-relaxed text-ink-soft" data-detail-summary>
+          例如 5353 是 5 樓、位置 353。這份調查列出的房號全部是奇數，它沒有說明偶數房號屬於哪裡，所以偶數不在這份索引內。
+        </p>
+        <dl class="mt-4 hidden space-y-2.5 border-t border-line pt-4 text-[0.8125rem]" data-detail-facts>
+          <div class="flex justify-between gap-3">
+            <dt class="shrink-0 text-ink-faint">景觀</dt>
+            <dd class="text-right font-bold text-ink" data-detail-view></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="shrink-0 text-ink-faint">區段</dt>
+            <dd class="text-right font-bold text-ink" data-detail-block></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="shrink-0 text-ink-faint">面積</dt>
+            <dd class="text-right font-bold text-ink" data-detail-size></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="shrink-0 text-ink-faint">定員</dt>
+            <dd class="text-right font-bold text-ink" data-detail-capacity></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="shrink-0 text-ink-faint">等級</dt>
+            <dd class="text-right font-bold text-ink" data-detail-category></dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
+
+    <div class="mt-7 space-y-7 border-t border-line-soft pt-7" data-index-list>
+      {
+        floors.map((floor) => (
+          <section data-floor-group={floor}>
+            <div class="flex items-baseline gap-3">
+              <h3 class="font-serif text-lg font-bold text-ink">{floor} 樓</h3>
+              <span class="text-xs text-ink-faint" data-floor-count>
+                {hits.filter((hit) => hit.floor === floor).length} 間
+              </span>
+            </div>
+            <div class="mt-3 grid gap-3 xl:grid-cols-2">
+              {blocks.map((block) => {
+                const entries = hits.filter((hit) => hit.floor === floor && hit.block === block.key);
+                if (entries.length === 0) return null;
+                return (
+                  <div class="rounded-xl border border-line bg-paper-deep/25 p-4" data-number-block>
+                    <div>
+                      <p class="text-sm font-bold text-ink">{block.label}</p>
+                      <p class="mt-0.5 text-2xs leading-relaxed text-ink-faint">{block.summary}</p>
+                    </div>
+                    <ul class="mt-3 flex flex-wrap gap-1.5">
+                      {entries.map((hit) => (
+                        <li
+                          data-index-room
+                          data-floor={hit.floor}
+                          data-view={hit.room.view}
+                        >
+                          <button
+                            type="button"
+                            data-room-number={hit.number}
+                            class:list={[
+                              'relative rounded-md border px-2 py-1.5 text-xs font-bold tabular-nums transition-transform hover:-translate-y-0.5',
+                              viewTone[hit.room.view] ?? 'border-line bg-card text-ink',
+                              hit.room.category === 'speciale' && 'ring-1 ring-gold/50',
+                            ]}
+                            aria-label={`${hit.number}，${hit.label}${hit.balcony ? '，可走上戶外陽台' : ''}`}
+                            title={hit.label}
+                          >
+                            {hit.number}
+                            {hit.balcony && (
+                              <span
+                                class="absolute -top-1 -right-1 h-2 w-2 rounded-full border border-white bg-gold"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <section class="mt-8 rounded-xl border border-line bg-paper-deep/25 p-5 sm:p-6">
+      <h3 class="font-serif text-base font-bold text-ink">可以連通的房型組合</h3>
+      <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+        同一份調查列出海港區 {`${connectingPairs.length} 組`}能打通成連通房的分類。這是分類層級的清單，不是特定房號；連通房也不是訂房選項——必須<strong
+          class="font-bold text-ink">同時訂下兩種房型</strong
+        >，再打電話向飯店提出希望，而且仍然不保證安排得到。
+      </p>
+      <ul class="mt-4 space-y-2.5">
+        {
+          connectingPairs.map((pair) => (
+            <li class="rounded-lg border border-line-soft bg-card px-4 py-3">
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-ink">
+                <span class="font-medium">{pair.rooms[0]!.name}</span>
+                <span class="text-ink-faint" aria-hidden="true">
+                  ●―●
+                </span>
+                <span class="font-medium">{pair.rooms[1]!.name}</span>
+              </p>
+              {pair.note && <p class="mt-1.5 text-2xs leading-relaxed text-ink-faint">{pair.note}</p>}
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-line-soft pt-5 text-xs text-ink-faint">
+      <span><span class="mr-1.5 inline-block h-2 w-2 rounded-full bg-gold"></span>可走到戶外陽台</span>
+      <span>金色外框＝尊榮客房或套房</span>
+      <a
+        href={sourceUrl}
+        rel="noopener nofollow"
+        target="_blank"
+        class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+      >
+        房號主要來源：dhoteloo
+      </a>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ payload }}>
+  (() => {
+    const root = document.querySelector('[data-miracosta-index]');
+    if (!root) return;
+
+    const records = new Map(payload.map((room) => [room.number, room]));
+    const cards = Array.from(root.querySelectorAll('[data-index-room]'));
+    const floorGroups = Array.from(root.querySelectorAll('[data-floor-group]'));
+    const count = root.querySelector('[data-index-count]');
+    const form = root.querySelector('[data-room-lookup]');
+    const input = root.querySelector('[name="room-number"]');
+    const status = root.querySelector('[data-lookup-status]');
+    const facts = root.querySelector('[data-detail-facts]');
+    let activeNumber = null;
+
+    const text = (selector, value) => {
+      const node = root.querySelector(selector);
+      if (node) node.textContent = value;
+    };
+
+    const selected = (name) => {
+      const checked = root.querySelector(`input[name="${name}"]:checked`);
+      return checked ? checked.value : 'all';
+    };
+
+    function applyFilters() {
+      const floor = selected('index-floor');
+      const view = selected('index-view');
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const show =
+          (floor === 'all' || card.dataset.floor === floor) &&
+          (view === 'all' || card.dataset.view === view);
+        card.hidden = !show;
+        if (show) visible += 1;
+      });
+
+      floorGroups.forEach((group) => {
+        const shown = Array.from(group.querySelectorAll('[data-index-room]')).filter(
+          (card) => !card.hidden,
+        ).length;
+        group.hidden = shown === 0;
+        const tally = group.querySelector('[data-floor-count]');
+        if (tally) tally.textContent = `${shown} 間`;
+        group.querySelectorAll('[data-number-block]').forEach((block) => {
+          block.hidden =
+            Array.from(block.querySelectorAll('[data-index-room]')).filter((card) => !card.hidden)
+              .length === 0;
+        });
+      });
+
+      if (count) count.textContent = `${visible} 間`;
+    }
+
+    function selectRoom(number) {
+      const room = records.get(number);
+      if (!room) return false;
+      activeNumber = number;
+
+      root.querySelectorAll('[data-room-number]').forEach((button) => {
+        const active = button.dataset.roomNumber === activeNumber;
+        button.classList.toggle('outline', active);
+        button.classList.toggle('outline-2', active);
+        button.classList.toggle('outline-offset-2', active);
+        button.classList.toggle('outline-berry', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      text('[data-detail-kicker]', `${room.floor} 樓・房號 ${room.number}`);
+      text('[data-detail-name]', room.roomName);
+      text(
+        '[data-detail-summary]',
+        room.ambiguous
+          ? '來源按景觀分級列出這批房號，官方現在按定員分成兩種版本，因此能確定房型格局與景觀，但無法確定這一間現在賣哪個定員版本。'
+          : room.balcony
+            ? '這間可以走到戶外陽台。陽台能否舒服使用仍受風、雨與氣溫影響。'
+            : '這個號碼來自海港區的逐間調查；官方不接受指定房號，索引適合拿到房卡後判讀。',
+      );
+      text('[data-detail-view]', room.view);
+      text('[data-detail-block]', room.block);
+      text('[data-detail-size]', room.size);
+      text('[data-detail-capacity]', room.capacity);
+      text('[data-detail-category]', room.category);
+      if (facts) facts.classList.remove('hidden');
+      return true;
+    }
+
+    root.addEventListener('change', applyFilters);
+
+    root.querySelectorAll('[data-room-number]').forEach((button) => {
+      button.addEventListener('click', () => selectRoom(button.dataset.roomNumber));
+    });
+
+    if (input) {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '').slice(0, 4);
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const number = input ? input.value : '';
+        const room = records.get(number);
+
+        if (!room) {
+          if (status) {
+            status.textContent =
+              number.length === 4
+                ? '這份索引找不到這個號碼。它可能在托斯卡納／威尼斯區，或屬於來源沒有逐間列號的景隅景觀。'
+                : '請輸入完整 4 位房號。';
+          }
+          return;
+        }
+
+        const floorInput = root.querySelector(`input[name="index-floor"][value="${room.floor}"]`);
+        const viewInput = root.querySelector('input[name="index-view"][value="all"]');
+        if (floorInput) floorInput.checked = true;
+        if (viewInput) viewInput.checked = true;
+        applyFilters();
+        selectRoom(number);
+        if (status) status.textContent = `找到 ${number}：${room.roomName}`;
+        const button = root.querySelector(`[data-room-number="${number}"]`);
+        if (button) button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    applyFilters();
+  })();
+</script>
