@@ -4,7 +4,6 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
 import RoomNumberLookup from '~/components/RoomNumberLookup.astro';
-import FloorMatrix from '~/components/FloorMatrix.astro';
 import FloorPlan from '~/components/FloorPlan.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
@@ -33,7 +32,6 @@ const sections = [
   { id: 'categories', label: '四大分類' },
   { id: 'room-number', label: '房號查詢' },
   { id: 'floor-plan', label: '客房平面圖' },
-  { id: 'floor-matrix', label: '樓層立面圖' },
   { id: 'room-explorer', label: '房型探索器' },
   { id: 'beds', label: '床型尺寸' },
   { id: 'facilities', label: '設施與拍照點' },
@@ -203,10 +201,6 @@ const schema = [
 
     <section class="mt-12">
       <FloorPlan />
-    </section>
-
-    <section class="mt-12">
-      <FloorMatrix />
     </section>
 
     <section class="mt-20">
