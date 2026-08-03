@@ -1,5 +1,7 @@
 ---
 import type { Room } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
 import {
   LAYOUT_IMAGE_SIZE,
   ROOM_LAYOUTS,
@@ -9,9 +11,11 @@ import {
 
 interface Props {
   room: Room;
+  locale?: Locale;
 }
 
-const { room } = Astro.props;
+const { room, locale = DEFAULT_LOCALE } = Astro.props;
+const ex = explorer(locale);
 const ref = ROOM_LAYOUTS[room.id];
 
 /**
@@ -36,19 +40,19 @@ const shared = ref
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
-        alt={`${room.name}的官方平面圖`}
+        alt={`${room.name} — ${ex.layoutCaption.official}`}
         class="block h-auto w-full"
       />
       <figcaption class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint">
         <span class="font-medium text-ink-soft">{room.size} m²</span>
-        {shared && <span>官方同一頁涵蓋數種床型，圖上並列</span>}
+        {shared && <span>{ex.layoutCaption.shared}</span>}
         <a
           href={layoutPageUrl(ref)}
           rel="noopener nofollow"
           target="_blank"
           class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
         >
-          官方平面圖
+          {ex.layoutCaption.official}
         </a>
       </figcaption>
     </figure>

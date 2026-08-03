@@ -1,11 +1,28 @@
 ---
-import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
+import { CATEGORIES, ROOMS, VIEWS, formatYen, type Room } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
+import {
+  CATEGORY_LABELS,
+  VIEW_LABELS,
+  bedSummary,
+  fieldSeparator,
+  floorRange,
+  roomName,
+  roomNameSecondary,
+} from '~/i18n/rooms';
 import { annualRange } from '~/data/tdh-rates';
 import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
 import RoomLayout from '~/components/RoomLayout.astro';
 
-const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
-const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+const ex = explorer(locale);
+const categoryLabel = CATEGORY_LABELS[locale];
+const viewLabel = VIEW_LABELS[locale];
 
 const viewStyle: Record<string, string> = {
   grand: 'bg-brand text-white',
@@ -20,13 +37,7 @@ const categoryStyle: Record<string, string> = {
   suite: 'border-brand/30 text-brand',
 };
 
-const capacityOptions = [
-  { value: '0', label: '不限' },
-  { value: '2', label: '2 人以上' },
-  { value: '3', label: '3 人以上' },
-  { value: '4', label: '4 人以上' },
-  { value: '5', label: '5 人' },
-];
+const capacityOptions = ex.capacityOptions;
 
 /** Counted rather than written down so the figure cannot drift from the data. */
 const numbered = Object.values(ROOM_NUMBERS).reduce((sum, entry) => sum + entry.numbers.length, 0);
@@ -45,25 +56,30 @@ const grouped = CATEGORIES.map((category) => ({
 
 function features(room: Room): string[] {
   const list: string[] = [];
-  if (room.alcove) list.push('凹室床');
-  if (room.balcony) list.push('陽台');
-  if (room.lounge) list.push('貴賓室');
-  if (room.breakfast) list.push('含早餐');
-  if (room.accessible) list.push('無障礙');
+  if (room.alcove) list.push(ex.features.alcove);
+  if (room.balcony) list.push(ex.features.balcony);
+  if (room.lounge) list.push(ex.features.lounge);
+  if (room.breakfast) list.push(ex.features.breakfast);
+  if (room.accessible) list.push(ex.features.accessible);
   return list;
 }
 ---
 
-<section id="room-explorer" class="not-prose scroll-mt-24" data-room-explorer>
+<section
+  id="room-explorer"
+  class="not-prose scroll-mt-24"
+  data-room-explorer
+  data-type-count={ex.typeCount(0).replace('0', '{n}')}
+>
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{ex.heading}</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
-          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
+          {ex.intro(ROOMS.length)}
         </p>
         <p class="mt-2 max-w-2xl text-xs leading-relaxed text-ink-faint">
-          名稱依官方繁中頁，「・」之後是本站為區分床型或人數所加。房號收錄 {numbered} 間，最基本的幾種標準房型來源沒有逐間列號。
+          {ex.naming(numbered)}
         </p>
       </div>
       <p
@@ -71,16 +87,16 @@ function features(room: Room): string[] {
         data-result-count
         aria-live="polite"
       >
-        {ROOMS.length} 種房型
+        {ex.typeCount(ROOMS.length)}
       </p>
     </div>
 
     <div class="mt-6 space-y-5 border-t border-line-soft pt-6">
       <fieldset>
-        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">分類</legend>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{ex.filters.category}</legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...CATEGORIES.map((c) => ({ key: c.key, label: c.label }))].map(
+            [{ key: 'all', label: ex.filters.all }, ...CATEGORIES.map((c) => ({ key: c.key, label: categoryLabel[c.key]! }))].map(
               (option, index) => (
                 <label class="cursor-pointer">
                   <input
@@ -101,10 +117,10 @@ function features(room: Room): string[] {
       </fieldset>
 
       <fieldset>
-        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{ex.filters.view}</legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...VIEWS.map((v) => ({ key: v.key, label: v.label }))].map(
+            [{ key: 'all', label: ex.filters.all }, ...VIEWS.map((v) => ({ key: v.key, label: viewLabel[v.key]! }))].map(
               (option, index) => (
                 <label class="cursor-pointer">
                   <input
@@ -127,7 +143,7 @@ function features(room: Room): string[] {
       <div class="grid gap-5 sm:grid-cols-2">
         <fieldset>
           <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
-            入住人數
+            {ex.filters.capacity}
           </legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
@@ -151,14 +167,14 @@ function features(room: Room): string[] {
 
         <fieldset>
           <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
-            必要條件
+            {ex.filters.features}
           </legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
               [
-                { key: 'alcove', label: '凹室床' },
-                { key: 'balcony', label: '陽台' },
-                { key: 'breakfast', label: '含早餐' },
+                { key: 'alcove', label: ex.features.alcove },
+                { key: 'balcony', label: ex.features.balcony },
+                { key: 'breakfast', label: ex.features.breakfast },
               ].map((option) => (
                 <label class="cursor-pointer">
                   <input type="checkbox" name="filter-flag" value={option.key} class="peer sr-only" />
@@ -173,13 +189,13 @@ function features(room: Room): string[] {
       </div>
 
       <div class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-5">
-        <p class="text-sm text-ink-soft">依分類排列，每一類裡由便宜到貴</p>
+        <p class="text-sm text-ink-soft">{ex.order}</p>
         <button
           type="button"
           data-reset
           class="ml-auto rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
         >
-          清除條件
+          {ex.reset}
         </button>
       </div>
     </div>
@@ -192,7 +208,7 @@ function features(room: Room): string[] {
           <h3 class="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-line pb-2 font-serif text-base font-bold text-ink">
             {group.label}
             <span class="text-xs font-normal text-ink-faint" data-group-count>
-              {group.rooms.length} 種
+              {ex.typeCount(group.rooms.length)}
             </span>
           </h3>
         </li>,
@@ -232,53 +248,53 @@ function features(room: Room): string[] {
           </div>
 
           <h3 class="mt-3 font-serif text-[1.0625rem] leading-snug font-bold text-ink">
-            {room.name}
+            {roomName(room, locale)}
           </h3>
-          <p class="mt-1 text-xs text-ink-faint">{room.nameJa}</p>
+          <p class="mt-1 text-xs text-ink-faint">{roomNameSecondary(room, locale)}</p>
 
-          <RoomLayout room={room} />
+          <RoomLayout room={room} locale={locale} />
 
           <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
             <div>
-              <dt class="text-2xs text-ink-faint">面積</dt>
+              <dt class="text-2xs text-ink-faint">{ex.fields.area}</dt>
               <dd class="mt-0.5 text-sm font-bold text-ink">
                 {room.size}
                 <span class="text-xs font-normal"> m²</span>
               </dd>
             </div>
             <div class="border-x border-line-soft">
-              <dt class="text-2xs text-ink-faint">人數上限</dt>
+              <dt class="text-2xs text-ink-faint">{ex.fields.capacity}</dt>
               <dd class="mt-0.5 text-sm font-bold text-ink">
                 {room.capacity}
-                <span class="text-xs font-normal"> 位</span>
+                <span class="text-xs font-normal">{ex.guests}</span>
               </dd>
             </div>
             <div>
-              <dt class="text-2xs text-ink-faint">價格區間</dt>
+              <dt class="text-2xs text-ink-faint">{ex.fields.priceRange}</dt>
               <dd class="mt-0.5 text-sm font-bold text-brand">
                 {annualRange(room.id)
                   ? `${formatYen(annualRange(room.id)![0])}–${formatYen(annualRange(room.id)![1])}`
-                  : `${formatYen(room.priceFrom)} 起`}
+                  : ex.from(formatYen(room.priceFrom))}
               </dd>
             </div>
           </dl>
 
           <p class="mt-3 text-[0.8125rem] leading-relaxed text-ink-soft">
-            <span class="font-medium text-ink">床型：</span>
-            {room.beds}
+            <span class="font-medium text-ink">{ex.fields.beds}{fieldSeparator(locale)}</span>
+            {bedSummary(room, locale)}
           </p>
           {room.floors && (
             <p class="mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
-              <span class="font-medium text-ink">分佈樓層：</span>
-              {room.floors}
+              <span class="font-medium text-ink">{ex.fields.floors}{fieldSeparator(locale)}</span>
+              {floorRange(room.floors, locale)}
             </p>
           )}
 
-          <p class="mt-3 border-l-2 border-gold pl-3 text-[0.8125rem] leading-relaxed text-ink">
-            {room.verdict}
-          </p>
+          {locale === 'zh-hant' && (
+            <p class="mt-3 border-l-2 border-gold pl-3 text-[0.8125rem] leading-relaxed text-ink">{room.verdict}</p>
+          )}
 
-          {room.note && (
+          {locale === 'zh-hant' && room.note && (
             <p class="mt-3 rounded-lg bg-paper-deep/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
               {room.note}
             </p>
@@ -297,17 +313,17 @@ function features(room: Room): string[] {
                 >
                   <path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                 </svg>
-                房號
+                {ex.roomNumbers}
                 {ROOM_NUMBERS[room.id]!.numbers.length > 0 ? (
                   <span class="font-medium text-ink">
-                    {ROOM_NUMBERS[room.id]!.numbers.length} 間
+                    {ex.roomCount(ROOM_NUMBERS[room.id]!.numbers.length)}
                   </span>
                 ) : (
-                  <span class="text-ink-faint">未逐間公布</span>
+                  <span class="text-ink-faint">{ex.notListed}</span>
                 )}
                 {!ROOM_NUMBERS[room.id]!.complete && (
                   <span class="rounded-full bg-paper-deep px-1.5 py-0.5 text-2xs text-ink-faint">
-                    不完整
+                    {ex.incomplete}
                   </span>
                 )}
               </summary>
@@ -324,7 +340,7 @@ function features(room: Room): string[] {
                         ]}
                         title={
                           ROOM_NUMBERS[room.id]!.balcony.includes(number)
-                            ? '可以走到戶外陽台'
+                            ? ex.balconyTitle
                             : undefined
                         }
                       >
@@ -334,9 +350,9 @@ function features(room: Room): string[] {
                   </ul>
                 )}
                 {ROOM_NUMBERS[room.id]!.balcony.length > 0 && (
-                  <p class="mt-2 text-2xs text-gold">金色標示的房號可以走到戶外陽台。</p>
+                  <p class="mt-2 text-2xs text-gold">{ex.balconyNumbers}</p>
                 )}
-                {ROOM_NUMBERS[room.id]!.note && (
+                {locale === 'zh-hant' && ROOM_NUMBERS[room.id]!.note && (
                   <p class="mt-2 text-2xs leading-relaxed text-ink-faint">
                     {ROOM_NUMBERS[room.id]!.note}
                   </p>
@@ -345,9 +361,7 @@ function features(room: Room): string[] {
             </details>
           )}
 
-          <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            最低約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚
-          </p>
+
         </li>
         )),
       ])
@@ -358,7 +372,7 @@ function features(room: Room): string[] {
     class="hidden rounded-xl border border-dashed border-line bg-paper-deep/40 px-5 py-10 text-center text-sm text-ink-soft"
     data-empty
   >
-    沒有符合條件的房型。試著放寬景觀或必要條件。
+    {ex.empty}
   </p>
 </section>
 
@@ -407,7 +421,7 @@ function features(room: Room): string[] {
         if (matches) visible += 1;
       }
 
-      resultCount.textContent = `${visible} 種房型`;
+      resultCount.textContent = (root.dataset.typeCount ?? '{n}').replace('{n}', String(visible));
       emptyState.classList.toggle('hidden', visible > 0);
       roomList.classList.toggle('hidden', visible === 0);
 
@@ -418,7 +432,7 @@ function features(room: Room): string[] {
         ).length;
         group.hidden = shown === 0;
         const tally = group.querySelector('[data-group-count]');
-        if (tally) tally.textContent = `${shown} 種`;
+        if (tally) tally.textContent = (root.dataset.typeCount ?? '{n}').replace('{n}', String(shown));
       }
     }
 

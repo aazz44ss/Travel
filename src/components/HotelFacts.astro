@@ -1,16 +1,42 @@
 ---
 import { HOTEL, ROOMS, cheapestRoom, formatYen } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
 const cheapest = cheapestRoom();
 
-const facts = [
-  { label: '客房總數', value: `${HOTEL.totalRooms} 間`, sub: `${ROOMS.length} 種房型` },
-  { label: '到樂園正門', value: '步行 1 分鐘', sub: '4 座迪士尼飯店中最近' },
-  { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
-  { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
-  { label: '最低參考價', value: formatYen(cheapest.priceFrom), sub: '每室每晚・2 位大人' },
-  { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
-];
+const COPY: Record<Locale, { label: string; value: string; sub: string }[]> = {
+  'zh-hant': [
+    { label: '客房總數', value: `${HOTEL.totalRooms} 間`, sub: `${ROOMS.length} 種房型` },
+    { label: '到樂園正門', value: '步行 1 分鐘', sub: '4 座迪士尼飯店中最近' },
+    { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
+    { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
+    { label: '最低參考價', value: formatYen(cheapest.priceFrom), sub: '每室每晚・2 位大人' },
+    { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
+  ],
+  ja: [
+    { label: '客室数', value: `${HOTEL.totalRooms} 室`, sub: `${ROOMS.length} タイプ` },
+    { label: 'パーク正面まで', value: '徒歩 1 分', sub: '4 座のディズニーホテルで最短' },
+    { label: 'JR 舞浜駅まで', value: '徒歩 8 分', sub: '東京駅から電車で約 15 分' },
+    { label: 'チェックイン／アウト', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: 'チェックアウトは遅め' },
+    { label: '参考最低料金', value: formatYen(cheapest.priceFrom), sub: '1 室 1 泊・大人 2 名' },
+    { label: '予約開始', value: '4 か月前 11:00', sub: '日本時間・最大 5 泊 3 室' },
+  ],
+  en: [
+    { label: 'Guest rooms', value: `${HOTEL.totalRooms}`, sub: `${ROOMS.length} room types` },
+    { label: 'To the park gate', value: '1 min walk', sub: 'Closest of the four Disney hotels' },
+    { label: 'To JR Maihama', value: '8 min walk', sub: 'About 15 min by train from Tokyo Station' },
+    { label: 'Check in / out', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: 'Later checkout than most hotels' },
+    { label: 'From', value: formatYen(cheapest.priceFrom), sub: 'Per room per night, two adults' },
+    { label: 'Booking opens', value: '4 months ahead, 11:00', sub: 'Japan time, up to 5 nights and 3 rooms' },
+  ],
+};
+
+const facts = COPY[locale];
 ---
 
 <dl class="not-prose my-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line lg:grid-cols-3">
