@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -19,7 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      pages-enabled: ${{ steps.pages-status.outputs.enabled }}
+      build-type: ${{ steps.pages-status.outputs.build-type }}
     steps:
       - uses: actions/checkout@v7
 
@@ -34,42 +34,87 @@ jobs:
       - name: Type check
         run: npm run check
 
-      # Pages has to be switched on once in Settings → Pages (source: GitHub
-      # Actions); the default workflow token is not allowed to do it. Until
-      # then this job still builds and type checks, and the deploy job is
-      # skipped rather than failing.
-      - name: Check whether GitHub Pages is enabled
+      # Pages has to be turned on once under Settings → Pages; the default
+      # workflow token is not allowed to do it. Whichever source is picked
+      # there, this workflow publishes to it:
+      #   "GitHub Actions"       -> the deploy job uploads a Pages artifact
+      #   "Deploy from a branch" -> the built site is pushed to gh-pages
+      # While Pages is still off, gh-pages is kept current so that enabling it
+      # publishes the site immediately.
+      - name: Read Pages configuration
         id: pages-status
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
-            echo 'enabled=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'enabled=false' >> "$GITHUB_OUTPUT"
-            echo '::notice::GitHub Pages is not enabled for this repository. Enable it under Settings → Pages with "GitHub Actions" as the source, then re-run this workflow to publish the site.'
+          build_type="$(gh api "repos/${{ github.repository }}/pages" --jq '.build_type' 2>/dev/null || echo 'disabled')"
+          echo "build-type=$build_type" >> "$GITHUB_OUTPUT"
+          if [ "$build_type" = 'disabled' ]; then
+            echo '::notice::GitHub Pages is off. Turn it on under Settings → Pages — either source works, the site is already built and waiting on the gh-pages branch.'
           fi
 
-      - name: Resolve Pages configuration
+      - name: Resolve Pages URL
         id: pages
-        if: steps.pages-status.outputs.enabled == 'true'
+        if: steps.pages-status.outputs.build-type == 'workflow'
         uses: actions/configure-pages@v6
+
+      # configure-pages only runs for the Actions source, so derive the same
+      # values by hand for every other case.
+      - name: Derive Pages URL
+        id: fallback
+        if: steps.pages-status.outputs.build-type != 'workflow'
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          repo='${{ github.event.repository.name }}'
+          echo "origin=https://$owner.github.io" >> "$GITHUB_OUTPUT"
+          if [ "$(echo "$repo" | tr '[:upper:]' '[:lower:]')" = "$owner.github.io" ]; then
+            echo 'base=/' >> "$GITHUB_OUTPUT"
+          else
+            echo "base=/$repo" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build
         env:
-          SITE_URL: ${{ steps.pages.outputs.origin }}
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_URL: ${{ steps.pages.outputs.origin || steps.fallback.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path || steps.fallback.outputs.base }}
         run: npm run build
 
       - name: Upload Pages artifact
-        if: steps.pages-status.outputs.enabled == 'true' && github.ref == 'refs/heads/main'
+        if: steps.pages-status.outputs.build-type == 'workflow' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
+      - name: Publish to gh-pages branch
+        if: steps.pages-status.outputs.build-type != 'workflow' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          remote="https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}.git"
+          rm -rf .gh-pages
+          if git ls-remote --exit-code --heads "$remote" gh-pages >/dev/null 2>&1; then
+            git clone -q --depth 1 --branch gh-pages "$remote" .gh-pages
+          else
+            git clone -q --depth 1 "$remote" .gh-pages
+            git -C .gh-pages checkout -q --orphan gh-pages
+            git -C .gh-pages rm -rq --cached .
+          fi
+          find .gh-pages -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r dist/. .gh-pages/
+          touch .gh-pages/.nojekyll
+          cd .gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --quiet --cached; then
+            echo 'No change in built output; nothing to publish.'
+          else
+            git commit -qm "deploy: 發布 ${GITHUB_SHA::7} 的建置結果"
+            git push -q origin gh-pages
+          fi
+
   deploy:
     needs: build
-    if: needs.build.outputs.pages-enabled == 'true' && github.ref == 'refs/heads/main'
+    if: needs.build.outputs.build-type == 'workflow' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

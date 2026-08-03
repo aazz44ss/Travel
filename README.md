@@ -81,9 +81,18 @@ sources:            # 文末的資料來源，依 official / media / blog / soci
 | `SITE_URL` | 網站絕對網址，用於 canonical、sitemap 與 RSS | `https://trip-homework.pages.dev` |
 | `BASE_PATH` | 部署的子路徑 | `/` |
 
-repo 內附 `.github/workflows/deploy.yml`，每次推送都會跑型別檢查與建置，推上 `main` 時再發布到 GitHub Pages。
+repo 內附 `.github/workflows/deploy.yml`，每次推送都會跑型別檢查與建置，推上 `main` 時再發布。
 
-第一次要發布之前，需要先到 repo 的 **Settings → Pages** 把來源改成 **GitHub Actions**。這一步無法由 workflow 代勞（預設的 workflow token 沒有開啟 Pages 的權限）。在那之前 workflow 仍然會正常跑完建置，只是跳過發布，不會亮紅燈。
+第一次要上線之前，需要有 repo 管理權限的人到 **Settings → Pages** 把 Pages 打開。這一步無法由 workflow 代勞——預設的 workflow token 沒有開啟 Pages 的權限，而且推送 `gh-pages` 分支自動啟用的舊行為 GitHub 已經取消了。
+
+兩種來源都可以，workflow 會自己判斷要走哪一條：
+
+| Settings → Pages 的來源 | workflow 的行為 |
+| --- | --- |
+| GitHub Actions | 上傳 Pages artifact 後發布 |
+| Deploy from a branch → `gh-pages` | 把建置結果推到 `gh-pages` 分支 |
+
+Pages 還沒打開的期間，workflow 仍會把最新的建置結果推到 `gh-pages`，所以打開的當下網站就會是最新的，不需要重跑。建置也不會因此亮紅燈。
 
 ## 編輯原則
 
