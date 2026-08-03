@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: Build and deploy
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,12 +12,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      pages-enabled: ${{ steps.pages-status.outputs.enabled }}
     steps:
       - uses: actions/checkout@v7
 
@@ -28,13 +31,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type check
+        run: npm run check
+
+      # Pages has to be switched on once in Settings → Pages (source: GitHub
+      # Actions); the default workflow token is not allowed to do it. Until
+      # then this job still builds and type checks, and the deploy job is
+      # skipped rather than failing.
+      - name: Check whether GitHub Pages is enabled
+        id: pages-status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::GitHub Pages is not enabled for this repository. Enable it under Settings → Pages with "GitHub Actions" as the source, then re-run this workflow to publish the site.'
+          fi
+
       - name: Resolve Pages configuration
         id: pages
+        if: steps.pages-status.outputs.enabled == 'true'
         uses: actions/configure-pages@v6
-        with:
-          # Turns Pages on for the repository the first time this runs, so the
-          # site deploys without anyone flipping the setting by hand.
-          enablement: true
 
       - name: Build
         env:
@@ -42,12 +61,15 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v5
+      - name: Upload Pages artifact
+        if: steps.pages-status.outputs.enabled == 'true' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.pages-enabled == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

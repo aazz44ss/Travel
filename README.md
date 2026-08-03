@@ -81,7 +81,9 @@ sources:            # 文末的資料來源，依 official / media / blog / soci
 | `SITE_URL` | 網站絕對網址，用於 canonical、sitemap 與 RSS | `https://trip-homework.pages.dev` |
 | `BASE_PATH` | 部署的子路徑 | `/` |
 
-repo 內附 `.github/workflows/deploy.yml`，推上 `main` 後會自動建置並發布到 GitHub Pages（需先在 repo 設定裡把 Pages 的來源改成 GitHub Actions）。
+repo 內附 `.github/workflows/deploy.yml`，每次推送都會跑型別檢查與建置，推上 `main` 時再發布到 GitHub Pages。
+
+第一次要發布之前，需要先到 repo 的 **Settings → Pages** 把來源改成 **GitHub Actions**。這一步無法由 workflow 代勞（預設的 workflow token 沒有開啟 Pages 的權限）。在那之前 workflow 仍然會正常跑完建置，只是跳過發布，不會亮紅燈。
 
 ## 編輯原則
 
