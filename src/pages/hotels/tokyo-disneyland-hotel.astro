@@ -24,7 +24,7 @@ import { PLAN_ROOMS } from '~/data/tdh-plan';
 const article = await getEntry('articles', 'tokyo-disneyland-hotel');
 
 const title = `${HOTEL.name} 房型資料庫`;
-const description = `${HOTEL.name}全 ${ROOMS.length} 種房型的面積、床型、人數上限、景觀分級與參考價，整理成可篩選的清單。另有依實際比例描繪的逐間客房平面圖，${PLAN_ROOMS.length} 間客房的位置、大小與面向一目瞭然。`;
+const description = `${HOTEL.name}全 ${ROOMS.length} 種房型的面積、床型、人數上限、景觀分級與參考價，整理成可篩選的清單。另有依實際比例描繪的客房平面圖，${PLAN_ROOMS.length} 個位置的大小與面向一目瞭然。`;
 
 const sections = [
   { id: 'overview', label: '基本資料' },

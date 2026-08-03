@@ -127,7 +127,6 @@ const planRooms = cells.reduce(
     sum + (cell.floors.length > 0 ? cell.floors : (floorFallback.get(cell.code[0]!) ?? [])).length,
   0,
 );
-const missingRooms = HOTEL.totalRooms - planRooms;
 
 const LEGEND: Tone[] = ['grand', 'park', 'entrance', 'inner', 'turret'];
 const CAT_LEGEND = ['standard', 'character', 'concierge', 'suite'] as const;
@@ -162,7 +161,6 @@ const payload = cells.map((cell, i) => ({
 }));
 
 const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(cells.length / 2)]!;
-const biggest = Math.max(...cells.map((c) => c.area));
 ---
 
 <section id="floor-plan" class="not-prose scroll-mt-32">
@@ -333,17 +331,8 @@ const biggest = Math.max(...cells.map((c) => c.area));
       </div>
 
       <p class="text-xs leading-relaxed text-ink-faint">
-        位置與大小是把原始平面圖切割成區域後逐間描出來的，房號則由各條走廊從一間已知的房間往下推；房型取自原始圖與官方資料，原圖未逐間標註房型的位置則依同一段走廊的標示推得。驗證方式：中庭環由左到右是
-        313 到 301，其仙履奇緣／愛麗絲／美女與野獸／小仙子的排列與房號資料完全吻合；8 樓空橋（401–407）取自 8
-        樓平面圖，套疊誤差在 2 像素以內。最大的家庭客房面積約是最小客房的 {Math.round((biggest / (median || 1)) * 10) / 10} 倍。手機請左右滑動圖面。
-      </p>
-
-      <p class="text-xs leading-relaxed text-ink-faint">
-        <span class="font-bold text-ink-soft">圖上是 {planRooms} 間，不是全館 {HOTEL.totalRooms} 間。</span>
-        差的 {missingRooms} 間是原始調查沒有畫進去的位置。這 {cells.length} 個位置裡有 {
-          cells.filter((cell) => cell.floors.length > 0).length
-        } 個有公開房號，剩下的只能依同一段走廊推估樓層範圍，1、2 樓的掌握度最低（各只有 4
-        個公開房號）。來源本身也註明資料僅供參考、不保證完整。
+        依原始平面圖逐間描出位置與大小，房號沿走廊推得。圖上涵蓋 {planRooms} 間，全館 {HOTEL.totalRooms}
+        間；差額是來源未標示的位置，1、2 樓最不完整。手機請左右滑動。
       </p>
     </div>
   </div>

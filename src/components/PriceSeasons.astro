@@ -205,38 +205,16 @@ const monthLabel = (m: number) => `${m} 月`;
       <p class="mt-3 text-xs text-ink-faint" data-rate-note></p>
     </div>
 
-    <div class="mt-6 space-y-2 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
+    <div class="mt-6 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
       <p>
-        <span class="font-bold text-ink-soft">這張圖不是平假日對照表。</span>
-        來源只公布每個月的最低與最高，沒有逐日的細分。區間的下限通常出現在該月的一般平日，上限出現在週末、連假或活動期間的特定日期——但不代表「每個週末都是上限」，一般週末多半落在中間。要知道某一天的實際金額，只能查官方訂房頁的
+        每室每晚、2 位大人。10 到 12 月是 2025 年的價格，所以那三個月偏高的部分可能混了年度調價。逐日金額請查
         <a
           href="https://www.tokyodisneyresort.jp/hotel/tdh.html"
           rel="noopener nofollow"
           target="_blank"
           class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >空室狀況／客房價格表</a
-        >，那裡是逐日標價的。
-      </p>
-      <p>
-        <span class="font-bold text-ink-soft">跨年份的注意事項。</span>
-        1 到 9 月是 2026 年的價格，10 到 12 月沿用 2025 年的，因為來源只公布到那裡。所以 10 到 12
-        月偏高的部分，可能混了一點年度調價而不是純粹的季節因素。
-      </p>
-      <p>
-        <span class="font-bold text-ink-soft">資料來源。</span>
-        整理自日本迪士尼媒體 CASTEL 的
-        <a
-          href="https://castel.jp/p/4155"
-          rel="noopener nofollow"
-          target="_blank"
-          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >客房種類與價格整理</a
-        >（2026 年 4 月 9 日）裡的逐月費率表，共 31 張表對應本頁 {priced.length}
-        種房型。這是二手來源不是官方公告——官方只在訂房日曆上逐日標價，並沒有發布按房型的月費率表，所以這裡的數字請當作參考值。金額為每室每晚、2
-        位大人，小學生以下 2 名同價。
-        {unpriced.length} 種房型只有起價、沒有逐月資料：{
-          unpriced.map((room) => room.name).join('、')
-        }。
+          >官方訂房頁</a
+        >。另有 {unpriced.length} 種房型只公布起價。
       </p>
     </div>
   </div>
