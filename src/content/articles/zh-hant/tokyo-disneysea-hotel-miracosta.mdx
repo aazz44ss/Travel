@@ -86,7 +86,7 @@ sources:
 import Callout from '~/components/Callout.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import SocialWall from '~/components/SocialWall.astro';
-import { withBase } from '~/consts';
+import { localePath } from '~/i18n/config';
 import { ROOMS, SOCIAL_INSIGHTS } from '~/data/tokyo-disneysea-hotel-miracosta';
 
 export const priceOf = (id) => ROOMS.find((room) => room.id === id).priceFrom;
@@ -207,7 +207,7 @@ export const harbourLadder = [
 - **地中海客房（Harbor Room）**：60 m²、兩扇大窗、最多 4 位。這是格局名稱，仍要看最後寫的是廣場或港灣景觀。
 - **套房**：海港套房 81 m²、觀海景套房 87 m²、皇家套房 199 m²。名字裡有「海港」不代表窗景一定是完整港灣。
 
-全部 {ROOMS.length} 種組合的官方格局圖、面積、定員、床型、樓層與逐月價格，都在<a href={withBase('/hotels/tokyo-disneysea-hotel-miracosta')}>房型資料庫</a>。官方同一頁藏著多個床型時，資料庫會拆成不同卡片，不必自己猜訂房頁上的四人版是哪張圖。
+全部 {ROOMS.length} 種組合的官方格局圖、面積、定員、床型、樓層與逐月價格，都在<a href={localePath('zh-hant', '/hotels/tokyo-disneysea-hotel-miracosta')}>房型資料庫</a>。官方同一頁藏著多個床型時，資料庫會拆成不同卡片，不必自己猜訂房頁上的四人版是哪張圖。
 
 ### 四人房的第四張床不是正規床
 
@@ -229,7 +229,7 @@ export const harbourLadder = [
 
 這份資料的邊界也要寫清楚。托斯卡納與威尼斯區沒有同等的逐間調查；海港區的景隅景觀雖然在原始位置圖上有標示，文章卻沒有列出房號；港灣景觀陽台房的 7 個號碼，來源是按景觀分級列的，官方現在卻按定員分成 3 位與 4 位兩種版本，所以只能確定這 7 間是那個房型，不能指出哪幾間是四人版。**因此本站做的是樓層與編號索引，不是按比例平面圖。** 沒有可驗證座標時硬畫一棟樓，只會把推測變成漂亮的錯誤。
 
-可搜尋的 178 間索引放在<a href={withBase('/hotels/tokyo-disneysea-hotel-miracosta#room-index')}>房型資料庫的海港區房號段落</a>。
+可搜尋的 178 間索引放在<a href={localePath('zh-hant', '/hotels/tokyo-disneysea-hotel-miracosta#room-index')}>房型資料庫的海港區房號段落</a>。
 
 ### 想打通兩間房，要在訂房前就決定
 
@@ -326,7 +326,7 @@ export const harbourLadder = [
 2. **床位**：兩人要雙人床、三位大人要三張正規床，還是四人接受郵輪床？
 3. **服務**：貴賓室與早餐能不能把尊榮價差用回來？
 
-把答案丟進<a href={withBase('/hotels/tokyo-disneysea-hotel-miracosta#room-explorer')}>房型探索器</a>，剩下通常只有兩三種。開賣時直接搜尋完整房名，不要在頁面上臨時理解「廣場全景」和「港灣全景」差在哪。
+把答案丟進<a href={localePath('zh-hant', '/hotels/tokyo-disneysea-hotel-miracosta#room-explorer')}>房型探索器</a>，剩下通常只有兩三種。開賣時直接搜尋完整房名，不要在頁面上臨時理解「廣場全景」和「港灣全景」差在哪。
 
 沒搶到就持續看取消房。5353、5357 這類只有兩間的房型，問題不是預算而是供給；一般港灣景觀三人版有 36 間，機率相對正常。取消庫存沒有固定釋出時刻，重點是固定回官方網站看，而不是相信一個神奇秒數。
 

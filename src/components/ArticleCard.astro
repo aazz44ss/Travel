@@ -1,13 +1,17 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { formatDateShort, withBase } from '~/consts';
+import { articleSlug } from '~/content.config';
+import { DEFAULT_LOCALE, formatDateShort, localePath, type Locale } from '~/i18n/config';
+import { t } from '~/i18n/ui';
 
 interface Props {
   article: CollectionEntry<'articles'>;
   featured?: boolean;
+  locale?: Locale;
 }
 
-const { article, featured = false } = Astro.props;
+const { article, featured = false, locale = DEFAULT_LOCALE } = Astro.props;
+const ui = t(locale);
 const { data } = article;
 
 const accentClass = {
@@ -51,14 +55,14 @@ const accentClass = {
 
   <div class:list={['flex flex-1 flex-col p-6', featured && 'md:p-8']}>
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
-      <time datetime={data.publishedAt.toISOString()}>{formatDateShort(data.publishedAt)}</time>
+      <time datetime={data.publishedAt.toISOString()}>{formatDateShort(data.publishedAt, locale)}</time>
       <span aria-hidden="true">·</span>
-      <span>閱讀約 {data.readingMinutes} 分鐘</span>
+      <span>{ui.common.readingTime(data.readingMinutes)}</span>
       {
         data.updatedAt && (
           <>
             <span aria-hidden="true">·</span>
-            <span class="text-brand">{formatDateShort(data.updatedAt)} 更新</span>
+            <span class="text-brand">{ui.common.updatedOn(formatDateShort(data.updatedAt, locale))}</span>
           </>
         )
       }
@@ -70,7 +74,7 @@ const accentClass = {
         featured ? 'text-xl sm:text-2xl' : 'text-lg',
       ]}
     >
-      <a href={withBase(`/articles/${article.id}`)} class="after:absolute after:inset-0">
+      <a href={localePath(locale, `/articles/${articleSlug(article.id)}`)} class="after:absolute after:inset-0">
         <span class="bg-gradient-to-r from-gold to-gold bg-[length:0%_1px] bg-bottom bg-no-repeat transition-[background-size] duration-300 group-hover:bg-[length:100%_1px]">
           {data.cardTitle ?? data.title}
         </span>

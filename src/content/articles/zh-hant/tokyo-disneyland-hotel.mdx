@@ -98,7 +98,7 @@ import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import SocialWall from '~/components/SocialWall.astro';
-import { withBase } from '~/consts';
+import { localePath } from '~/i18n/config';
 import { ROOMS, SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
 
 export const priceOf = (name) => ROOMS.find((room) => room.name === name).priceFrom;
@@ -200,7 +200,7 @@ export const viewLadder = [
 
 不過景觀只是價格的一個維度。同一間房在最便宜與最貴的日期之間往往差上四到六成，比升級景觀的價差還大。
 
-這裡有個容易看錯的地方：**7 到 9 月握有全年最便宜的日期，但它們不是淡季。** 這幾個月的底價是全年最低，最貴的日期卻能到 +44% 到 +61%——暑假就是這個形狀，連假與週末很貴，中間夾著幾個特別便宜的日子。真正整月都便宜的是**梅雨季的 6 月**，它最貴的日期只到 +33%，是全年最低的天花板。最該避開的是 **11、12 月**，兩端都高。10 月則是另一種難處：月內落差全年最小，但底價已經 +29%，等於沒有便宜的日子可挑。逐月的區間圖在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
+這裡有個容易看錯的地方：**7 到 9 月握有全年最便宜的日期，但它們不是淡季。** 這幾個月的底價是全年最低，最貴的日期卻能到 +44% 到 +61%——暑假就是這個形狀，連假與週末很貴，中間夾著幾個特別便宜的日子。真正整月都便宜的是**梅雨季的 6 月**，它最貴的日期只到 +33%，是全年最低的天花板。最該避開的是 **11、12 月**，兩端都高。10 月則是另一種難處：月內落差全年最小，但底價已經 +29%，等於沒有便宜的日子可挑。逐月的區間圖在<a href={localePath('zh-hant', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
 
 <Callout type="key" title="景觀的選擇邏輯">
 - **預算有限、又想看到樂園** → 選「樂園景觀」。多付約 6,000 日圓，這是全飯店投報率最高的一次加價。
@@ -228,7 +228,7 @@ export const viewLadder = [
 - **塔樓（Turret）**：位在飯店的圓形小塔裡，形狀特殊，只有禮賓等級才有。
 - **陽台（Balcony）**：只有禮賓等級的兩種房型有，而且房名一定會寫出來。
 
-全部 38 種房型的面積、床型、人數、參考價與樓層分佈，整理成可篩選的清單放在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。用條件篩掉不適合的，剩下的通常不會超過三個選項——訂房時開著那一頁對照最快。
+全部 38 種房型的面積、床型、人數、參考價與樓層分佈，整理成可篩選的清單放在<a href={localePath('zh-hant', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。用條件篩掉不適合的，剩下的通常不會超過三個選項——訂房時開著那一頁對照最快。
 
 ## 房號：入住當下就能知道窗外是什麼
 
@@ -241,7 +241,7 @@ export const viewLadder = [
 - **後三碼決定景觀。** 216–222、401–407、516–522 這三組全部是樂園全景觀的正面景（219 與 519 這兩個號碼不存在）；105 到 107 是側面的樂園景觀。
 - **6 開頭的那一段是兩排面對面，不是同一種房。** 偶數是迪士尼明星房、面向飯店正門；奇數是標準房，其中 605 到 617 面向樂園，其餘朝建築側面。所以同一段走廊的門對門，窗外可能完全相反。
 
-本站把各房型頁附的平面圖切割成區域、逐間描出輪廓，再沿著走廊從已知的房間往下推，還原出 116 個位置的實際大小與角度——**依實際比例的互動平面圖放在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>**，拿到房卡後在圖上找到自己的號碼，就知道窗戶朝哪一邊。
+本站把各房型頁附的平面圖切割成區域、逐間描出輪廓，再沿著走廊從已知的房間往下推，還原出 116 個位置的實際大小與角度——**依實際比例的互動平面圖放在<a href={localePath('zh-hant', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>**，拿到房卡後在圖上找到自己的號碼，就知道窗戶朝哪一邊。
 
 <Callout type="warn" title="這份資料是給你拿到房卡之後用的">
 官方不接受指定房號，所以查得到的房號不能拿來許願。來源是 2022 年的逐間調查，建築本身沒有動過，位置與窗戶方向仍然適用；但它偏重明星房與禮賓房，最基本的幾種標準房型沒有逐間列號。
@@ -249,7 +249,7 @@ export const viewLadder = [
 
 ### 床的尺寸，比房型名稱更值得看
 
-官方中文頁把 120 公分寬的床叫「標準床」（日文是レギュラーサイズ）。這個名字很容易誤導台灣旅客——它比台灣的單人床寬，但離雙人床還很遠，兩個成年人並睡會非常擠。八種床型的完整尺寸與可睡人數在<a href={withBase('/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
+官方中文頁把 120 公分寬的床叫「標準床」（日文是レギュラーサイズ）。這個名字很容易誤導台灣旅客——它比台灣的單人床寬，但離雙人床還很遠，兩個成年人並睡會非常擠。八種床型的完整尺寸與可睡人數在<a href={localePath('zh-hant', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">房型資料庫</a>。
 
 <Callout type="tip" title="用床型反推房型">
 如果你是**兩個大人**：直接找「雙人床」的房型（180 公分寬）。這類房型通常是 48 平方公尺，反而比 40 平方公尺的雙床房大。
