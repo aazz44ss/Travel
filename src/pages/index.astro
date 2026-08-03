@@ -3,7 +3,16 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ArticleCard from '~/components/ArticleCard.astro';
 import { SITE, withBase } from '~/consts';
-import { CATEGORIES, HOTEL, ROOMS, roomsByCategory } from '~/data/tokyo-disneyland-hotel';
+import {
+  CATEGORIES as TDH_CATEGORIES,
+  HOTEL as TDH_HOTEL,
+  ROOMS as TDH_ROOMS,
+} from '~/data/tokyo-disneyland-hotel';
+import {
+  CATEGORIES as DHM_CATEGORIES,
+  HOTEL as DHM_HOTEL,
+  ROOMS as DHM_ROOMS,
+} from '~/data/tokyo-disneysea-hotel-miracosta';
 
 const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
@@ -11,6 +20,29 @@ const articles = (await getCollection('articles')).sort(
 
 const featured = articles.find((article) => article.data.featured) ?? articles[0];
 const rest = articles.filter((article) => article.id !== featured?.id);
+
+const hotels = [
+  {
+    hotel: DHM_HOTEL,
+    rooms: DHM_ROOMS,
+    categories: DHM_CATEGORIES,
+    href: '/hotels/tokyo-disneysea-hotel-miracosta',
+    kicker: '住在東京迪士尼海洋裡',
+    description: '三個建築側、八種景觀、海港區逐間房號，以及陽台與頂樓露天陽台的完整比較。',
+    gradient: 'from-[#4c1826] via-berry to-[#9a6840]',
+  },
+  {
+    hotel: TDH_HOTEL,
+    rooms: TDH_ROOMS,
+    categories: TDH_CATEGORIES,
+    href: '/hotels/tokyo-disneyland-hotel',
+    kicker: '東京迪士尼樂園正門前',
+    description: '四大分類、三種樂園景觀與依實際比例重建的逐間客房平面圖。',
+    gradient: 'from-brand-deep to-brand',
+  },
+];
+
+const totalRoomTypes = hotels.reduce((sum, entry) => sum + entry.rooms.length, 0);
 
 const principles = [
   {
@@ -32,9 +64,9 @@ const principles = [
 ];
 
 const upcoming = [
-  { place: '東京迪士尼海洋觀海景大飯店', note: '威尼斯側與托斯卡尼側的房型與視野比較' },
   { place: '東京迪士尼度假區交通', note: '從成田、羽田到舞濱的四種走法與實際花費' },
   { place: '東京迪士尼樂園單日行程', note: '不買尊享卡的情況下，怎麼排才不會走冤枉路' },
+  { place: '東京迪士尼海洋夢幻泉鄉大飯店', note: '豪華館與夢幻館的權益、入口與房型差異' },
 ];
 
 const schema = {
@@ -83,17 +115,17 @@ const schema = {
           )
         }
         <a
-          href={withBase('/hotels/tokyo-disneyland-hotel')}
+          href="#hotel-databases"
           class="inline-flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-paper-deep"
         >
-          打開房型資料庫
+          瀏覽房型資料庫
         </a>
       </div>
 
       <dl class="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-line pt-8">
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">已收錄房型</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{ROOMS.length} 種</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{totalRoomTypes} 種</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">目前文章</dt>
@@ -164,40 +196,48 @@ const schema = {
     </div>
   </section>
 
-  <section class="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-    <div
-      class="overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-brand-deep to-brand text-white"
-    >
-      <div class="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.3fr_1fr] lg:items-center">
-        <div>
-          <p class="text-2xs font-bold tracking-[0.22em] uppercase opacity-80">工具</p>
-          <h2 class="mt-3 font-serif text-2xl leading-snug font-bold sm:text-3xl">
-            {HOTEL.name}房型資料庫
-          </h2>
-          <p class="mt-4 max-w-lg text-[0.9375rem] leading-[1.9] opacity-90">
-            {ROOMS.length}
-            種房型的面積、床型配置、人數上限、景觀分級與參考價，全部整理成可以篩選的清單。訂房前打開它，用你的條件把不適合的濾掉。
-          </p>
-          <a
-            href={withBase('/hotels/tokyo-disneyland-hotel')}
-            class="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-brand-deep transition-transform duration-300 hover:-translate-y-0.5"
+  <section id="hotel-databases" class="mx-auto max-w-6xl scroll-mt-24 px-5 py-16 sm:px-8 sm:py-20">
+    <p class="text-2xs font-bold tracking-[0.22em] text-gold uppercase">工具</p>
+    <h2 class="mt-3 font-serif text-xl font-bold text-ink sm:text-2xl">房型資料庫</h2>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft">
+      把房型名稱拆成可以篩選的規格，再把官方格局、逐月價格與可核對的房號放回同一張卡片。訂房頁開著時直接對照。
+    </p>
+
+    <div class="mt-7 grid gap-6 lg:grid-cols-2">
+      {
+        hotels.map((entry) => (
+          <article
+            class:list={[
+              'flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-gradient-to-br text-white',
+              entry.gradient,
+            ]}
           >
-            打開資料庫 <span aria-hidden="true">→</span>
-          </a>
-        </div>
-        <ul class="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-white/20">
-          {
-            CATEGORIES.map((category) => (
-              <li class="bg-brand-deep/60 px-5 py-6 backdrop-blur-sm">
-                <p class="text-2xs tracking-[0.14em] uppercase opacity-70">{category.label}</p>
-                <p class="mt-1.5 font-serif text-xl font-bold">
-                  {roomsByCategory(category.key).length} 種
-                </p>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
+            <div class="flex flex-1 flex-col p-7 sm:p-8">
+              <p class="text-2xs font-bold tracking-[0.18em] uppercase opacity-75">{entry.kicker}</p>
+              <h3 class="mt-3 font-serif text-xl leading-snug font-bold">{entry.hotel.name}</h3>
+              <p class="mt-3 text-sm leading-[1.85] opacity-90">{entry.description}</p>
+
+              <ul class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-white/20">
+                {entry.categories.map((category) => (
+                  <li class="bg-black/15 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-2xs leading-snug opacity-75">{category.label}</p>
+                    <p class="mt-1 font-serif text-lg font-bold">
+                      {entry.rooms.filter((room) => room.category === category.key).length} 種
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={withBase(entry.href)}
+                class="mt-7 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-ink transition-transform duration-300 hover:-translate-y-0.5"
+              >
+                打開 {entry.rooms.length} 種房型 <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </article>
+        ))
+      }
     </div>
   </section>
 
