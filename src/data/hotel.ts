@@ -128,10 +128,22 @@ export interface RoomNumberEntry {
   balcony: string[];
   /** False when the source could not enumerate every room in the category. */
   complete: boolean;
+  /**
+   * Other room types these numbers may equally belong to. A survey that
+   * enumerates rooms by view level cannot resolve types the hotel now splits by
+   * occupancy, so its numbers pin down a group rather than a single type.
+   */
+  ambiguousWith?: string[];
   note?: string;
 }
 
 export type RoomNumbers = Record<string, RoomNumberEntry>;
+
+/** Two room types a source says can be booked as a connecting pair. */
+export interface ConnectingPair {
+  types: readonly [string, string];
+  note?: string;
+}
 
 /** One official floor-plan drawing, referenced rather than copied. */
 export interface RoomLayoutRef {
