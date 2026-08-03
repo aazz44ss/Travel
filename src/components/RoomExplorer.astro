@@ -28,6 +28,18 @@ const capacityOptions = [
 ];
 
 /**
+ * The survey behind the room numbers enumerated the smaller categories room by
+ * room but only outlined the high-volume standard ones on a floor plan, so the
+ * numbers cover well under the 706 rooms in the hotel. Counted here rather than
+ * written down so the figure cannot drift away from the data.
+ */
+const numbered = Object.values(ROOM_NUMBERS).reduce((sum, entry) => sum + entry.numbers.length, 0);
+const unlistedTypes = ROOMS.filter((room) => {
+  const entry = ROOM_NUMBERS[room.id];
+  return !entry || entry.numbers.length === 0 || !entry.complete;
+});
+
+/**
  * Grouped in the same order as the category filter, cheapest first inside each
  * group, so reading straight down keeps all the character rooms together. The
  * order is fixed: filtering hides cards but never reshuffles them.
@@ -57,6 +69,12 @@ function features(room: Room): string[] {
         <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
           {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
+        </p>
+        <p class="mt-2 max-w-2xl text-xs leading-relaxed text-ink-faint">
+          房號共收錄 {numbered} 間，少於全館的 706 間。缺的集中在
+          {` ${unlistedTypes.length} `}
+          種數量最多的標準房型（精緻客房與精緻凹室客房，含樂園景觀版本）——它們遍布 1 到 9
+          樓，原始調查只在平面圖上圈出範圍，沒有逐間列號。其餘房型是逐間列完的。
         </p>
       </div>
       <p
