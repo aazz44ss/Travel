@@ -7,13 +7,16 @@ import ArticleCard from '~/components/ArticleCard.astro';
 import { LOCALE_META, localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { page } from '~/i18n/pages';
-import { CATEGORIES, HOTEL, ROOMS, roomsByCategory } from '~/data/tokyo-disneyland-hotel';
+import { hotelCopy } from '~/i18n/hotel';
+import { CATEGORY_LABELS } from '~/i18n/rooms';
+import { CATEGORIES, ROOMS, roomsByCategory } from '~/data/tokyo-disneyland-hotel';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
 const { locale } = Astro.props;
 const ui = t(locale);
 const copy = page(locale).home;
+const hotel = hotelCopy(locale);
 
 const articles = (await getCollection('articles'))
   .filter((article) => articleLocale(article.id) === locale)
@@ -82,16 +85,16 @@ const schema = {
       <dl class="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-line pt-8">
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statRooms}</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{ROOMS.length} 種</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{copy.countRooms(ROOMS.length)}</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statArticles}</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{articles.length} 篇</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{copy.countArticles(articles.length)}</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statSources}</dt>
           <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">
-            {articles.reduce((sum, article) => sum + article.data.sources.length, 0)} 筆
+            {copy.countSources(articles.reduce((sum, article) => sum + article.data.sources.length, 0))}
           </dd>
         </div>
       </dl>
@@ -161,11 +164,10 @@ const schema = {
         <div>
           <p class="text-2xs font-bold tracking-[0.22em] uppercase opacity-80">{copy.toolLabel}</p>
           <h2 class="mt-3 font-serif text-2xl leading-snug font-bold sm:text-3xl">
-            {HOTEL.name}房型資料庫
+            {hotel.hotelName}{hotel.titleSuffix}
           </h2>
           <p class="mt-4 max-w-lg text-[0.9375rem] leading-[1.9] opacity-90">
-            {ROOMS.length}
-            種房型的面積、床型配置、人數上限、景觀分級與參考價，全部整理成可以篩選的清單。訂房前打開它，用你的條件把不適合的濾掉。
+            {hotel.heroIntro(ROOMS.length)}
           </p>
           <a
             href={localePath(locale, '/hotels/tokyo-disneyland-hotel')}
@@ -178,9 +180,9 @@ const schema = {
           {
             CATEGORIES.map((category) => (
               <li class="bg-brand-deep/60 px-5 py-6 backdrop-blur-sm">
-                <p class="text-2xs tracking-[0.14em] uppercase opacity-70">{category.label}</p>
+                <p class="text-2xs tracking-[0.14em] uppercase opacity-70">{CATEGORY_LABELS[locale][category.key]}</p>
                 <p class="mt-1.5 font-serif text-xl font-bold">
-                  {roomsByCategory(category.key).length} 種
+                  {copy.countRooms(roomsByCategory(category.key).length)}
                 </p>
               </li>
             ))

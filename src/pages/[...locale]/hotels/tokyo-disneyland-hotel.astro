@@ -15,6 +15,14 @@ import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { hotelCopy } from '~/i18n/hotel';
 import {
+  CATEGORY_LABELS,
+  CATEGORY_PERKS,
+  CATEGORY_SUMMARY,
+  VIEW_DETAIL,
+  VIEW_LABELS,
+  VIEW_SUMMARY,
+} from '~/i18n/rooms';
+import {
   CATEGORIES,
   FAQS,
   HOTEL,
@@ -39,7 +47,7 @@ const description = copy.pageDescription(ROOMS.length, PLAN_ROOMS.length);
 const sections = copy.sections.filter(
   (section) =>
     locale === 'zh-hant' ||
-    !['facilities', 'dining', 'benefits', 'faq'].includes(section.id),
+    !['price-seasons', 'facilities', 'dining', 'benefits', 'faq'].includes(section.id),
 );
 
 const schema = [
@@ -161,16 +169,18 @@ const schema = [
               ]}
             >
               <div class="flex items-baseline justify-between gap-2">
-                <h3 class="font-serif text-base font-bold text-ink">{view.label}</h3>
+                <h3 class="font-serif text-base font-bold text-ink">{VIEW_LABELS[locale][view.key]}</h3>
                 <span class="text-2xs text-ink-faint">
                   {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
                 </span>
               </div>
               <p class="mt-1 text-xs text-ink-faint">
-                {view.labelJa}／{view.labelEn}
+                {locale === 'ja' ? view.labelEn : `${view.labelJa}／${view.labelEn}`}
               </p>
-              <p class="mt-3 text-sm font-medium text-brand-deep">{view.summary}</p>
-              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">{view.detail}</p>
+              <p class="mt-3 text-sm font-medium text-brand-deep">{VIEW_SUMMARY[locale][view.key]}</p>
+              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
+                {locale === 'zh-hant' ? view.detail : VIEW_DETAIL[locale][view.key]}
+              </p>
             </article>
           ))
         }
@@ -187,14 +197,16 @@ const schema = [
           CATEGORIES.map((category) => (
             <article class="rounded-xl border border-line bg-card p-5">
               <div class="flex items-baseline justify-between gap-3">
-                <h3 class="font-serif text-base font-bold text-ink">{category.label}</h3>
+                <h3 class="font-serif text-base font-bold text-ink">{CATEGORY_LABELS[locale][category.key]}</h3>
                 <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
                   {copy.typeCount(roomsByCategory(category.key).length)}
                 </span>
               </div>
-              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">{category.summary}</p>
+              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
+                {CATEGORY_SUMMARY[locale][category.key]}
+              </p>
               <ul class="mt-3 flex flex-wrap gap-1.5">
-                {category.perks.map((perk) => (
+                {CATEGORY_PERKS[locale][category.key]!.map((perk) => (
                   <li class="rounded-full border border-line px-2.5 py-1 text-2xs text-ink-soft">
                     {perk}
                   </li>
@@ -214,9 +226,16 @@ const schema = [
       <RoomExplorer locale={locale} />
     </section>
 
-    <section class="mt-20">
-      <PriceSeasons locale={locale} />
-    </section>
+    {
+      /* The monthly rate analysis is written prose rather than official data, so
+         it stays in Traditional Chinese; the Japanese and English guides state
+         the same seasonal conclusions in their own text. */
+      locale === 'zh-hant' && (
+        <section class="mt-20">
+          <PriceSeasons locale={locale} />
+        </section>
+      )
+    }
 
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>

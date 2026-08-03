@@ -16,7 +16,12 @@ const capacityText = (text: string): string => {
   if (locale === 'zh-hant') return text;
   const max = /以 (\d) 位為限/.exec(text)?.[1];
   const share = /含 (\d) 位不佔床/.exec(text)?.[1];
-  if (!max) return text;
+  if (!max) {
+    /* The crib row states an age limit rather than a headcount. */
+    if (/未滿 18 個月/.test(text))
+      return locale === 'ja' ? '生後 18 か月未満のお子様' : 'Children under 18 months';
+    return '';
+  }
   if (locale === 'ja') return share ? `最大 ${max} 名（うち添い寝 ${share} 名）` : `最大 ${max} 名`;
   return share ? `Up to ${max}, including ${share} sharing` : `Up to ${max}`;
 };
@@ -47,7 +52,7 @@ const FOOTNOTE: Record<Locale, string> = {
             <tr class="align-top transition-colors hover:bg-paper-deep/40">
               <th scope="row" class="px-4 py-3.5 text-left font-bold text-ink">
                 {bedName(bed.name, locale)}
-                <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{locale === 'ja' ? bed.name : bed.nameJa}</span>
+                <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{locale === 'ja' ? '' : locale === 'en' ? bed.nameJa : bed.nameJa}</span>
               </th>
               <td class="px-4 py-3.5 whitespace-nowrap text-ink-soft tabular-nums">{bed.size}</td>
               <td class="px-4 py-3.5 text-ink-soft">{capacityText(bed.capacity)}</td>

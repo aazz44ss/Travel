@@ -1,5 +1,13 @@
 ---
 import { ROOMS, formatYen } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { VIEW_LABELS } from '~/i18n/rooms';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
 
 /**
  * The same room, priced three ways. Isolating a single room type makes the view
@@ -15,26 +23,42 @@ const base = priceOf('精緻客房・2 張標準床');
 const park = priceOf('精緻客房（樂園景觀）');
 const grand = priceOf('精緻客房（樂園全景觀）・2 張標準床');
 
+const LADDER: Record<Locale, { caption: string; sub: string; notes: [string, string, string] }> = {
+  'zh-hant': { caption: '{L.caption}', sub: '{L.sub}', notes: ['窗外是中庭、正門或飯店側面', '斜看樂園，煙火看得到但構圖偏', '正對樂園，全部在 5 樓以上'] },
+  ja: { caption: '同じスーペリアルーム、眺望 3 段階の差額', sub: '2026 年の参考最低料金で比較。客室の仕様は同じで、違うのは窓の外だけです。', notes: ['窓の外は中庭・正面エントランス・建物側面', '斜めからパークが見える。花火は見えるが構図は偏る', 'パークに正対。すべて 5 階以上'] },
+  en: { caption: 'The same Superior room, priced three ways', sub: 'Compared at 2026 reference starting rates. The room is identical; only the window differs.', notes: ['Faces the courtyard, entrance or side of the hotel', 'Sees the park at an angle; fireworks visible, framing off-centre', 'Faces the park head on, all on the 5th floor or above'] },
+};
+const L = LADDER[locale];
+
+const SUMMARY: Record<Locale, (park: number, grand: number) => string> = {
+  'zh-hant': (a, b) =>
+    `換句話說，從沒有景觀升到樂園景觀只要約 ${a.toLocaleString('en-US')} 日圓；再往上升到正面景又要多付約 ${b.toLocaleString('en-US')} 日圓。中間那一階幾乎是所有人都該按下去的按鈕，最後那一階才是真正需要考慮的支出。`,
+  ja: (a, b) =>
+    `眺望なしからパークビューへは約 ${a.toLocaleString('en-US')} 円、そこから正面のグランドビューへはさらに約 ${b.toLocaleString('en-US')} 円。中段はほぼ誰にとっても押すべきボタンで、最後の一段が本当に検討すべき支出です。`,
+  en: (a, b) =>
+    `In other words, going from no view to Park View costs about ¥${a.toLocaleString('en-US')}; going on to the frontal view costs about ¥${b.toLocaleString('en-US')} more. The middle step is one almost everyone should take; the last one is the spend that actually needs thought.`,
+};
+
 const rungs = [
   {
-    view: '無景觀指定',
+    view: VIEW_LABELS[locale].none!,
     price: base,
     delta: null,
-    note: '窗外是中庭、正門或飯店側面',
+    note: L.notes[0],
     tone: 'muted',
   },
   {
-    view: '樂園景觀',
+    view: VIEW_LABELS[locale].park!,
     price: park,
     delta: park - base,
-    note: '斜看樂園，煙火看得到但構圖偏',
+    note: L.notes[1],
     tone: 'mid',
   },
   {
-    view: '樂園全景觀',
+    view: VIEW_LABELS[locale].grand!,
     price: grand,
     delta: grand - base,
-    note: '正對樂園，全部在 5 樓以上',
+    note: L.notes[2],
     tone: 'full',
   },
 ] as const;
@@ -50,9 +74,9 @@ const toneStyle = {
 
 <figure class="not-prose my-10 rounded-xl border border-line bg-card p-5 sm:p-7">
   <figcaption class="mb-5">
-    <p class="font-serif text-base font-bold text-ink">同一間精緻客房，三種景觀的價差</p>
+    <p class="font-serif text-base font-bold text-ink">{L.caption}</p>
     <p class="mt-1 text-xs leading-relaxed text-ink-faint">
-      以 2026 年的參考起價比較。房間規格完全相同，差別只有窗外。
+      {L.sub}
     </p>
   </figcaption>
 
@@ -82,7 +106,6 @@ const toneStyle = {
   </ul>
 
   <p class="mt-5 border-t border-line-soft pt-4 text-[0.8125rem] leading-relaxed text-ink-soft">
-    換句話說，從沒有景觀升到樂園景觀只要約 6,000 日圓；再往上升到正面景又要多付約 8,500
-    日圓。中間那一階幾乎是所有人都該按下去的按鈕，最後那一階才是真正需要考慮的支出。
+    {SUMMARY[locale](park - base, grand - park)}
   </p>
 </figure>

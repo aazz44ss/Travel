@@ -78,7 +78,6 @@ sources:
 import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
-import SocialWall from '~/components/SocialWall.astro';
 import { localePath } from '~/i18n/config';
 
 The Tokyo Disneyland Hotel has 706 guest rooms in four categories, and 457 of them are Standard. The official room page lists 27 names, but one name often hides variants with different beds or occupancy — "Superior Room" covers both a 48 m² room with one double bed and a 40 m² room with two regular beds. Counted apart, that comes to 38 combinations. That number, not the price, is this hotel's real barrier to entry.
@@ -95,7 +94,7 @@ The second thing is the building. It is Victorian, white and gold, and lit at ni
 
 The third is the one most easily missed: **this is the only hotel where you have a chance of seeing Tokyo Disneyland from your room.** MiraCosta and Fantasy Springs look onto DisneySea, and both sit inside their park, which is a different proposition. That possibility is what the next three sections are about.
 
-<Callout type="note" title="About the prices">
+<Callout locale="en" type="note" title="About the prices">
 Every figure here is per room per night for two adults, based on published 2026 rates. A "from" price is the cheapest date of the year; the same room on its dearest date can cost close to twice that. Read them as floors, not budgets.
 </Callout>
 
@@ -107,7 +106,7 @@ From Tokyo Station it is about 15 minutes to Maihama on the JR Keiyō or Musashi
 
 Driving, it is about 5 minutes from the Urayasu or Kasai exit of the Shuto Expressway Bayshore Route. Buses run between the airports and the hotel.
 
-<Callout type="tip" title="Do not drag your luggage into the park">
+<Callout locale="en" type="tip" title="Do not drag your luggage into the park">
 Check-in is 15:00, but your flight probably landed in the morning. Go first to the second floor of the Tokyo Disney Resort Welcome Center, just left of Maihama Station's south exit, where the Disney hotel counter will send your bags to the hotel **free of charge** between 7:30 and 16:00. Head straight into the park; by the time you check in that evening, the bags are in the room.
 
 Going home works in reverse: hand your bags to the hotel's luggage counter (accepted 7:00–12:30) and collect them from the Welcome Center's second floor after 13:00. This direction is **paid** at ¥800 per item. Official pages disagree on the deadline — the hotel's page says 20:00, the Welcome Center's says 21:00 — so plan for 20:00.
@@ -127,7 +126,7 @@ The hotel defines two view terms. In practice you need to understand three state
 
 The ground between the hotel and the park is not empty: the Disney Resort Line's Tokyo Disneyland Station sits in it. The station building has real height, so from a low floor the subject of the view becomes a platform roof rather than a park.
 
-<ViewDiagram />
+<ViewDiagram locale="en" />
 
 That explains an otherwise odd rule. Why is every Park Grand View room on the 5th floor or above? Because below the 5th, even a room pointing straight at the park has its sightline cut by the station, so the hotel does not sell those as that grade.
 
@@ -149,13 +148,13 @@ The conclusion is clean: **if your goal is the projection show, watch it in the 
 
 ### What the view premium looks like
 
-<PriceLadder />
+<PriceLadder locale="en" />
 
 View is only one axis of price, though. The gap between a room's cheapest and dearest date is usually 40 to 60 percent, wider than any view upgrade.
 
 Here is the part that is easy to read wrongly: **July to September hold the cheapest dates of the year, yet they are not low season.** Their floor is the lowest, but their dearest dates reach 44 to 61 percent above it — that is the shape of a school holiday, with expensive weekends and public holidays around a few unusually cheap days. The month that is genuinely cheap throughout is **June, the rainy season**, whose dearest date only reaches +33 percent, the lowest ceiling of the year. The months to avoid are **November and December**, high at both ends. October has a different problem: the smallest spread of the year on a floor already 29 percent up, so there are no cheap days to pick. The month-by-month ranges are in the <a href={localePath('en', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">room database</a>.
 
-<Callout type="key" title="How to choose a view">
+<Callout locale="en" type="key" title="How to choose a view">
 - **Limited budget but you want to see the park** → Park View. About ¥6,000 more, the highest return on any upgrade here.
 - **You want the frontal view, the one in the videos** → Park Grand View, accepting about ¥8,500 over Park View.
 - **You will be in the park all day and the room is for sleeping** → take no view grade and put the ¥14,500 into a good dinner or another day's ticket.
@@ -196,7 +195,7 @@ Someone in Japan walked this hotel room by room and recorded which numbers belon
 
 The official room pages include a plan with the numbers marked. This site cut that drawing into regions, traced each room, and worked along each corridor from a known room to recover the true size and angle of 116 positions — the **interactive, true-proportion plan is in the <a href={localePath('en', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">room database</a>**, where you can find your number after check-in and see which way the window faces.
 
-<Callout type="warn" title="This is for after you have the key card">
+<Callout locale="en" type="warn" title="This is for after you have the key card">
 The hotel does not accept room-number requests, so nothing here can be used as a wish. The source is a 2022 room-by-room survey; the building has not changed, so positions and window orientations still hold. It leans toward character and concierge rooms, though — the most basic standard types were never listed room by room.
 </Callout>
 
@@ -204,7 +203,7 @@ The hotel does not accept room-number requests, so nothing here can be used as a
 
 The official English pages call the 120 cm bed a regular bed. That width misleads a lot of travellers: it is wider than a single at home but a long way from a double, and two adults side by side will be cramped. Full dimensions and occupancy for all eight bed types are in the <a href={localePath('en', '/hotels/tokyo-disneyland-hotel')} class="text-brand underline underline-offset-4 transition-colors hover:text-gold">room database</a>.
 
-<Callout type="tip" title="Working backwards from the bed">
+<Callout locale="en" type="tip" title="Working backwards from the bed">
 **Two adults**: look for room types with a double bed (180 cm). They are usually 48 m², which makes them larger than the 40 m² twins.
 
 **Two adults and two children**: a room with a trundle bed is enough. It stows under a regular bed and its surface is only 27 cm high, so a child rolling off comes to no harm.
@@ -224,7 +223,7 @@ For many people this is the entire reason to stay here. Each of the four is a fu
 
 **Tinker Bell** is built around green and Pixie Hollow, with plants and flowers blown up to absurd scale so you feel shrunk. It and Alice are the cheapest of the four themed rooms at about ¥71,500, or about ¥75,500 for the version with an alcove bed.
 
-<Callout type="warn" title="Two things to know before booking a character room">
+<Callout locale="en" type="warn" title="Two things to know before booking a character room">
 1. **None of them carries a view grade.** All nine character types, including the concierge Cinderella room, are sold without one. The hotel states they face the main entrance, with a footnote reading "some rooms excepted" — a few positions do face the park side. But they are not sold on their view and you cannot request a number, so if you want fireworks from the room, rule the whole category out.
 2. **The Cinderella room exists at two levels, ¥33,500 apart.** Standard from about ¥78,500, concierge from about ¥112,000. The room itself is the same; the difference is the lounge, next-day breakfast and room service. Check which one you are pressing.
 </Callout>
@@ -253,7 +252,7 @@ There are only two suites. **Disney's Magic Kingdom Suite** has one room each on
 
 **Breakfast is the meal to settle early.** Sherwood Garden Restaurant is a buffet with a lower counter for children, where at lunch and dinner they can plate their own food on a Mickey plate. **Where concierge guests eat breakfast is decided by the room type you book**: Superior Room (Park View), Superior Room (Park Grand View), Superior Alcove Room (Park Grand View) and Turret Room eat at Dreamers Lounge; other concierge rooms and the suites can choose in-room or Sherwood Garden, applied for through My Bookings. For restaurant reservations, note that Sherwood Garden and Canna take Priority Seating while Dreamers Lounge only accepts advance orders for some items. If a slot is gone, keep checking — like rooms, cancellations are released.
 
-<Callout type="key" title="A photo route worth planning">
+<Callout locale="en" type="key" title="A photo route worth planning">
 Almost everyone arriving by train misses **Fantasia Plaza**, because it is at the hotel's driveway entrance rather than on the way to the park. The Sorcerer Mickey fountain there is worth the detour — the matching statue that used to stand behind Cinderella Castle has been removed, so this is the only one left in the resort.
 
 The smoothest order is the gap after check-out and before the park: lobby atrium → out the main entrance to Fantasia Plaza → left to the Alice garden → back around to Mickey's Friendship Plaza. All three outdoor spots are within a minute of each other and the whole loop takes under ten minutes. Before eight in the morning has the best light and the fewest people.
@@ -261,9 +260,15 @@ The smoothest order is the gap after check-out and before the park: lobby atrium
 
 ## What social media shows, and what you will meet
 
-Drawn from first-hand stays posted on TikTok, Instagram and Japanese travel blogs, with the emphasis on what the videos leave out.
+Four things worth carrying over from first-hand stays posted on TikTok, Instagram and Japanese blogs.
 
-<SocialWall />
+**The "pull back the curtain" shot is almost always the 7th or 8th floor.** Park Grand View rooms dominate the short video from this hotel, and the framing is identical every time: door handle, entryway, pan to the window, curtain. It sets an expectation that a lower floor will not meet.
+
+**Sherwood Garden is the least photographed spot in the hotel** because you need a room key to get through the gate, so only guests between check-in and check-out can be in it. There is a fountain and a gazebo, lit at night, and because non-guests are filtered out you can take your time with the angle. If you only shoot one set of photos at this hotel, do it here rather than the lobby, which always has people in it.
+
+**Limited-time event rooms are what people actually chase.** Seasonal collaborations sell out faster than anything else and are announced with little notice, so they only work if your dates are flexible.
+
+**Check which way the ceiling rain shower points before you turn it on.** Guests keep reporting the same surprise, and it is easier to notice while dry.
 
 ## Booking, in practice
 
@@ -273,7 +278,7 @@ Drawn from first-hand stays posted on TikTok, Instagram and Japanese travel blog
 
 **If you miss it**: hunt cancellations. This is common knowledge across the Japanese Disney hotels rather than a trick. Guests consistently report that the official site keeps releasing cancelled rooms, so if you did not get what you wanted at the opening, a daily check will often turn it up. Bookmark the booking page and look once a day — better odds than any other technique.
 
-<Callout type="tip" title="Three things to check before you press book">
+<Callout locale="en" type="tip" title="Three things to check before you press book">
 1. **Whether the name has brackets.** No brackets means no view, whatever the price.
 2. **Whether the name says balcony**, if you want one. An ordinary Park Grand View room does not come with a balcony.
 3. **Occupancy counts adults.** Children of 11 and under sharing a bed usually do not count, but bed numbers still cap the room, and the booking system will block combinations that exceed them.
