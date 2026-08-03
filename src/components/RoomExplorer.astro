@@ -26,12 +26,17 @@ const capacityOptions = [
   { value: '5', label: '5 人' },
 ];
 
-const sortOptions = [
-  { value: 'price-asc', label: '最低價：低到高' },
-  { value: 'price-desc', label: '最低價：高到低' },
-  { value: 'size-desc', label: '坪數：大到小' },
-  { value: 'capacity-desc', label: '人數：多到少' },
-];
+/**
+ * Grouped in the same order as the category filter, cheapest first inside each
+ * group, so reading straight down keeps all the character rooms together. The
+ * order is fixed: filtering hides cards but never reshuffles them.
+ */
+const grouped = CATEGORIES.map((category) => ({
+  ...category,
+  rooms: ROOMS.filter((room) => room.category === category.key).sort(
+    (a, b) => a.priceFrom - b.priceFrom,
+  ),
+})).filter((group) => group.rooms.length > 0);
 
 function features(room: Room): string[] {
   const list: string[] = [];
@@ -160,15 +165,7 @@ function features(room: Room): string[] {
       </div>
 
       <div class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-5">
-        <label class="flex items-center gap-2 text-sm text-ink-soft">
-          排序
-          <select
-            data-sort
-            class="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            {sortOptions.map((option) => <option value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
+        <p class="text-sm text-ink-soft">依分類排列，每一類裡由便宜到貴</p>
         <button
           type="button"
           data-reset
@@ -182,15 +179,22 @@ function features(room: Room): string[] {
 
   <ul class="mt-6 grid gap-4 md:grid-cols-2" data-room-list>
     {
-      ROOMS.map((room) => (
+      grouped.flatMap((group) => [
+        <li class="md:col-span-2" data-group={group.key}>
+          <h3 class="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-line pb-2 font-serif text-base font-bold text-ink">
+            {group.label}
+            <span class="text-xs font-normal text-ink-faint" data-group-count>
+              {group.rooms.length} 種
+            </span>
+          </h3>
+        </li>,
+        ...group.rooms.map((room) => (
         <li
           class="group flex h-full flex-col rounded-xl border border-line bg-card p-5 transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5"
           data-room
           data-category={room.category}
           data-view={room.view}
           data-capacity={room.capacity}
-          data-price={room.priceFrom}
-          data-size={room.sizeValue}
           data-alcove={String(room.alcove)}
           data-balcony={String(room.balcony)}
           data-breakfast={String(room.breakfast)}
@@ -275,7 +279,8 @@ function features(room: Room): string[] {
             最低約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚
           </p>
         </li>
-      ))
+        )),
+      ])
     }
   </ul>
 
@@ -294,15 +299,14 @@ function features(room: Room): string[] {
     const list = root.querySelector<HTMLElement>('[data-room-list]');
     const empty = root.querySelector<HTMLElement>('[data-empty]');
     const count = root.querySelector<HTMLElement>('[data-result-count]');
-    const sortSelect = root.querySelector<HTMLSelectElement>('[data-sort]');
     const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
-    if (!list || !empty || !count || !sortSelect || !resetButton) return;
+    if (!list || !empty || !count || !resetButton) return;
 
     const roomList = list;
     const emptyState = empty;
     const resultCount = count;
-    const sorter = sortSelect;
     const cards = Array.from(roomList.querySelectorAll<HTMLElement>('[data-room]'));
+    const groups = Array.from(roomList.querySelectorAll<HTMLElement>('[data-group]'));
 
     function selected(name: string): string {
       const input = root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
@@ -336,33 +340,19 @@ function features(room: Room): string[] {
       resultCount.textContent = `${visible} 種房型`;
       emptyState.classList.toggle('hidden', visible > 0);
       roomList.classList.toggle('hidden', visible === 0);
+
+      // A heading is only useful while its group still has something under it.
+      for (const group of groups) {
+        const shown = cards.filter(
+          (card) => card.dataset.category === group.dataset.group && !card.hidden,
+        ).length;
+        group.hidden = shown === 0;
+        const tally = group.querySelector('[data-group-count]');
+        if (tally) tally.textContent = `${shown} 種`;
+      }
     }
 
-    function sort() {
-      const mode = sorter.value;
-      const ordered = [...cards].sort((a, b) => {
-        const price = (el: HTMLElement) => Number(el.dataset.price);
-        const size = (el: HTMLElement) => Number(el.dataset.size);
-        const seats = (el: HTMLElement) => Number(el.dataset.capacity);
-        switch (mode) {
-          case 'price-desc':
-            return price(b) - price(a);
-          case 'size-desc':
-            return size(b) - size(a) || price(a) - price(b);
-          case 'capacity-desc':
-            return seats(b) - seats(a) || price(a) - price(b);
-          default:
-            return price(a) - price(b);
-        }
-      });
-      for (const card of ordered) roomList.append(card);
-    }
-
-
-    root.addEventListener('change', (event) => {
-      if ((event.target as HTMLElement).closest('[data-sort]')) sort();
-      apply();
-    });
+    root.addEventListener('change', apply);
 
     resetButton.addEventListener('click', () => {
       root
@@ -371,12 +361,9 @@ function features(room: Room): string[] {
       root
         .querySelectorAll<HTMLInputElement>('input[name="filter-flag"]')
         .forEach((input) => (input.checked = false));
-      sortSelect.value = 'price-asc';
-      sort();
       apply();
     });
 
-    sort();
     apply();
   }
 
