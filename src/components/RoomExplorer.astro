@@ -1,57 +1,80 @@
 ---
-import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
-import { annualRange } from '~/data/tdh-rates';
-import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import type {
+  MonthlyRates,
+  Room,
+  RoomCategory,
+  RoomFlag,
+  RoomLayoutSet,
+  RoomNumbers,
+  RoomView,
+} from '~/data/hotel';
+import { annualRangeOf, formatYen, toTwd } from '~/data/hotel';
 import RoomLayout from '~/components/RoomLayout.astro';
 
-const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
-const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
+interface Props {
+  rooms: Room[];
+  categories: RoomCategory[];
+  views: RoomView[];
+  flags: RoomFlag[];
+  rates: MonthlyRates;
+  roomNumbers: RoomNumbers;
+  layouts: RoomLayoutSet;
+  jpyPerTwd: number;
+  /** Tone for each view key, darkest for the best view. */
+  viewStyle: Record<string, string>;
+  /** Border and text colour for each category key. */
+  categoryStyle: Record<string, string>;
+  /** Explains where the room names and the room numbers came from. */
+  provenance: string;
+}
 
-const viewStyle: Record<string, string> = {
-  grand: 'bg-brand text-white',
-  park: 'bg-brand-soft text-brand-deep',
-  none: 'bg-paper-deep text-ink-faint',
-};
+const {
+  rooms,
+  categories,
+  views,
+  flags,
+  rates,
+  roomNumbers,
+  layouts,
+  jpyPerTwd,
+  viewStyle,
+  categoryStyle,
+  provenance,
+} = Astro.props;
 
-const categoryStyle: Record<string, string> = {
-  standard: 'border-line text-ink-soft',
-  character: 'border-berry/30 text-berry',
-  concierge: 'border-gold/40 text-gold',
-  suite: 'border-brand/30 text-brand',
-};
+const categoryLabel = Object.fromEntries(categories.map((c) => [c.key, c.label]));
+const viewLabel = Object.fromEntries(views.map((v) => [v.key, v.label]));
+const badgeFlags = flags.filter((flag) => flag.badge !== false);
+const filterFlags = flags.filter((flag) => flag.filter);
 
+const capacityCeiling = Math.max(...rooms.map((room) => room.capacity));
 const capacityOptions = [
   { value: '0', label: '不限' },
-  { value: '2', label: '2 人以上' },
-  { value: '3', label: '3 人以上' },
-  { value: '4', label: '4 人以上' },
-  { value: '5', label: '5 人' },
+  ...Array.from({ length: capacityCeiling - 1 }, (_, i) => i + 2).map((n) => ({
+    value: String(n),
+    label: n === capacityCeiling ? `${n} 人` : `${n} 人以上`,
+  })),
 ];
 
 /** Counted rather than written down so the figure cannot drift from the data. */
-const numbered = Object.values(ROOM_NUMBERS).reduce((sum, entry) => sum + entry.numbers.length, 0);
+const numbered = Object.values(roomNumbers).reduce((sum, entry) => sum + entry.numbers.length, 0);
 
 /**
  * Grouped in the same order as the category filter, cheapest first inside each
- * group, so reading straight down keeps all the character rooms together. The
- * order is fixed: filtering hides cards but never reshuffles them.
+ * group, so reading straight down keeps one category together. The order is
+ * fixed: filtering hides cards but never reshuffles them.
  */
-const grouped = CATEGORIES.map((category) => ({
-  ...category,
-  rooms: ROOMS.filter((room) => room.category === category.key).sort(
-    (a, b) => a.priceFrom - b.priceFrom,
-  ),
-})).filter((group) => group.rooms.length > 0);
+const grouped = categories
+  .map((category) => ({
+    ...category,
+    rooms: rooms
+      .filter((room) => room.category === category.key)
+      .sort((a, b) => a.priceFrom - b.priceFrom),
+  }))
+  .filter((group) => group.rooms.length > 0);
 
-function features(room: Room): string[] {
-  const list: string[] = [];
-  if (room.alcove) list.push('凹室床');
-  if (room.balcony) list.push('陽台');
-  if (room.lounge) list.push('貴賓室');
-  if (room.breakfast) list.push('含早餐');
-  if (room.accessible) list.push('無障礙');
-  return list;
-}
+const features = (room: Room): string[] =>
+  badgeFlags.filter((flag) => room.flags.includes(flag.key)).map((flag) => flag.label);
 ---
 
 <section id="room-explorer" class="not-prose scroll-mt-24" data-room-explorer>
@@ -60,10 +83,10 @@ function features(room: Room): string[] {
       <div>
         <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
-          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
+          {rooms.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
         </p>
         <p class="mt-2 max-w-2xl text-xs leading-relaxed text-ink-faint">
-          名稱依官方繁中頁，「・」之後是本站為區分床型或人數所加。房號收錄 {numbered} 間，最基本的幾種標準房型來源沒有逐間列號。
+          {provenance.replace('{numbered}', String(numbered))}
         </p>
       </div>
       <p
@@ -71,7 +94,7 @@ function features(room: Room): string[] {
         data-result-count
         aria-live="polite"
       >
-        {ROOMS.length} 種房型
+        {rooms.length} 種房型
       </p>
     </div>
 
@@ -80,7 +103,7 @@ function features(room: Room): string[] {
         <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">分類</legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...CATEGORIES.map((c) => ({ key: c.key, label: c.label }))].map(
+            [{ key: 'all', label: '全部' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map(
               (option, index) => (
                 <label class="cursor-pointer">
                   <input
@@ -104,7 +127,7 @@ function features(room: Room): string[] {
         <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...VIEWS.map((v) => ({ key: v.key, label: v.label }))].map(
+            [{ key: 'all', label: '全部' }, ...views.map((v) => ({ key: v.key, label: v.label }))].map(
               (option, index) => (
                 <label class="cursor-pointer">
                   <input
@@ -155,11 +178,7 @@ function features(room: Room): string[] {
           </legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
-              [
-                { key: 'alcove', label: '凹室床' },
-                { key: 'balcony', label: '陽台' },
-                { key: 'breakfast', label: '含早餐' },
-              ].map((option) => (
+              filterFlags.map((option) => (
                 <label class="cursor-pointer">
                   <input type="checkbox" name="filter-flag" value={option.key} class="peer sr-only" />
                   <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-gold peer-checked:bg-gold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold hover:bg-paper-deep">
@@ -203,9 +222,7 @@ function features(room: Room): string[] {
           data-category={room.category}
           data-view={room.view}
           data-capacity={room.capacity}
-          data-alcove={String(room.alcove)}
-          data-balcony={String(room.balcony)}
-          data-breakfast={String(room.breakfast)}
+          data-flags={room.flags.join(' ')}
         >
           <div class="flex flex-wrap items-center gap-1.5">
             <span
@@ -236,7 +253,7 @@ function features(room: Room): string[] {
           </h3>
           <p class="mt-1 text-xs text-ink-faint">{room.nameJa}</p>
 
-          <RoomLayout room={room} />
+          <RoomLayout room={room} layouts={layouts} />
 
           <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
             <div>
@@ -256,8 +273,8 @@ function features(room: Room): string[] {
             <div>
               <dt class="text-2xs text-ink-faint">價格區間</dt>
               <dd class="mt-0.5 text-sm font-bold text-brand">
-                {annualRange(room.id)
-                  ? `${formatYen(annualRange(room.id)![0])}–${formatYen(annualRange(room.id)![1])}`
+                {annualRangeOf(rates, room.id)
+                  ? `${formatYen(annualRangeOf(rates, room.id)![0])}–${formatYen(annualRangeOf(rates, room.id)![1])}`
                   : `${formatYen(room.priceFrom)} 起`}
               </dd>
             </div>
@@ -284,7 +301,7 @@ function features(room: Room): string[] {
             </p>
           )}
 
-          {ROOM_NUMBERS[room.id] && (
+          {roomNumbers[room.id] && (
             <details class="group/numbers mt-3 rounded-lg border border-line-soft">
               <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-ink-soft transition-colors hover:bg-paper-deep/50">
                 <svg
@@ -298,32 +315,32 @@ function features(room: Room): string[] {
                   <path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                 </svg>
                 房號
-                {ROOM_NUMBERS[room.id]!.numbers.length > 0 ? (
+                {roomNumbers[room.id]!.numbers.length > 0 ? (
                   <span class="font-medium text-ink">
-                    {ROOM_NUMBERS[room.id]!.numbers.length} 間
+                    {roomNumbers[room.id]!.numbers.length} 間
                   </span>
                 ) : (
                   <span class="text-ink-faint">未逐間公布</span>
                 )}
-                {!ROOM_NUMBERS[room.id]!.complete && (
+                {!roomNumbers[room.id]!.complete && (
                   <span class="rounded-full bg-paper-deep px-1.5 py-0.5 text-2xs text-ink-faint">
                     不完整
                   </span>
                 )}
               </summary>
               <div class="border-t border-line-soft px-3 py-2.5">
-                {ROOM_NUMBERS[room.id]!.numbers.length > 0 && (
+                {roomNumbers[room.id]!.numbers.length > 0 && (
                   <ul class="flex flex-wrap gap-1">
-                    {ROOM_NUMBERS[room.id]!.numbers.map((number) => (
+                    {roomNumbers[room.id]!.numbers.map((number) => (
                       <li
                         class:list={[
                           'rounded px-1.5 py-0.5 text-2xs tabular-nums',
-                          ROOM_NUMBERS[room.id]!.balcony.includes(number)
+                          roomNumbers[room.id]!.balcony.includes(number)
                             ? 'bg-gold-soft font-bold text-gold'
                             : 'bg-paper-deep text-ink-soft',
                         ]}
                         title={
-                          ROOM_NUMBERS[room.id]!.balcony.includes(number)
+                          roomNumbers[room.id]!.balcony.includes(number)
                             ? '可以走到戶外陽台'
                             : undefined
                         }
@@ -333,12 +350,12 @@ function features(room: Room): string[] {
                     ))}
                   </ul>
                 )}
-                {ROOM_NUMBERS[room.id]!.balcony.length > 0 && (
+                {roomNumbers[room.id]!.balcony.length > 0 && (
                   <p class="mt-2 text-2xs text-gold">金色標示的房號可以走到戶外陽台。</p>
                 )}
-                {ROOM_NUMBERS[room.id]!.note && (
+                {roomNumbers[room.id]!.note && (
                   <p class="mt-2 text-2xs leading-relaxed text-ink-faint">
-                    {ROOM_NUMBERS[room.id]!.note}
+                    {roomNumbers[room.id]!.note}
                   </p>
                 )}
               </div>
@@ -346,7 +363,7 @@ function features(room: Room): string[] {
           )}
 
           <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            最低約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元／每室每晚
+            最低約新台幣 {toTwd(room.priceFrom, jpyPerTwd).toLocaleString('en-US')} 元／每室每晚
           </p>
         </li>
         )),
@@ -363,8 +380,6 @@ function features(room: Room): string[] {
 </section>
 
 <script>
-  type Flag = 'alcove' | 'balcony' | 'breakfast';
-
   function initRoomExplorer(root: HTMLElement) {
     const list = root.querySelector<HTMLElement>('[data-room-list]');
     const empty = root.querySelector<HTMLElement>('[data-empty]');
@@ -383,10 +398,10 @@ function features(room: Room): string[] {
       return input?.value ?? 'all';
     }
 
-    function activeFlags(): Flag[] {
+    function activeFlags(): string[] {
       return Array.from(
         root.querySelectorAll<HTMLInputElement>('input[name="filter-flag"]:checked'),
-      ).map((input) => input.value as Flag);
+      ).map((input) => input.value);
     }
 
     function apply() {
@@ -397,11 +412,12 @@ function features(room: Room): string[] {
 
       let visible = 0;
       for (const card of cards) {
+        const carried = (card.dataset.flags ?? '').split(' ');
         const matches =
           (category === 'all' || card.dataset.category === category) &&
           (view === 'all' || card.dataset.view === view) &&
           Number(card.dataset.capacity) >= capacity &&
-          flags.every((flag) => card.dataset[flag] === 'true');
+          flags.every((flag) => carried.includes(flag));
 
         card.hidden = !matches;
         if (matches) visible += 1;
