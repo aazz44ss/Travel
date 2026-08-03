@@ -1,6 +1,5 @@
 ---
 import { CATEGORIES, ROOMS, VIEWS, formatYen, toTwd, type Room } from '~/data/tokyo-disneyland-hotel';
-import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
 
 const categoryLabel = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
 const viewLabel = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]));
@@ -50,7 +49,7 @@ function features(room: Room): string[] {
       <div>
         <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
         <p class="mt-1.5 text-sm text-ink-soft">
-          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。參考價為 2026 年的每室每晚起價。
+          {ROOMS.length} 種房型，用你在意的條件篩掉不適合的。參考價是公開費率表中該房型的最低價位，落在淡季的平日；週末、連假或旺季通常會比這個數字高三到九成。
         </p>
       </div>
       <p
@@ -267,66 +266,6 @@ function features(room: Room): string[] {
             </p>
           )}
 
-          {ROOM_NUMBERS[room.id] && (
-            <details class="group/numbers mt-3 rounded-lg border border-line-soft">
-              <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-ink-soft transition-colors hover:bg-paper-deep/50">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  class="shrink-0 transition-transform duration-200 group-open/numbers:rotate-45"
-                  aria-hidden="true"
-                >
-                  <path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                </svg>
-                房號
-                {ROOM_NUMBERS[room.id]!.numbers.length > 0 ? (
-                  <span class="font-medium text-ink">
-                    {ROOM_NUMBERS[room.id]!.numbers.length} 間
-                  </span>
-                ) : (
-                  <span class="text-ink-faint">未逐間公布</span>
-                )}
-                {!ROOM_NUMBERS[room.id]!.complete && (
-                  <span class="rounded-full bg-paper-deep px-1.5 py-0.5 text-2xs text-ink-faint">
-                    不完整
-                  </span>
-                )}
-              </summary>
-              <div class="border-t border-line-soft px-3 py-2.5">
-                {ROOM_NUMBERS[room.id]!.numbers.length > 0 && (
-                  <ul class="flex flex-wrap gap-1">
-                    {ROOM_NUMBERS[room.id]!.numbers.map((number) => (
-                      <li
-                        class:list={[
-                          'rounded px-1.5 py-0.5 text-2xs tabular-nums',
-                          ROOM_NUMBERS[room.id]!.balcony.includes(number)
-                            ? 'bg-gold-soft font-bold text-gold'
-                            : 'bg-paper-deep text-ink-soft',
-                        ]}
-                        title={
-                          ROOM_NUMBERS[room.id]!.balcony.includes(number)
-                            ? '可以走到戶外陽台'
-                            : undefined
-                        }
-                      >
-                        {number}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {ROOM_NUMBERS[room.id]!.balcony.length > 0 && (
-                  <p class="mt-2 text-2xs text-gold">金色標示的房號可以走到戶外陽台。</p>
-                )}
-                {ROOM_NUMBERS[room.id]!.note && (
-                  <p class="mt-2 text-2xs leading-relaxed text-ink-faint">
-                    {ROOM_NUMBERS[room.id]!.note}
-                  </p>
-                )}
-              </div>
-            </details>
-          )}
 
           <p class="mt-auto pt-4 text-2xs text-ink-faint">
             約新台幣 {toTwd(room.priceFrom).toLocaleString('en-US')} 元起／每室每晚
