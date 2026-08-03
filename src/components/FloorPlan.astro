@@ -383,17 +383,20 @@ const payload = cells.map((cell, index) => ({
       const visible = f === null ? roomNumbers : roomNumbers.filter((n) => Number(n[0]) === f);
 
       if (hint) hint.textContent = cell.bar;
-      if (label) label.textContent = cell.code ? `位置 ${cell.code}` : '房號未公布的位置';
+      if (label) label.textContent = `位置 ${cell.code}`;
       if (toneBadge) {
         toneBadge.textContent = badge;
         toneBadge.style.background = fill;
         toneBadge.style.color = text;
         toneBadge.classList.remove('hidden');
       }
-      if (blurb)
-        blurb.textContent = cell.code
-          ? `${cell.type}。${cell.facing === 'park' ? '這一側面向東京迪士尼樂園。' : cell.facing === 'entrance' ? '這一側面向飯店正門。' : '這一側面向建築側面或中庭。'}`
-          : `${cell.type}。${cell.facing === 'park' ? '這一側面向東京迪士尼樂園。' : cell.facing === 'entrance' ? '這一側面向飯店正門。' : '這一側面向建築側面或中庭。'}房間確實存在，但原始調查沒有公布房號——這幾個類別各有數十間，只用平面圖標了範圍。`;
+      const where =
+        cell.facing === 'park'
+          ? '這一側面向東京迪士尼樂園。'
+          : cell.facing === 'entrance'
+            ? '這一側面向飯店正門。'
+            : '這一側面向建築側面或中庭。';
+      if (blurb) blurb.textContent = `${cell.type}。${where}`;
 
       if (facts) {
         const rows = [];
