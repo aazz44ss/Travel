@@ -184,7 +184,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '禮賓房 塔樓客房',
     tone: 'turret',
     facing: 'park',
-    bed: '兩張標準床',
+    bed: '2 張標準床',
     poly: [
       919.5, 344, 907.5, 344, 901, 336.5, 901, 329.5, 904.5, 324, 925.5, 306, 927.5, 306, 937, 316.5,
       926, 326.5, 925, 338.5
@@ -195,7 +195,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'side',
-    bed: '三張標準床',
+    bed: '3 張標準床',
     poly: [570.5, 212, 539.5, 211, 529, 199.5, 544.5, 184, 557.5, 197, 571, 198.5],
   },
   {
@@ -203,7 +203,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'side',
-    bed: '三張標準床',
+    bed: '3 張標準床',
     poly: [613.5, 211, 581.5, 211, 580, 209.5, 580, 198.5, 581.5, 197, 596.5, 198, 610.5, 184, 625, 197.5],
   },
   {
@@ -278,7 +278,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
   },
   {
     code: '213',
-    type: '尊爵客房（4 名對應）',
+    type: '尊爵客房・4 位',
     tone: 'inner',
     facing: 'side',
     poly: [570.5, 308, 540.5, 308, 539, 305.5, 539, 295.5, 540.5, 294, 571.5, 294, 572, 306.5],
@@ -323,7 +323,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '樂園全景觀客房',
     tone: 'grand',
     facing: 'park',
-    bed: '兩張標準床・40 m²',
+    bed: '2 張標準床・40 m²',
     poly: [621.5, 353, 609.5, 353, 608, 350.5, 608, 319.5, 609.5, 317, 623, 317.5, 623, 351.5],
   },
   {
@@ -331,7 +331,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '樂園全景觀客房',
     tone: 'grand',
     facing: 'park',
-    bed: '雙人床・48 m²',
+    bed: '1 張雙人床・48 m²',
     poly: [637.5, 343, 625, 342.5, 625.5, 309, 638, 309.5],
   },
   {
@@ -346,7 +346,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '家庭客房（樂園景觀）',
     tone: 'park',
     facing: 'park',
-    bed: '5 人・93 m²',
+    bed: '5 位・93 m²',
     poly: [516.5, 187, 514.5, 185, 501.5, 185, 500, 178.5, 500, 152.5, 512.5, 139, 514.5, 139, 539, 164.5],
   },
   {
@@ -382,7 +382,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '兩張標準床＋凹室床',
+    bed: '2 張標準床＋凹室床',
     poly: [483.5, 57, 470, 56.5, 469, 18.5, 474.5, 12, 478.5, 12, 484, 16.5],
   },
   {
@@ -390,7 +390,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [468.5, 57, 455, 56.5, 455.5, 24, 468, 24.5],
   },
   {
@@ -398,7 +398,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '3 人',
+    bed: '3 位',
     poly: [452.5, 57, 439, 56.5, 439.5, 25, 453, 25.5],
   },
   {
@@ -406,7 +406,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [436.5, 57, 423, 56.5, 423, 26.5, 424.5, 25, 438, 25.5, 438, 51.5],
   },
   {
@@ -414,7 +414,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '兩張標準床＋凹室床',
+    bed: '2 張標準床＋凹室床',
     poly: [421.5, 57, 408, 56.5, 408, 16.5, 412.5, 13, 418.5, 13, 422, 16.5],
   },
   {
@@ -457,7 +457,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '家庭客房（樂園景觀）',
     tone: 'park',
     facing: 'park',
-    bed: '5 人・93 m²',
+    bed: '5 位・93 m²',
     poly: [392.5, 185, 375.5, 185, 354, 164.5, 378.5, 138, 393, 152.5],
   },
   {
@@ -517,7 +517,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'side',
-    bed: '三張標準床',
+    bed: '3 張標準床',
     poly: [341.5, 213, 322.5, 212, 322, 199.5, 335.5, 199, 349.5, 184, 364, 198.5, 351.5, 212],
   },
   {
@@ -525,7 +525,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'side',
-    bed: '三張標準床',
+    bed: '3 張標準床',
     poly: [309.5, 213, 279.5, 213, 268, 199.5, 283.5, 183, 299.5, 199, 313, 199.5, 313, 211.5],
   },
   {
@@ -600,7 +600,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
   },
   {
     code: '513',
-    type: '尊爵客房（4 名對應）',
+    type: '尊爵客房・4 位',
     tone: 'inner',
     facing: 'side',
     poly: [352.5, 309, 323.5, 309, 323, 294.5, 352.5, 294],
@@ -645,7 +645,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '樂園全景觀客房',
     tone: 'grand',
     facing: 'park',
-    bed: '兩張標準床・40 m²',
+    bed: '2 張標準床・40 m²',
     poly: [283.5, 354, 271.5, 354, 270, 352.5, 270.5, 319, 283.5, 319, 285, 320.5, 285, 351.5],
   },
   {
@@ -653,7 +653,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '樂園全景觀客房',
     tone: 'grand',
     facing: 'park',
-    bed: '雙人床・48 m²',
+    bed: '1 張雙人床・48 m²',
     poly: [267.5, 345, 254, 344.5, 254.5, 311, 268, 311.5],
   },
   {
@@ -668,7 +668,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '兩張標準床・4 人',
+    bed: '2 張標準床・4 位',
     poly: [
       254.5, 143, 253, 141.5, 254, 110.5, 258, 108.5, 258, 104.5, 262.5, 100, 270.5, 100, 275, 104.5,
       275, 112.5, 270.5, 118, 267, 119.5, 268, 141.5
@@ -679,7 +679,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼美女與野獸客房',
     tone: 'entrance',
     facing: 'park',
-    bed: '兩張標準床・3 人',
+    bed: '2 張標準床・3 位',
     poly: [254.5, 187, 252.5, 185, 238, 184.5, 238.5, 152, 250.5, 152, 251, 165.5, 259.5, 166, 267, 174.5],
   },
   {
@@ -687,7 +687,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [250.5, 143, 239.5, 143, 238, 141.5, 237.5, 110, 248.5, 109, 252, 110.5, 252, 141.5],
   },
   {
@@ -702,7 +702,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [235.5, 143, 222, 142.5, 222.5, 110, 236, 110.5],
   },
   {
@@ -717,7 +717,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [219.5, 143, 207, 142.5, 207, 110.5, 209.5, 109, 221, 110.5, 221, 141.5],
   },
   {
@@ -732,7 +732,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [204.5, 143, 191, 142.5, 190, 110.5, 192.5, 109, 205, 110.5],
   },
   {
@@ -747,7 +747,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [188.5, 143, 175, 142.5, 175.5, 110, 179.5, 109, 189, 110.5],
   },
   {
@@ -762,7 +762,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼愛麗絲夢遊仙境客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '凹室',
+    bed: '凹室床',
     poly: [172.5, 143, 159, 142.5, 159.5, 110, 168.5, 109, 174, 110.5, 174, 141.5],
   },
   {
@@ -784,7 +784,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '小家庭客房（樂園景觀）',
     tone: 'park',
     facing: 'park',
-    bed: '三張標準床',
+    bed: '3 張標準床',
     poly: [
       106.5, 183, 94.5, 182, 91, 177.5, 122.5, 149, 125.5, 152, 142, 152.5, 142, 172.5, 140.5, 174,
       116.5, 174
@@ -795,7 +795,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '尊爵客房',
     tone: 'inner',
     facing: 'side',
-    bed: '兩張標準床',
+    bed: '2 張標準床',
     poly: [90.5, 176, 87, 173.5, 87, 160.5, 112.5, 137, 122, 147.5],
   },
   {
@@ -810,7 +810,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [118.5, 129, 110, 120.5, 110, 118.5, 134.5, 96, 142, 106.5, 138.5, 112],
   },
   {
@@ -825,7 +825,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [108.5, 118, 99, 107.5, 99, 105.5, 124.5, 84, 133, 94.5],
   },
   {
@@ -840,7 +840,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [97.5, 105, 88, 93.5, 113.5, 71, 123, 82.5],
   },
   {
@@ -855,7 +855,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [87.5, 92, 77, 81.5, 103.5, 59, 112, 69.5],
   },
   {
@@ -870,7 +870,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [76.5, 80, 67, 69.5, 91.5, 47, 93.5, 47, 102, 57.5],
   },
   {
@@ -885,7 +885,7 @@ export const PLAN_ROOMS: PlanRoom[] = [
     type: '迪士尼小仙子客房',
     tone: 'entrance',
     facing: 'entrance',
-    bed: '4 人・凹室',
+    bed: '4 位＋凹室床',
     poly: [66.5, 68, 59, 61.5, 56, 56.5, 81.5, 34, 91, 45.5],
   },
   {
