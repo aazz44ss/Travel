@@ -398,6 +398,7 @@ export const ROOMS: Room[] = [
     breakfast: false,
     accessible: false,
     verdict: '位在建築轉角，兩面採光。59 平方公尺卻只要標準房的價位。',
+    note: '全飯店只有 3215、3515 兩間。這一整欄由下往上是：3 樓景隅客房、4–7 樓塔樓客房、8–9 樓套房，越高等級越高。',
   },
   {
     id: 'std-corner-pv',
@@ -804,7 +805,7 @@ export const ROOMS: Room[] = [
     breakfast: true,
     accessible: false,
     verdict: '位在飯店的圓形小塔裡，窗戶朝多個方向。房間本身沒有景觀保證，但形狀獨一無二。',
-    note: '有住客回報 7 樓的雙床塔樓客房可以走到戶外，但 2026 年 4 月後無法指定樓層。',
+    note: '房號 3121、4121、5121、6121、7121，全飯店只有五間，一層一間。有住客回報 7 樓的雙床塔樓客房可以走到戶外，但 2026 年 4 月後無法指定樓層。',
   },
   {
     id: 'conc-turret-double',
@@ -825,6 +826,7 @@ export const ROOMS: Room[] = [
     breakfast: true,
     accessible: false,
     verdict: '59 平方公尺的塔樓，是進入禮賓房層級最便宜的路徑之一。',
+    note: '房號結尾是 215 與 515，也就是正面兩座角塔。同一欄的 8–9 樓就是套房，等於用禮賓房的價格住進套房的正下方。',
   },
   {
     id: 'conc-cinderella',
@@ -854,7 +856,7 @@ export const ROOMS: Room[] = [
     name: '迪士尼魔法王國套房（8 樓）',
     nameJa: 'ディズニー・マジックキングダム・スイート（8階）',
     category: 'suite',
-    view: 'grand',
+    view: 'park',
     capacity: 3,
     coSleepers: 2,
     beds: '2 張標準床 ＋ 凹室床',
@@ -868,14 +870,14 @@ export const ROOMS: Room[] = [
     breakfast: true,
     accessible: false,
     verdict: '99 平方公尺、兩座洗手台、淋浴間與浴缸分離。8 樓的版本不能走到陽台。',
-    note: '官方客房一覽未標註景觀分類，但套房位於 8–9 樓的樂園側。',
+    note: '房號 8215 與 8515，位在飯店正面兩側角塔的頂端。官方客房一覽沒有給套房景觀分類，實際是從塔樓的角度看出去，正面與側面都有窗。'
   },
   {
     id: 'suite-magic-kingdom-9f',
     name: '迪士尼魔法王國套房（9 樓）',
     nameJa: 'ディズニー・マジックキングダム・スイート（9階）',
     category: 'suite',
-    view: 'grand',
+    view: 'park',
     capacity: 3,
     coSleepers: 2,
     beds: '2 張標準床 ＋ 凹室床',
@@ -889,14 +891,14 @@ export const ROOMS: Room[] = [
     breakfast: true,
     accessible: false,
     verdict: '和 8 樓同格局，但可以走到陽台上。多付 30,000 日圓買的就是那一道門。',
-    note: '官方客房一覽未標註景觀分類，但套房位於 8–9 樓的樂園側。',
+    note: '全飯店只有 9515 一間，位在角塔的最頂層。官方客房一覽沒有給套房景觀分類。'
   },
   {
     id: 'suite-walt-disney',
     name: '華特・迪士尼套房',
     nameJa: 'ウォルト・ディズニー・スイート',
     category: 'suite',
-    view: 'grand',
+    view: 'park',
     capacity: 2,
     coSleepers: 2,
     beds: '1 張 King size 雙人床',
@@ -910,7 +912,7 @@ export const ROOMS: Room[] = [
     breakfast: true,
     accessible: false,
     verdict: '235 平方公尺、房內有米奇銅像，全年一價 600,000 日圓。住客可確保參加園區導覽行程。',
-    note: '官方客房一覽未標註景觀分類，但套房位於 9 樓的樂園側。',
+    note: '全飯店唯一的 9215 號房，位在另一座角塔的最頂層。官方客房一覽沒有給套房景觀分類。'
   },
 ];
 

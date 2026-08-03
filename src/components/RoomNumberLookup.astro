@@ -1,0 +1,240 @@
+---
+import { ROOMS, VIEWS, CATEGORIES } from '~/data/tokyo-disneyland-hotel';
+import { KNOWN_ROOM_NUMBERS, ROOM_NUMBERS, ROOM_NUMBER_COUNT } from '~/data/tdh-room-numbers';
+
+const roomById = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
+const viewByKey = Object.fromEntries(VIEWS.map((view) => [view.key, view]));
+const categoryByKey = Object.fromEntries(CATEGORIES.map((category) => [category.label, category]));
+
+/**
+ * What the window actually gives you. Only the two labelled view classes carry
+ * an official guarantee, so everything else is described as "not guaranteed"
+ * rather than "no view" — except character rooms, which the hotel states face
+ * the main entrance.
+ */
+function outlookFor(view: string, isCharacter: boolean) {
+  if (view === 'grand') {
+    return { castle: '看得到，而且是正面', headline: '正對東京迪士尼樂園' };
+  }
+  if (view === 'park') {
+    return { castle: '看得到，但角度偏斜', headline: '看得到樂園，位置偏側面' };
+  }
+  if (isCharacter) {
+    return { castle: '看不到', headline: '官方說明明星房面向飯店正門側，看不到樂園也看不到煙火' };
+  }
+  return {
+    castle: '沒有保證',
+    headline: '官方沒有給這個房型景觀分類，窗外可能是中庭、正門或建築側面，不保證看得到樂園',
+  };
+}
+
+const index = KNOWN_ROOM_NUMBERS.map((hit) => {
+  const room = roomById[hit.roomId];
+  if (!room) throw new Error(`Unknown room type: ${hit.roomId}`);
+  const look = outlookFor(room.view, room.category === 'character');
+  return {
+    number: hit.number,
+    floor: hit.floor,
+    // A room can have a balcony because its whole category does, or because the
+    // survey flagged that specific number.
+    balcony: hit.balcony || room.balcony,
+    view: room.view,
+    name: room.name,
+    category: CATEGORIES.find((c) => c.key === room.category)?.label ?? '',
+    size: room.size,
+    capacity: room.capacity,
+    castle: look.castle,
+    headline: look.headline,
+    note: room.note ?? '',
+  };
+});
+
+const grandCount = index.filter((entry) => entry.view === 'grand').length;
+const parkCount = index.filter((entry) => entry.view === 'park').length;
+const balconyCount = index.filter((entry) => entry.balcony).length;
+const incomplete = Object.values(ROOM_NUMBERS).filter((entry) => !entry.complete).length;
+
+void categoryByKey;
+void viewByKey;
+---
+
+<section id="room-number" class="not-prose scroll-mt-32" data-room-lookup>
+  <div class="overflow-hidden rounded-2xl border border-line bg-card">
+    <div class="border-b border-line bg-paper-deep/50 px-5 py-6 sm:px-7">
+      <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房號查詢</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
+        辦好入住、拿到房卡之後，把房號打進去，就知道等一下拉開窗簾會看到什麼。目前收錄
+        {ROOM_NUMBER_COUNT} 個房號，其中 {grandCount} 間正對樂園、{parkCount} 間看得到樂園、{
+          balconyCount
+        } 間可以走到戶外陽台。
+      </p>
+
+      <div class="mt-5 flex flex-wrap items-center gap-3">
+        <label class="relative">
+          <span class="sr-only">輸入房號</span>
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="4"
+            placeholder="例如 6222"
+            autocomplete="off"
+            data-lookup-input
+            class="w-44 rounded-full border border-line bg-card px-5 py-3 font-serif text-lg tracking-[0.2em] text-ink tabular-nums transition-colors placeholder:text-base placeholder:tracking-normal placeholder:text-ink-faint focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          />
+        </label>
+        <p class="text-xs text-ink-faint">房號的第一碼就是樓層</p>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-2" data-examples>
+        <span class="self-center text-xs text-ink-faint">試試看：</span>
+        {
+          ['6222', '9215', '3604', '8401'].map((sample) => (
+            <button
+              type="button"
+              data-sample={sample}
+              class="rounded-full border border-line bg-card px-3 py-1 text-xs text-ink-soft tabular-nums transition-colors hover:bg-paper-deep hover:text-ink"
+            >
+              {sample}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="px-5 py-6 sm:px-7">
+      <p class="text-sm text-ink-faint" data-lookup-idle>輸入四位數房號後，結果會顯示在這裡。</p>
+
+      <p class="hidden rounded-xl border border-dashed border-line bg-paper-deep/40 px-4 py-5 text-sm text-ink-soft" data-lookup-miss>
+        資料裡沒有這個房號。原始調查對房間數量特別多的類別（精緻客房、精緻客房樂園景觀、精緻凹室客房樂園景觀）只用平面圖標示範圍，沒有逐間列出，共有
+        {incomplete} 個類別屬於這種情況。如果你的房號查不到，很可能就是其中之一。
+      </p>
+
+      <div class="hidden" data-lookup-hit>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="font-serif text-3xl font-bold text-ink tabular-nums" data-hit-number></p>
+            <p class="mt-1 text-sm text-ink-soft">
+              <span data-hit-floor></span> ・ <span data-hit-category></span>
+            </p>
+          </div>
+          <span
+            class="rounded-full px-3.5 py-1.5 text-sm font-bold"
+            data-hit-view-badge
+            data-tone=""></span>
+        </div>
+
+        <p class="mt-4 font-serif text-lg font-bold text-brand-deep" data-hit-name></p>
+
+        <dl class="mt-5 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
+          <div class="bg-card px-4 py-4">
+            <dt class="text-2xs tracking-[0.12em] text-ink-faint uppercase">看得到城堡嗎</dt>
+            <dd class="mt-1 text-sm font-bold text-ink" data-hit-castle></dd>
+          </div>
+          <div class="bg-card px-4 py-4">
+            <dt class="text-2xs tracking-[0.12em] text-ink-faint uppercase">陽台</dt>
+            <dd class="mt-1 text-sm font-bold text-ink" data-hit-balcony></dd>
+          </div>
+          <div class="bg-card px-4 py-4">
+            <dt class="text-2xs tracking-[0.12em] text-ink-faint uppercase">面積／人數</dt>
+            <dd class="mt-1 text-sm font-bold text-ink" data-hit-spec></dd>
+          </div>
+        </dl>
+
+        <p class="mt-4 border-l-2 border-gold pl-3 text-[0.875rem] leading-[1.9] text-ink-soft" data-hit-outlook></p>
+
+        <p
+          class="mt-3 hidden rounded-lg bg-paper-deep/70 px-3.5 py-2.5 text-[0.8125rem] leading-relaxed text-ink-soft"
+          data-hit-note></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ index }}>
+  (() => {
+    const root = document.querySelector('[data-room-lookup]');
+    if (!root) return;
+
+    const input = root.querySelector('[data-lookup-input]');
+    const idle = root.querySelector('[data-lookup-idle]');
+    const miss = root.querySelector('[data-lookup-miss]');
+    const hit = root.querySelector('[data-lookup-hit]');
+    if (!input || !idle || !miss || !hit) return;
+
+    const table = new Map(index.map((entry) => [entry.number, entry]));
+
+    const badgeTone = {
+      grand: 'background-color: var(--color-brand); color: #fff;',
+      park: 'background-color: var(--color-brand-soft); color: var(--color-brand-deep);',
+      none: 'background-color: var(--color-paper-deep); color: var(--color-ink-soft);',
+    };
+
+    const viewLabel = { grand: '樂園全景觀', park: '樂園景觀', none: '無景觀指定' };
+
+    const set = (selector, value) => {
+      const node = hit.querySelector(selector);
+      if (node) node.textContent = value;
+    };
+
+    function render() {
+      const value = input.value.replace(/\D/g, '').slice(0, 4);
+      if (input.value !== value) input.value = value;
+
+      if (value.length < 4) {
+        idle.classList.remove('hidden');
+        miss.classList.add('hidden');
+        hit.classList.add('hidden');
+        return;
+      }
+
+      const entry = table.get(value);
+      idle.classList.add('hidden');
+
+      if (!entry) {
+        miss.classList.remove('hidden');
+        hit.classList.add('hidden');
+        return;
+      }
+
+      miss.classList.add('hidden');
+      hit.classList.remove('hidden');
+
+      set('[data-hit-number]', entry.number);
+      set('[data-hit-floor]', `${entry.floor} 樓`);
+      set('[data-hit-category]', entry.category);
+      set('[data-hit-name]', entry.name);
+      set('[data-hit-castle]', entry.castle);
+      set('[data-hit-balcony]', entry.balcony ? '可以走到戶外' : '無');
+      set('[data-hit-spec]', `${entry.size} m² ／ 上限 ${entry.capacity} 位`);
+
+      const outlookNode = hit.querySelector('[data-hit-outlook]');
+      if (outlookNode) {
+        outlookNode.textContent = entry.balcony
+          ? `${entry.headline}。這一間還可以打開門走到戶外陽台，是全飯店少數做得到的房間。`
+          : `${entry.headline}。`;
+      }
+
+      const noteNode = hit.querySelector('[data-hit-note]');
+      if (noteNode) {
+        noteNode.textContent = entry.note;
+        noteNode.classList.toggle('hidden', !entry.note);
+      }
+
+      const badge = hit.querySelector('[data-hit-view-badge]');
+      if (badge) {
+        badge.textContent = viewLabel[entry.view];
+        badge.setAttribute('style', badgeTone[entry.view]);
+      }
+    }
+
+    input.addEventListener('input', render);
+    root.querySelectorAll('[data-sample]').forEach((button) => {
+      button.addEventListener('click', () => {
+        input.value = button.dataset.sample ?? '';
+        render();
+        input.focus();
+      });
+    });
+    render();
+  })();
+</script>
