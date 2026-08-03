@@ -15,7 +15,7 @@ tags:
   - 親子旅行
   - 日本住宿
   - 房型比較
-  - 房號查詢
+  - 客房平面圖
 takeaways:
   - 想在房間看到樂園，只有房名寫著「樂園景觀」或「樂園全景觀」的房型才算數；沒有標註景觀的房間窗外是中庭或正門，完全看不到。
   - 2026 年 4 月 1 日起飯店取消了依樓層區分的客房分類，價格也一律化。好處是低樓層不用再多付錢，代價是你再也不能指定樓層，視野變成抽卡。
@@ -98,7 +98,6 @@ import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
 import BenefitList from '~/components/BenefitList.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
-import RoomNumberLookup from '~/components/RoomNumberLookup.astro';
 import FloorPlan from '~/components/FloorPlan.astro';
 import SocialWall from '~/components/SocialWall.astro';
 import FaqList from '~/components/FaqList.astro';
@@ -239,13 +238,9 @@ import { withBase } from '~/consts';
 - **後三碼是位置。** 同一組後三碼在不同樓層是垂直堆疊的同一個位置。所以 5222、6222、7222、8222 是同一面窗戶，只是高度不同。
 - **後三碼決定景觀。** 216 到 222、401 到 407、516 到 522 這幾組全部是正面景；105 到 107 是側面的樂園景觀；600 開頭的整批是迪士尼明星房，面向飯店正門。
 
-<RoomNumberLookup />
-
-### 這些號碼在建築上的哪裡
-
 各房型頁附的平面圖把每一間房的房號都標了出來。我把那張圖切割成區域、逐間描出輪廓，再沿著每條走廊從一間已知的房間往下推，還原出 116 間客房的實際位置、大小與角度。
 
-所以下面這張圖不是示意圖：家庭客房看起來就是標準房的兩倍半大，因為它真的是 93 對 40 平方公尺；走廊的轉角是真的轉角；西翼確實是斜的。
+所以下面這張圖不是示意圖：家庭客房看起來就是標準房的兩倍半大，因為它真的是 93 對 40 平方公尺；走廊的轉角是真的轉角；西翼確實是斜的。拿到房卡之後，在圖上找到你的號碼，就知道窗戶朝哪一邊。
 
 <FloorPlan />
 

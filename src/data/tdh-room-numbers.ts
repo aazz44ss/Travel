@@ -272,5 +272,3 @@ const INDEX: Map<string, RoomNumberHit> = new Map(
 export const KNOWN_ROOM_NUMBERS: RoomNumberHit[] = [...INDEX.values()].sort((a, b) =>
   a.number.localeCompare(b.number),
 );
-
-export const ROOM_NUMBER_COUNT = INDEX.size;
