@@ -99,6 +99,7 @@ import Callout from '~/components/Callout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
+import PriceSeasons from '~/components/PriceSeasons.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
@@ -126,7 +127,7 @@ import { withBase } from '~/consts';
 第三個，也是最容易被忽略的：**這是唯一一間，你有機會在房間裡看到「東京迪士尼樂園」的飯店。**（觀海景大飯店與夢幻泉鄉大飯店看得到的是迪士尼海洋，而且它們是直接蓋在園區裡，性質不一樣。）而這件事，正是接下來三個章節要拆解的重點。
 
 <Callout type="note" title="關於價格">
-本文出現的所有金額都是「每室每晚、2 位大人」的參考起價，以 2026 年公布的費率為基準。迪士尼飯店的房價會依日期大幅浮動，同一間房淡季與旺季的差距可以到 5 萬日圓以上。請把這些數字當成「房型之間的相對關係」來看，不要當成報價。
+本文出現的金額都是「每室每晚、2 位大人」，以公開的 2026 年費率為基準。單看一個「起價」會誤導——那是淡季平日的價格，同一間房遇到旺季的週末可能是它的兩倍。所以下面另外整理了逐月的價格區間，看得到平假日與淡旺季各佔多少。
 </Callout>
 
 ## 位置：離樂園近到會改變行程
@@ -201,6 +202,10 @@ import { withBase } from '~/consts';
 ### 價差長什麼樣子
 
 <PriceLadder />
+
+不過景觀只是價格的一個維度。同一間房在淡季平日和旺季週末之間的差距，往往比升級景觀還大：
+
+<PriceSeasons />
 
 <Callout type="key" title="景觀的選擇邏輯">
 - **預算有限、又想看到樂園** → 選「樂園景觀」。多付約 6,000 日圓，這是全飯店投報率最高的一次加價。
