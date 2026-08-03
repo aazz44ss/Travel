@@ -57,8 +57,8 @@ export const BARS: Bar[] = [
   {
     key: 'ring-west',
     label: '中庭環・西側',
-    x: 437,
-    y: 181,
+    x: 637,
+    y: 185,
     angle: -50,
     rows: [
       {
@@ -74,8 +74,8 @@ export const BARS: Bar[] = [
   {
     key: 'ring-top',
     label: '中庭環・北側',
-    x: 495,
-    y: 86,
+    x: 695,
+    y: 90,
     angle: 0,
     rows: [
       {
@@ -95,8 +95,8 @@ export const BARS: Bar[] = [
   {
     key: 'ring-east',
     label: '中庭環・東側',
-    x: 728,
-    y: 90,
+    x: 928,
+    y: 94,
     angle: 50,
     rows: [
       {
@@ -114,13 +114,12 @@ export const BARS: Bar[] = [
   {
     key: 'wing-west-diag',
     label: '西翼・斜段',
-    x: 200,
-    y: 96,
+    x: 150,
+    y: 120,
     angle: 30,
     rows: [
-      { facing: 'side', slots: repeat(SUPERIOR_NOVIEW, 6) },
       {
-        facing: 'side',
+        facing: 'entrance',
         slots: [
           { code: '632', type: '迪士尼小仙子客房', tone: 'entrance', bed: '4 人・凹室' },
           { code: '630', type: '迪士尼小仙子客房', tone: 'entrance', bed: '4 人・凹室' },
@@ -130,13 +129,14 @@ export const BARS: Bar[] = [
           { code: '622', type: '迪士尼小仙子客房', tone: 'entrance', bed: '4 人・凹室' },
         ],
       },
+      { facing: 'side', slots: repeat(SUPERIOR_NOVIEW, 6) },
     ],
   },
   {
     key: 'wing-west-horiz',
     label: '西翼・橫段',
-    x: 90,
-    y: 214,
+    x: 306,
+    y: 210,
     angle: 0,
     rows: [
       {
@@ -168,8 +168,8 @@ export const BARS: Bar[] = [
   {
     key: 'wing-east-inner',
     label: '東翼・內段',
-    x: 840,
-    y: 214,
+    x: 1040,
+    y: 210,
     angle: 0,
     rows: [
       {
@@ -187,8 +187,8 @@ export const BARS: Bar[] = [
   {
     key: 'wing-east-diag',
     label: '東翼・斜段',
-    x: 1000,
-    y: 250,
+    x: 1200,
+    y: 240,
     angle: 46,
     rows: [
       { facing: 'park', slots: [...repeat(SUPERIOR_PARK, 6)] },
@@ -206,7 +206,7 @@ export const BARS: Bar[] = [
   {
     key: 'leg-west',
     label: '西腳',
-    x: 464,
+    x: 664,
     y: 262,
     angle: 90,
     rows: [
@@ -232,7 +232,7 @@ export const BARS: Bar[] = [
   {
     key: 'leg-east',
     label: '東腳',
-    x: 800,
+    x: 1000,
     y: 262,
     angle: 90,
     rows: [
@@ -262,8 +262,8 @@ export const BARS: Bar[] = [
   {
     key: 'family-west',
     label: '西側家庭客房',
-    x: 330,
-    y: 292,
+    x: 552,
+    y: 248,
     angle: 0,
     rows: [
       {
@@ -275,8 +275,8 @@ export const BARS: Bar[] = [
   {
     key: 'family-east',
     label: '東側家庭客房',
-    x: 840,
-    y: 292,
+    x: 1088,
+    y: 248,
     angle: 0,
     rows: [
       {
@@ -290,7 +290,7 @@ export const BARS: Bar[] = [
   {
     key: 'end-west',
     label: '西端正面客房',
-    x: 270,
+    x: 527,
     y: 492,
     angle: 0,
     rows: [
@@ -311,7 +311,7 @@ export const BARS: Bar[] = [
   {
     key: 'end-east',
     label: '東端正面客房',
-    x: 720,
+    x: 863,
     y: 492,
     angle: 0,
     rows: [
@@ -334,7 +334,7 @@ export const BARS: Bar[] = [
   {
     key: 'bridge',
     label: '空橋（8–9 樓）',
-    x: 495,
+    x: 695,
     y: 400,
     angle: 0,
     floors: [8, 9],
