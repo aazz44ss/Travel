@@ -3,7 +3,6 @@ import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
-import RoomNumberLookup from '~/components/RoomNumberLookup.astro';
 import FloorPlan from '~/components/FloorPlan.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
@@ -19,18 +18,17 @@ import {
   VIEWS,
   roomsByCategory,
 } from '~/data/tokyo-disneyland-hotel';
-import { ROOM_NUMBER_COUNT } from '~/data/tdh-room-numbers';
+import { PLAN_ROOMS } from '~/data/tdh-plan';
 
 const article = await getEntry('articles', 'tokyo-disneyland-hotel');
 
 const title = `${HOTEL.name} 房型資料庫`;
-const description = `${HOTEL.name}全 ${ROOMS.length} 種房型的面積、床型、人數上限、景觀分級與參考價，整理成可篩選的清單。另收錄 ${ROOM_NUMBER_COUNT} 個房號的位置與視野，可直接查詢你被分到的房間看不看得到城堡。`;
+const description = `${HOTEL.name}全 ${ROOMS.length} 種房型的面積、床型、人數上限、景觀分級與參考價，整理成可篩選的清單。另有依實際比例描繪的逐間客房平面圖，${PLAN_ROOMS.length} 間客房的位置、大小與面向一目瞭然。`;
 
 const sections = [
   { id: 'overview', label: '基本資料' },
   { id: 'views', label: '景觀分級' },
   { id: 'categories', label: '四大分類' },
-  { id: 'room-number', label: '房號查詢' },
   { id: 'floor-plan', label: '客房平面圖' },
   { id: 'room-explorer', label: '房型探索器' },
   { id: 'beds', label: '床型尺寸' },
@@ -193,10 +191,6 @@ const schema = [
           ))
         }
       </div>
-    </section>
-
-    <section class="mt-20">
-      <RoomNumberLookup />
     </section>
 
     <section class="mt-12">
