@@ -26,11 +26,16 @@ const roomName = new Map(ROOMS.map((room) => [room.id, room.name]));
 
 const tally = roseCourtTally();
 
+/**
+ * The alcove room is 118 of the 147 positions, so it gets the quietest fill and
+ * the three rarer categories get tints that separate from it at a glance — the
+ * `-soft` gold token is too close to `paper-deep` to tell apart in a grid.
+ */
 const CATEGORY_TONE: Record<RoseCategory, string> = {
   superior: 'bg-brand-soft text-brand-deep',
   alcove: 'bg-paper-deep text-ink-soft',
-  deluxe: 'bg-gold-soft text-gold',
-  accessible: 'bg-berry-soft text-berry',
+  deluxe: 'bg-gold/25 text-gold',
+  accessible: 'bg-berry/20 text-berry',
 };
 
 const faces = ELEVATIONS.map((face) => {
