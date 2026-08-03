@@ -1,10 +1,16 @@
 ---
-import { FACILITIES } from '~/data/tokyo-disneyland-hotel';
+import type { Facility } from '~/data/hotel-schema';
+
+interface Props {
+  facilities: Facility[];
+}
+
+const { facilities } = Astro.props;
 ---
 
 <div class="not-prose my-8 grid gap-4 sm:grid-cols-2">
   {
-    FACILITIES.map((facility) => (
+    facilities.map((facility) => (
       <article class="flex flex-col rounded-xl border border-line bg-card p-5">
         <div class="flex flex-wrap items-center gap-2">
           <h4 class="font-serif text-base font-bold text-ink">{facility.name}</h4>

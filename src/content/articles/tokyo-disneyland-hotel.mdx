@@ -98,6 +98,7 @@ import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import SocialWall from '~/components/SocialWall.astro';
+import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
 import { withBase } from '~/consts';
 
 東京迪士尼樂園大飯店有 706 間客房，官方把它們分成四大類——其中光是標準房就佔了 457 間。官方客房頁列出 27 個房型名稱，但同一個名稱底下常常藏著床型或人數不同的版本（例如「精緻客房」同時包含 1 張雙人床的 48 平方公尺與 2 張標準床的 40 平方公尺），本站把這些拆開來算，得到 38 種組合。這個數字本身就是這間飯店最大的門檻——不是價格，是選擇。
@@ -284,7 +285,7 @@ import { withBase } from '~/consts';
 
 這一節整理自 TikTok、Instagram 與日本旅遊部落格上住客的第一手分享，重點放在「影片沒告訴你的部分」。
 
-<SocialWall />
+<SocialWall insights={SOCIAL_INSIGHTS} />
 
 ## 訂房實戰
 

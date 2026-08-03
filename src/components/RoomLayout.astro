@@ -1,38 +1,28 @@
 ---
-import type { Room } from '~/data/tokyo-disneyland-hotel';
-import {
-  LAYOUT_IMAGE_SIZE,
-  ROOM_LAYOUTS,
-  layoutImageUrl,
-  layoutPageUrl,
-} from '~/data/tdh-room-layouts';
+import type { Room } from '~/data/hotel-schema';
 
 interface Props {
   room: Room;
+  /** Absolute URL of the hotel's own plan drawing, served from the resort CDN. */
+  src?: string;
+  /** Official room page the drawing came from. */
+  href?: string;
+  width: number;
+  height: number;
+  /** Set when the official page's drawing covers more than one of our variants. */
+  shared?: boolean;
 }
 
-const { room } = Astro.props;
-const ref = ROOM_LAYOUTS[room.id];
-
-/**
- * The hotel's own plan drawing for this room type, served from the resort's CDN
- * rather than copied here. Several official pages cover more than one of our
- * variants, in which case the drawing shows both plans side by side.
- */
-const shared = ref
-  ? Object.entries(ROOM_LAYOUTS).filter(
-      ([, other]) => other.slug === ref.slug && (other.layout ?? 1) === (ref.layout ?? 1),
-    ).length > 1
-  : false;
+const { room, src, href, width, height, shared = false } = Astro.props;
 ---
 
 {
-  ref && (
+  src && (
     <figure class="not-prose mt-3 overflow-hidden rounded-lg border border-line-soft bg-white">
       <img
-        src={layoutImageUrl(ref)}
-        width={LAYOUT_IMAGE_SIZE.width}
-        height={LAYOUT_IMAGE_SIZE.height}
+        src={src}
+        width={width}
+        height={height}
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
@@ -42,14 +32,16 @@ const shared = ref
       <figcaption class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint">
         <span class="font-medium text-ink-soft">{room.size} m²</span>
         {shared && <span>官方同一頁涵蓋數種床型，圖上並列</span>}
-        <a
-          href={layoutPageUrl(ref)}
-          rel="noopener nofollow"
-          target="_blank"
-          class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-        >
-          官方平面圖
-        </a>
+        {href && (
+          <a
+            href={href}
+            rel="noopener nofollow"
+            target="_blank"
+            class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+          >
+            官方平面圖
+          </a>
+        )}
       </figcaption>
     </figure>
   )
