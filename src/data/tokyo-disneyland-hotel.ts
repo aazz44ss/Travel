@@ -927,21 +927,21 @@ export interface BedSpec {
 export const BED_SPECS: BedSpec[] = [
   {
     name: '標準床',
-    nameJa: 'シングルベッド',
+    nameJa: 'レギュラーサイズ',
     size: '120 × 210 × 55 cm',
     capacity: '2 位（含 1 位不佔床孩童）',
     note: '寬 120 公分，比台灣的單人床寬、比雙人床窄。兩個大人並睡會很擠。',
   },
   {
     name: '標準床（無障礙設計）',
-    nameJa: 'シングルベッド（アクセシブル）',
+    nameJa: 'レギュラーサイズ（アクセシブル）',
     size: '120 × 210 × 45 cm',
     capacity: '2 位（含 1 位不佔床孩童）',
     note: '床高 45 公分，方便輪椅平移。',
   },
   {
     name: '雙人床',
-    nameJa: 'ダブルベッド',
+    nameJa: 'ダブルサイズ',
     size: '180 × 210 × 45 cm',
     capacity: '4 位（含 2 位不佔床孩童）',
     note: '180 公分寬，接近台灣的雙人加大。兩大兩小睡得下。',
