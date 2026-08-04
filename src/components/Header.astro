@@ -4,9 +4,15 @@ import { t } from '~/i18n/ui';
 
 interface Props {
   locale?: Locale;
+  /**
+   * Where the language switcher should point. Defaults to the same page in the
+   * other locale, which is right everywhere except the 404 page, whose URL has
+   * no counterpart to switch to.
+   */
+  switchTo?: string;
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
+const { locale = DEFAULT_LOCALE, switchTo } = Astro.props;
 const ui = t(locale);
 
 const links = [
@@ -26,7 +32,7 @@ function isActive(href: string): boolean {
 }
 
 /** The same page in the other locales; falls back to their home page. */
-const pagePath = (() => {
+const pagePath = switchTo ?? (() => {
   const root = localePath(locale, '/').replace(/\/+$/, '');
   const rest = current.startsWith(root) ? current.slice(root.length) : '';
   return rest || '/';

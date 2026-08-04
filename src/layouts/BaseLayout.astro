@@ -13,11 +13,13 @@ interface Props {
   updatedAt?: Date;
   type?: 'website' | 'article';
   locale?: Locale;
+  /** Passed through to the language switcher; see Header. */
+  switchTo?: string;
   /** Path of this page written as if the site were single-language. */
   path?: string;
 }
 
-const { locale = DEFAULT_LOCALE, path = '/', ...props } = Astro.props;
+const { locale = DEFAULT_LOCALE, path = '/', switchTo, ...props } = Astro.props;
 const ui = t(locale);
 ---
 
@@ -33,7 +35,7 @@ const ui = t(locale);
     >
       {ui.common.skipToContent}
     </a>
-    <Header locale={locale} />
+    <Header locale={locale} switchTo={switchTo} />
     <main id="main" class="flex-1">
       <slot />
     </main>

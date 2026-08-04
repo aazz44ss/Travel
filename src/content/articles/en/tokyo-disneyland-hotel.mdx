@@ -78,6 +78,9 @@ sources:
 import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
+import SocialWall from '~/components/SocialWall.astro';
+import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
+import { localizeHotelContent } from '~/i18n/content';
 import { localePath } from '~/i18n/config';
 import { ROOMS, VIEWS } from '~/data/tokyo-disneyland-hotel';
 
@@ -289,15 +292,9 @@ The smoothest order is the gap after check-out and before the park: lobby atrium
 
 ## What social media shows, and what you will meet
 
-Four things worth carrying over from first-hand stays posted on TikTok, Instagram and Japanese blogs.
+Drawn from first-hand stays posted on TikTok, Instagram and Japanese travel blogs, with the emphasis on what the videos leave out.
 
-**The "pull back the curtain" shot is almost always the 7th or 8th floor.** Park Grand View rooms dominate the short video from this hotel, and the framing is identical every time: door handle, entryway, pan to the window, curtain. It sets an expectation that a lower floor will not meet.
-
-**Sherwood Garden is the least photographed spot in the hotel** because you need a room key to get through the gate, so only guests between check-in and check-out can be in it. There is a fountain and a gazebo, lit at night, and because non-guests are filtered out you can take your time with the angle. If you only shoot one set of photos at this hotel, do it here rather than the lobby, which always has people in it.
-
-**Limited-time event rooms are what people actually chase.** Seasonal collaborations sell out faster than anything else and are announced with little notice, so they only work if your dates are flexible.
-
-**Check which way the ceiling rain shower points before you turn it on.** Guests keep reporting the same surprise, and it is easier to notice while dry.
+<SocialWall insights={localizeHotelContent('tdh', 'en').social(SOCIAL_INSIGHTS)} />
 
 ## Booking, in practice
 

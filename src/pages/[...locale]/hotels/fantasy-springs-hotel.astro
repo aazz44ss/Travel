@@ -3,9 +3,9 @@ import type { GetStaticPaths } from 'astro';
 import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
-import PriceSeasons from '~/components/PriceSeasons.astro';
+import ElevationMap from '~/components/ElevationMap.astro';
+import RateTable from '~/components/RateTable.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
-import FloorPlan from '~/components/FloorPlan.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
@@ -15,8 +15,8 @@ import { formatYen, lowestRate } from '~/data/hotel';
 import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { hotelCopy } from '~/i18n/hotel';
-import { localizeHotelContent } from '~/i18n/content';
 import { categoryLabel, names, viewLabel } from '~/i18n/rooms';
+import { localizeHotelContent } from '~/i18n/content';
 import {
   BED_SPECS,
   BENEFITS,
@@ -29,48 +29,50 @@ import {
   ROOMS,
   VIEWS,
   roomsByCategory,
-} from '~/data/tokyo-disneyland-hotel';
-import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/tdh-rates';
-import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
-import { LAYOUTS } from '~/data/tdh-room-layouts';
-import { PLAN_ROOMS } from '~/data/tdh-plan';
+} from '~/data/fantasy-springs-hotel';
+import { ROOM_NUMBERS, ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
+import { LAYOUTS } from '~/data/fsh-room-layouts';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
 const { locale } = Astro.props;
 const ui = t(locale);
-const copy = hotelCopy(locale, 'tdh');
-const L = localizeHotelContent('tdh', locale);
-const text = names('tdh');
+const copy = hotelCopy(locale, 'fsh');
+const text = names('fsh');
+const L = localizeHotelContent('fsh', locale);
 
-/** Darkest tone for the view that actually sells the hotel. */
 const viewStyle = {
   grand: 'bg-brand text-white',
   park: 'bg-brand-soft text-brand-deep',
+  partial: 'bg-gold-soft text-[#6f4e18]',
   none: 'bg-paper-deep text-ink-faint',
+  allpark: 'bg-berry-soft text-berry',
 };
 
 const categoryStyle = {
-  standard: 'border-line text-ink-soft',
-  character: 'border-berry/30 text-berry',
-  concierge: 'border-gold/40 text-gold',
-  suite: 'border-brand/30 text-brand',
+  springs: 'border-brand/30 text-brand',
+  rose: 'border-gold/40 text-gold',
+  bay: 'border-line text-ink-soft',
+  entrance: 'border-line text-ink-soft',
+  grand: 'border-berry/30 text-berry',
 };
 
-const article = await getEntry('articles', `${locale}/tokyo-disneyland-hotel`);
-const articlePath = localePath(locale, '/articles/tokyo-disneyland-hotel');
-
-const title = `${copy.hotelName}${copy.titleSuffix}`;
-const description = copy.pageDescription(ROOMS.length, PLAN_ROOMS.length);
+const article = await getEntry('articles', `${locale}/fantasy-springs-hotel`);
+const articlePath = localePath(locale, '/articles/fantasy-springs-hotel');
 
 /**
- * The rate analysis, the facility, dining, benefit and FAQ lists and the
- * per-room verdicts are editorial rather than official data and exist in
- * Traditional Chinese only, so the Japanese and English versions drop those
- * sections rather than show them untranslated. Their guides cover the same
- * ground in prose.
+ * The price list, the facility, dining, benefit and FAQ lists and the per-room
+ * verdicts are editorial rather than official data and exist in Traditional
+ * Chinese only, so the Japanese and English versions drop those sections rather
+ * than show them untranslated; their guides cover the same ground in prose.
  */
-const sections = copy.sections;
+const editorialOnly = ['rates', 'facilities', 'dining', 'benefits', 'faq'];
+const sections = copy.sections.filter(
+  (section) => locale === 'zh-hant' || !editorialOnly.includes(section.id),
+);
+
+const title = `${copy.hotelName}${copy.titleSuffix}`;
+const description = copy.pageDescription(ROOMS.length, ROSE_ROOM_COUNT);
 
 const schema = [
   {
@@ -86,20 +88,24 @@ const schema = [
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'JP',
-      addressRegion: '千葉縣',
-      addressLocality: '浦安市',
+      addressRegion: HOTEL.region,
+      addressLocality: HOTEL.locality,
     },
   },
   /* Only claim FAQ structured data where the answers are actually on the page. */
-  {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: L.faqs(FAQS).map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-    })),
-  },
+  ...(locale === 'zh-hant'
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: FAQS.map((faq) => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+          })),
+        },
+      ]
+    : []),
 ];
 ---
 
@@ -108,9 +114,9 @@ const schema = [
   description={description}
   schema={schema}
   locale={locale}
-  path="/hotels/tokyo-disneyland-hotel"
+  path="/hotels/fantasy-springs-hotel"
 >
-  <header class="border-b border-line bg-gradient-to-br from-brand-deep to-brand text-white">
+  <header class="border-b border-line bg-gradient-to-br from-berry via-[#5a3a63] to-brand-deep text-white">
     <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
       <nav class="flex items-center gap-2 text-xs opacity-80" aria-label={ui.common.breadcrumb}>
         <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100"
@@ -124,7 +130,7 @@ const schema = [
       <p class="mt-8 text-2xs font-bold tracking-[0.22em] uppercase opacity-85">
         {copy.regionLabel}
       </p>
-      <h1 class="mt-3 font-serif text-3xl leading-tight font-bold sm:text-[2.6rem]">
+      <h1 class="mt-3 max-w-4xl font-serif text-3xl leading-tight font-bold sm:text-[2.6rem]">
         {copy.hotelName}<span class="block text-xl font-medium opacity-80 sm:text-2xl"
           >{copy.databaseLabel}</span
         >
@@ -180,63 +186,51 @@ const schema = [
       <p class="text-sm leading-relaxed text-ink-faint">{copy.provenance}</p>
     </section>
 
-    <section id="views" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.views}</h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.viewsIntro}</p>
-      <div class="mt-6 grid gap-4 lg:grid-cols-3">
-        {
-          VIEWS.map((view, index) => (
-            <article
-              class:list={[
-                'rounded-xl border p-5',
-                index === 0 ? 'border-brand/30 bg-brand-soft/50' : 'border-line bg-card',
-              ]}
-            >
-              <div class="flex items-baseline justify-between gap-2">
-                <h3 class="font-serif text-base font-bold text-ink">
-                  {viewLabel('tdh', locale, view.key)}
-                </h3>
-                <span class="text-2xs text-ink-faint">
-                  {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
-                </span>
-              </div>
-              <p class="mt-1 text-xs text-ink-faint">
-                {locale === 'ja' ? view.labelEn : `${view.labelJa}／${view.labelEn}`}
-              </p>
-              <p class="mt-3 text-sm font-medium text-brand-deep">
-                {text.viewSummary[locale][view.key]}
-              </p>
-              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {locale === 'zh-hant' ? view.detail : text.viewDetail[locale][view.key]}
-              </p>
-            </article>
-          ))
-        }
-      </div>
-    </section>
-
-    <section id="categories" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.categories}</h2>
+    <section id="sides" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.sides}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
         {copy.categoriesIntro}
       </p>
+      <figure class="mt-6 overflow-hidden rounded-xl border border-line bg-white">
+        <img
+          src={HOTEL.sideMap[locale]}
+          width={HOTEL.sideMapSize.width}
+          height={HOTEL.sideMapSize.height}
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          alt={title}
+          class="block h-auto w-full"
+        />
+        <figcaption class="border-t border-line px-4 py-2.5 text-2xs text-ink-faint">
+          <a
+            href={HOTEL.rooms[locale]}
+            rel="noopener nofollow"
+            target="_blank"
+            class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+          >
+            {HOTEL.nameEn}
+          </a>
+        </figcaption>
+      </figure>
       <div class="mt-6 grid gap-4 sm:grid-cols-2">
         {
           CATEGORIES.map((category) => (
             <article class="rounded-xl border border-line bg-card p-5">
               <div class="flex items-baseline justify-between gap-3">
                 <h3 class="font-serif text-base font-bold text-ink">
-                  {categoryLabel('tdh', locale, category.key)}
+                  {categoryLabel('fsh', locale, category.key)}
                 </h3>
                 <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
                   {copy.typeCount(roomsByCategory(category.key).length)}
                 </span>
               </div>
-              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {text.categorySummary[locale][category.key]}
+              {locale !== 'en' && <p class="mt-1 text-xs text-ink-faint">{category.labelEn}</p>}
+              <p class="mt-3 text-[0.875rem] leading-[1.85] text-ink-soft">
+                {text.categorySummary[locale][category.key] ?? category.summary}
               </p>
               <ul class="mt-3 flex flex-wrap gap-1.5">
-                {text.categoryPerks[locale][category.key]!.map((perk) => (
+                {(text.categoryPerks[locale][category.key] ?? category.perks).map((perk) => (
                   <li class="rounded-full border border-line px-2.5 py-1 text-2xs text-ink-soft">
                     {perk}
                   </li>
@@ -248,18 +242,53 @@ const schema = [
       </div>
     </section>
 
-    <section class="mt-12">
-      <FloorPlan locale={locale} />
+    <section id="views" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.views}</h2>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.viewsIntro}</p>
+      <div class="mt-6 grid gap-4 lg:grid-cols-3">
+        {
+          VIEWS.map((view) => (
+            <article
+              class:list={[
+                'rounded-xl border p-5',
+                view.key === 'grand' ? 'border-brand/30 bg-brand-soft/50' : 'border-line bg-card',
+              ]}
+            >
+              <div class="flex items-baseline justify-between gap-2">
+                <h3 class="font-serif text-base font-bold text-ink">
+                  {viewLabel('fsh', locale, view.key)}
+                </h3>
+                <span class="text-2xs whitespace-nowrap text-ink-faint">
+                  {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
+                </span>
+              </div>
+              <p class="mt-1 text-xs text-ink-faint">
+                {view.labelJa}／{view.labelEn}
+              </p>
+              <p class="mt-3 text-sm font-medium text-brand-deep">
+                {text.viewSummary[locale][view.key] ?? view.summary}
+              </p>
+              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
+                {text.viewDetail[locale][view.key] ?? view.detail}
+              </p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mt-20">
+      <ElevationMap locale={locale} />
     </section>
 
     <section class="mt-20">
       <RoomExplorer
-        hotel="tdh"
+        hotel="fsh"
         rooms={L.rooms(ROOMS)}
         categories={CATEGORIES}
         views={VIEWS}
         flags={FLAGS}
-        rates={MONTHLY_RATES}
+        rates={{}}
         roomNumbers={ROOM_NUMBERS}
         layouts={LAYOUTS}
         viewStyle={viewStyle}
@@ -269,50 +298,45 @@ const schema = [
       />
     </section>
 
-      <section class="mt-20">
-        <PriceSeasons
-          rooms={L.rooms(ROOMS)}
-          categories={CATEGORIES}
-          rates={MONTHLY_RATES}
-          currentYearMonths={RATE_YEAR_2026_MONTHS}
-          years={{ current: '2026', carried: '2025' }}
-          defaultRoomId="std-superior-pgv-double"
-          source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/4155' }}
-          bargainNote={copy.bargainNote}
-          locale={locale}
-          hotel="tdh"
-        />
-      </section>
+    {
+      locale === 'zh-hant' && (
+        <section class="mt-20">
+          <RateTable />
+        </section>
+      )
+    }
 
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
-      <BedTable
-        beds={L.beds(BED_SPECS)}
-        caption={`${copy.hotelName}${copy.bedTableCaption}`}
-        locale={locale}
-      />
+      <BedTable beds={L.beds(BED_SPECS)} caption={copy.bedTableCaption} locale={locale} />
     </section>
 
-        <section id="facilities" class="mt-20 scroll-mt-32">
-          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
-          <FacilityGrid facilities={L.facilities(FACILITIES)} guestOnlyLabel={L.label('住客限定')} />
-        </section>
+    {
+      locale === 'zh-hant' && (
+        <>
+          <section id="facilities" class="mt-20 scroll-mt-32">
+            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
+            <FacilityGrid facilities={FACILITIES} guestOnlyLabel={L.label('住客限定')} />
+          </section>
 
-        <section id="dining" class="mt-20 scroll-mt-32">
-          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
-          <DiningList dining={L.dining(DINING)} />
-        </section>
+          <section id="dining" class="mt-20 scroll-mt-32">
+            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
+            <DiningList dining={DINING} />
+          </section>
 
-        <section id="benefits" class="mt-20 scroll-mt-32">
-          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
-          <BenefitList benefits={L.benefits(BENEFITS)} />
-        </section>
+          <section id="benefits" class="mt-20 scroll-mt-32">
+            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
+            <BenefitList benefits={BENEFITS} />
+          </section>
 
-        <section id="faq" class="mt-20 scroll-mt-32">
-          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
-          <FaqList faqs={L.faqs(FAQS)} />
-        </section>
+          <section id="faq" class="mt-20 scroll-mt-32">
+            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
+            <FaqList faqs={FAQS} />
+          </section>
+        </>
+      )
+    }
 
     {
       article && (

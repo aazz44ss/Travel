@@ -26,7 +26,7 @@ interface Props {
   locale?: Locale;
 }
 
-const { rooms, views, roomNumbers, connecting, sourceUrl, locale = DEFAULT_LOCALE } = Astro.props;
+const { rooms, roomNumbers, connecting, sourceUrl, locale = DEFAULT_LOCALE } = Astro.props;
 
 const copy = explorer(locale).harbourPlan;
 const roomById = Object.fromEntries(rooms.map((room) => [room.id, room]));
@@ -106,7 +106,6 @@ const byFloor = Object.fromEntries(
 );
 
 const enumerated = cells.filter((cell) => cell.roomId).length / PLAN_FLOORS.length;
-const harbourGrades = ['harbour-grand', 'harbour', 'piazza-grand'];
 
 /** The legend only lists what the plan actually contains. */
 const legend = (

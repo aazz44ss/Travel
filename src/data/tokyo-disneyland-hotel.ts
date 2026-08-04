@@ -24,7 +24,7 @@ import type {
   RoomView,
   SocialInsight,
 } from './hotel';
-import { formatYen, toTwd } from './hotel';
+import { byPrice, formatYen, lowestRate, toTwd } from './hotel';
 
 export const HOTEL = {
   name: '東京迪士尼樂園大飯店',
@@ -1009,7 +1009,7 @@ export function roomsByCategory(key: string): Room[] {
 }
 
 export function cheapestRoom(): Room {
-  return ROOMS.reduce((min, room) => (room.priceFrom < min.priceFrom ? room : min));
+  return ROOMS.reduce((min, room) => (byPrice(room, min) < 0 ? room : min));
 }
 
 export const HOTEL_FACTS: HotelFact[] = [
@@ -1023,7 +1023,7 @@ export const HOTEL_FACTS: HotelFact[] = [
   },
   {
     label: '最低參考價',
-    value: formatYen(cheapestRoom().priceFrom),
+    value: formatYen(lowestRate(ROOMS)),
     sub: '每室每晚・2 位大人',
   },
   { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },

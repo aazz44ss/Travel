@@ -54,8 +54,12 @@ export interface Room {
   size: string;
   /** Numeric size used for sorting and filtering. */
   sizeValue: number;
-  /** Reference "from" rate in JPY per room per night. */
-  priceFrom: number;
+  /**
+   * Reference "from" rate in JPY per room per night. Left undefined when no
+   * source publishes a rate for the type, rather than filled with an estimate:
+   * the Fantasy Springs Hotel's luxury wing is the case this exists for.
+   */
+  priceFrom?: number;
   floors?: string;
   /** Keys from the hotel's `FLAGS`. */
   flags: string[];
@@ -161,6 +165,20 @@ export interface RoomLayoutSet {
   imageUrl: (ref: RoomLayoutRef) => string;
   pageUrl: (ref: RoomLayoutRef) => string;
   imageSize: { readonly width: number; readonly height: number };
+}
+
+/** Priced types first and cheapest first; unpriced types keep their order at the end. */
+export function byPrice(a: Room, b: Room): number {
+  if (a.priceFrom === undefined) return b.priceFrom === undefined ? 0 : 1;
+  if (b.priceFrom === undefined) return -1;
+  return a.priceFrom - b.priceFrom;
+}
+
+/** The lowest published rate across a hotel's rooms. */
+export function lowestRate(rooms: Room[]): number {
+  const priced = rooms.map((room) => room.priceFrom).filter((n): n is number => n !== undefined);
+  if (priced.length === 0) throw new Error('lowestRate: no room has a published rate');
+  return Math.min(...priced);
 }
 
 export function formatYen(value: number): string {

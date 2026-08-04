@@ -10,6 +10,8 @@
 
 | 內容 | 路徑 |
 | --- | --- |
+| 東京迪士尼海洋夢幻泉鄉大飯店完全指南 | `/articles/fantasy-springs-hotel` |
+| 夢幻泉鄉大飯店房型資料庫（31 種房型、玫瑰庭區 147 間客房位置圖） | `/hotels/fantasy-springs-hotel` |
 | 東京迪士尼海洋觀海景大飯店完全指南 | `/articles/tokyo-disneysea-hotel-miracosta` |
 | 東京迪士尼海洋觀海景大飯店房型資料庫（37 種組合、海港區房號索引） | `/hotels/tokyo-disneysea-hotel-miracosta` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
@@ -42,6 +44,7 @@ src/
 ├── content.config.ts 文章 schema，以及從 id 拆出語言與 slug 的工具
 ├── data/             結構化資料集，與文章分離維護
 │   ├── hotel.ts      各飯店共用型別與價格工具
+│   ├── fantasy-springs-hotel.ts
 │   ├── tokyo-disneyland-hotel.ts
 │   └── tokyo-disneysea-hotel-miracosta.ts
 ├── i18n/             語言設定與各語言的介面、頁面、飯店頁文案

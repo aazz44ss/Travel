@@ -21,6 +21,8 @@ export interface PageCopy {
     method: { title: string; body: string }[];
     toolLabel: string;
     toolCta: string;
+    databasesHeading: string;
+    databasesIntro: string;
     pipelineHeading: string;
     pipelineIntro: string;
     pipeline: { title: string; body: string }[];
@@ -77,6 +79,9 @@ const zhHant: PageCopy = {
       },
     ],
     toolLabel: '工具',
+    databasesHeading: '飯店資料庫',
+    databasesIntro:
+      '每一間飯店的房型面積、床型配置、人數上限、景觀分級與參考價，全部整理成可以篩選的清單，並且把房號對應到實際位置。訂房前打開它，用你的條件把不適合的濾掉。',
     toolCta: '打開資料庫',
     pipelineHeading: '接下來在查什麼',
     pipelineIntro: '下面這幾篇正在整理資料。順序會依查證的進度調整。',
@@ -181,6 +186,9 @@ const ja: PageCopy = {
       },
     ],
     toolLabel: 'ツール',
+    databasesHeading: 'ホテル客室データベース',
+    databasesIntro:
+      '各ホテルの客室面積、ベッド構成、定員、眺望の区分、参考料金を絞り込めるリストにまとめ、部屋番号を実際の位置に対応させています。予約ページを開く前に、条件に合わないものを外すために使ってください。',
     toolCta: 'データベースを開く',
     pipelineHeading: 'いま調べているもの',
     pipelineIntro: '以下は資料を整理中の記事です。順番は確認の進み方によって変わります。',
@@ -288,6 +296,9 @@ const en: PageCopy = {
       },
     ],
     toolLabel: 'Tool',
+    databasesHeading: 'Hotel room databases',
+    databasesIntro:
+      'Every room type at each hotel — area, beds, occupancy, view grade and reference rate — as a list you can filter, with room numbers mapped to where they actually are. Open it beside the booking page and rule out what does not fit.',
     toolCta: 'Open the database',
     pipelineHeading: 'What is being researched next',
     pipelineIntro: 'These are in progress. The order shifts with how the fact-checking goes.',

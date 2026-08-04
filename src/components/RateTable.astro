@@ -1,0 +1,100 @@
+---
+import { CATEGORIES, HOTEL, ROOMS } from '~/data/fantasy-springs-hotel';
+import { RATE_SOURCE, RATES } from '~/data/fsh-rates';
+import { formatYen, toTwd } from '~/data/hotel';
+
+/**
+ * Every Fantasy Chateau category priced on one date, which is the only way this
+ * hotel's price list is ever visible whole: rooms go on sale four months ahead
+ * and are gone within days, so a survey taken the morning a date opened is a
+ * complete snapshot and any later look is a handful of survivors.
+ *
+ * Grouped by side and cheapest first, so the table reads as what you give up to
+ * save money rather than as a list of names.
+ */
+const cheapest = Math.min(...Object.values(RATES).map((rate) => rate.price));
+
+const groups = CATEGORIES.map((category) => ({
+  label: category.label,
+  rows: ROOMS.filter((room) => room.category === category.key && RATES[room.id])
+    .map((room) => ({ room, rate: RATES[room.id]! }))
+    .sort((a, b) => a.rate.price - b.rate.price),
+}))
+  .filter((group) => group.rows.length > 0)
+  // A price table should read as a ladder, so the sides come in order of what
+  // they start at rather than in the page's usual order.
+  .sort((a, b) => a.rows[0]!.rate.price - b.rows[0]!.rate.price);
+
+/** Fantasy Chateau types the survey did not reach. The Grand Chateau is a separate case. */
+const missed = ROOMS.filter((room) => room.category !== 'grand' && !RATES[room.id]);
+---
+
+<section id="rates" class="not-prose scroll-mt-32">
+  <h2 class="font-serif text-2xl font-bold text-ink">同一天的完整價目</h2>
+  <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+    夢幻館全部的分類，每室每晚、2 位大人佔床，而且全部是同一個住宿日（{RATE_SOURCE.stayDateLabel}）的價格——
+    這樣才比得出房型之間的相對關係。實際金額依日期浮動，請以官方訂房系統為準。豪華館不在表上：官方網站不公布它的房價。
+  </p>
+
+  <div class="table-scroll mt-6 overflow-hidden rounded-xl border border-line bg-card">
+    <table class="w-full min-w-[38rem] text-sm">
+      <caption class="sr-only">
+        東京迪士尼海洋夢幻泉鄉大飯店 夢幻館各分類於同一住宿日的參考價
+      </caption>
+      <thead>
+        <tr class="bg-paper-deep text-left">
+          <th scope="col" class="px-4 py-3 font-bold text-ink">房型</th>
+          <th scope="col" class="px-4 py-3 text-right font-bold text-ink">參考價</th>
+          <th scope="col" class="px-4 py-3 text-right font-bold text-ink">比最低價貴</th>
+          <th scope="col" class="px-4 py-3 text-right font-bold text-ink">比 9 月下旬漲</th>
+        </tr>
+      </thead>
+      {
+        groups.map((group) => (
+          <tbody class="divide-y divide-line-soft border-t border-line">
+            <tr class="bg-paper-deep/40">
+              <th scope="colgroup" colspan="4" class="px-4 py-2 text-left text-2xs font-bold tracking-wider text-ink-soft">
+                {group.label}
+              </th>
+            </tr>
+            {group.rows.map(({ room, rate }) => (
+              <tr class="align-top transition-colors hover:bg-paper-deep/40">
+                <th scope="row" class="px-4 py-3 text-left font-medium text-ink">
+                  {room.name}
+                  <span class="mt-0.5 block text-2xs font-normal text-ink-faint">
+                    {room.size} m²・人數上限 {room.capacity} 位
+                  </span>
+                </th>
+                <td class="px-4 py-3 text-right whitespace-nowrap tabular-nums">
+                  <span class="font-bold text-brand">{formatYen(rate.price)}</span>
+                  <span class="mt-0.5 block text-2xs font-normal text-ink-faint">
+                    約新台幣 {toTwd(rate.price, HOTEL.jpyPerTwd).toLocaleString('en-US')} 元
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap text-ink-soft tabular-nums">
+                  {rate.price === cheapest ? '—' : `＋${formatYen(rate.price - cheapest)}`}
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap text-ink-soft tabular-nums">
+                  {rate.rise ? `＋${formatYen(rate.rise)}` : '新分類'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        ))
+      }
+    </table>
+  </div>
+
+  <p class="mt-3 text-xs leading-relaxed text-ink-faint">
+    價格是二手整理，來自 <a
+      href={RATE_SOURCE.url}
+      rel="noopener nofollow"
+      target="_blank"
+      class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+      >fukufukusatoka 在開賣日記錄的價格調查</a
+    >（{RATE_SOURCE.published} 發表），官方網站只公布逐日的最低價。「新分類」是玫瑰庭區按樓層拆分後新增的四個分類，
+    以及同時新增的無障礙樂園景觀，在 9 月下旬還不存在。這份調查唯一沒有涵蓋的夢幻館房型是{
+      missed.map((room) => room.name).join('、')
+    }。
+  </p>
+</section>

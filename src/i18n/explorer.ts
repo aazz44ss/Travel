@@ -15,6 +15,8 @@ export interface ExplorerCopy {
   fields: { area: string; capacity: string; priceRange: string; beds: string; floors: string };
   guests: string;
   from: (price: string) => string;
+  /** Shown where no source publishes a rate for the type. */
+  unpriced: string;
   roomNumbers: string;
   roomCount: (n: number) => string;
   notListed: string;
@@ -100,6 +102,7 @@ const zhHant: ExplorerCopy = {
   fields: { area: '面積', capacity: '人數上限', priceRange: '價格區間', beds: '床型', floors: '分佈樓層' },
   guests: ' 位',
   from: (price) => `${price} 起`,
+  unpriced: '未公布',
   roomNumbers: '房號',
   roomCount: (n) => `${n} 間`,
   notListed: '未逐間公布',
@@ -207,6 +210,7 @@ const ja: ExplorerCopy = {
   fields: { area: '広さ', capacity: '定員', priceRange: '料金の幅', beds: 'ベッド', floors: '階層' },
   guests: ' 名',
   from: (price) => `${price} から`,
+  unpriced: '非公開',
   roomNumbers: '部屋番号',
   roomCount: (n) => `${n} 室`,
   notListed: '1 室ずつの公開なし',
@@ -314,6 +318,7 @@ const en: ExplorerCopy = {
   fields: { area: 'Area', capacity: 'Sleeps', priceRange: 'Price range', beds: 'Beds', floors: 'Floors' },
   guests: '',
   from: (price) => `from ${price}`,
+  unpriced: 'Not published',
   roomNumbers: 'Room numbers',
   roomCount: (n) => `${n} room${n === 1 ? '' : 's'}`,
   notListed: 'Not published individually',
@@ -412,3 +417,138 @@ const en: ExplorerCopy = {
 
 const COPY: Record<Locale, ExplorerCopy> = { 'zh-hant': zhHant, ja, en };
 export const explorer = (locale: Locale): ExplorerCopy => COPY[locale];
+
+/** Copy for the month-by-month rate panel. */
+export interface SeasonCopy {
+  heading: string;
+  intro: string;
+  panelHeading: string;
+  panelIntro: (types: number) => string;
+  bargain: (months: string, safest: string) => string;
+  safest: (month: string, pct: number, worst: string, worstPct: number) => string;
+  flattest: (month: string, pct: number, swingiest: string) => string;
+  roomLabel: string;
+  stats: { low: [string, string]; high: [string, string]; ratio: [string, string]; season: [string, string] };
+  monthLabel: (m: number) => string;
+  flatRatio: string;
+  flatSeason: string;
+  ratio: (n: string) => string;
+  seasonPair: (cheap: number, dear: number) => string;
+  partial: (from: number, to: number) => string;
+  flatNote: string;
+  colourNote: string;
+  tooltip: (year: number, month: number, low: string, high: string) => string;
+  source: (unpriced: number) => { before: string; link: string; after: string };
+}
+
+const SEASON: Record<Locale, SeasonCopy> = {
+  'zh-hant': {
+    heading: '逐月價格區間',
+    intro:
+      '每一條橫棒是那個月「最便宜的日期」到「最貴的日期」。棒子的位置看淡旺季，棒子的長度看同一個月裡日期的影響有多大。選一個房型看它整年的樣子。',
+    panelHeading: '淡旺季：光看底價會看錯',
+    panelIntro: (types) =>
+      `${types} 種有完整十二個月資料的房型，各自以「自己全年最便宜的那一天」為 100 對齊後平均。每條棒子的左端是那個月最便宜的日期、右端是最貴的日期。棒子的高度看貴不貴，長度看挑日子有多重要。`,
+    bargain: (months, safest) =>
+      `${months}有全年最便宜的日期，但不是淡季。它們的底價是全年最低，天花板卻比 ${safest} 高出不少——暑假就是這個形狀：連假與週末很貴，中間夾著幾個特別便宜的日子。`,
+    safest: (month, pct, worst, worstPct) =>
+      `真正整月都便宜的是 ${month}，天花板全年最低（+${pct}%），也就是不太需要挑日子。最該避開的是 ${worst}，最貴的日期到 +${worstPct}%。`,
+    flattest: (month, pct, swingiest) =>
+      `${month}是「怎麼選都一樣」的月份，月內落差全年最小，底價卻已經是 +${pct}%，等於沒有便宜的日子可挑；${swingiest}相反，落差全年最大，值得為了日期調整行程。`,
+    roomLabel: '房型',
+    stats: {
+      low: ['全年最低', '最便宜的日期'],
+      high: ['全年最高', '最貴的日期'],
+      ratio: ['最高／最低', '同一間房的倍數'],
+      season: ['最便宜／最貴', '以月份看'],
+    },
+    monthLabel: (m) => `${m} 月`,
+    flatRatio: '全年同價',
+    flatSeason: '全年一價',
+    ratio: (n) => `${n} 倍`,
+    seasonPair: (cheap, dear) => `${cheap} 月／${dear} 月`,
+    partial: (from, to) => `這個房型的來源只公布 ${from} 到 ${to} 月。`,
+    flatNote: '這個房型全年一價，不分日期與季節。',
+    colourNote: '深色是最便宜的月份，紅色是最貴的。',
+    tooltip: (year, month, low, high) => `${year} 年 ${month} 月：${low} – ${high}`,
+    source: (unpriced) => ({
+      before: '每室每晚、2 位大人。整理自',
+      link: 'CASTEL 的逐月費率表',
+      after: `，是二手來源；官方只逐日標價，沒有發布月費率。10 到 12 月為 2025 年價格。另有 ${unpriced} 種房型只公布起價。`,
+    }),
+  },
+  ja: {
+    heading: '月別の料金レンジ',
+    intro:
+      '横棒 1 本がその月の「もっとも安い日」から「もっとも高い日」までです。棒の位置で季節、棒の長さで同じ月のなかで日付がどれだけ効くかが分かります。客室タイプを選ぶと一年分が表示されます。',
+    panelHeading: '季節：底値だけを見ると読み違える',
+    panelIntro: (types) =>
+      `12 か月分のデータが揃う ${types} タイプについて、それぞれ「自分の年間最安の 1 日」を 100 として揃えたうえで平均しました。棒の左端がその月の最安日、右端が最高日。高さで高いかどうか、長さで日付選びの重要度が分かります。`,
+    bargain: (months, safest) =>
+      `${months}は年間最安の日を持ちますが、閑散期ではありません。底値は年間最低でも、天井は ${safest} よりかなり高い。夏休みはこの形です。連休と週末が高く、その間に特別に安い日がはさまっています。`,
+    safest: (month, pct, worst, worstPct) =>
+      `月を通して本当に安いのは ${month} です。天井が年間最低（+${pct}%）で、日付を選ぶ必要があまりありません。もっとも避けるべきは ${worst} で、最高日は +${worstPct}% に届きます。`,
+    flattest: (month, pct, swingiest) =>
+      `${month} は「どれを選んでも同じ」月です。月内の振れ幅が年間最小である一方、底値がすでに +${pct}%。つまり安い日を選ぶ余地がありません。${swingiest} は逆に振れ幅が年間最大で、日付のために日程を動かす価値があります。`,
+    roomLabel: '客室タイプ',
+    stats: {
+      low: ['年間最安', 'もっとも安い日'],
+      high: ['年間最高', 'もっとも高い日'],
+      ratio: ['最高／最安', '同じ部屋での倍率'],
+      season: ['最安／最高', '月で見る'],
+    },
+    monthLabel: (m) => `${m} 月`,
+    flatRatio: '通年同額',
+    flatSeason: '通年一律',
+    ratio: (n) => `${n} 倍`,
+    seasonPair: (cheap, dear) => `${cheap} 月／${dear} 月`,
+    partial: (from, to) => `このタイプは出典が ${from}〜${to} 月しか公開していません。`,
+    flatNote: 'このタイプは通年一律で、日付や季節で変わりません。',
+    colourNote: '濃い色がもっとも安い月、赤がもっとも高い月です。',
+    tooltip: (year, month, low, high) => `${year} 年 ${month} 月：${low} – ${high}`,
+    source: (unpriced) => ({
+      before: '1 室 1 泊・大人 2 名。出典は',
+      link: 'CASTEL の月別料金表',
+      after: `で、二次情報です。公式は日別にしか料金を出しておらず、月別の料金表は公開していません。10〜12 月は 2025 年の価格。ほかに ${unpriced} タイプは最低料金のみの公開です。`,
+    }),
+  },
+  en: {
+    heading: 'Rates by month',
+    intro:
+      'Each bar runs from that month’s cheapest date to its dearest. The bar’s position shows the season; its length shows how much the date matters within the month. Pick a room type to see its whole year.',
+    panelHeading: 'Season: reading only the floor misleads',
+    panelIntro: (types) =>
+      `The ${types} room types with a full twelve months, each indexed against its own cheapest date of the year as 100, then averaged. The left end of each bar is that month’s cheapest date, the right end its dearest. Height tells you how expensive; length tells you how much the date matters.`,
+    bargain: (months, safest) =>
+      `${months} hold the cheapest dates of the year, but they are not low season. Their floor is the year’s lowest while their ceiling sits well above ${safest}. That is the shape of a school holiday: expensive weekends and public holidays with a few unusually cheap days in between.`,
+    safest: (month, pct, worst, worstPct) =>
+      `The month that is genuinely cheap throughout is ${month}, whose ceiling is the year’s lowest at +${pct}%, so the date barely matters. The one to avoid is ${worst}, where the dearest date reaches +${worstPct}%.`,
+    flattest: (month, pct, swingiest) =>
+      `${month} is the “whichever you pick” month: the smallest spread of the year, but on a floor already +${pct}%, so there are no cheap days to choose. ${swingiest} is the opposite, with the widest spread of the year, which makes shifting your dates worth it.`,
+    roomLabel: 'Room type',
+    stats: {
+      low: ['Year’s low', 'Cheapest date'],
+      high: ['Year’s high', 'Dearest date'],
+      ratio: ['High / low', 'Multiple for one room'],
+      season: ['Cheapest / dearest', 'By month'],
+    },
+    monthLabel: (m) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1]!,
+    flatRatio: 'Flat all year',
+    flatSeason: 'One rate all year',
+    ratio: (n) => `${n}×`,
+    seasonPair: (cheap, dear) =>
+      `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][cheap - 1]} / ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dear - 1]}`,
+    partial: (from, to) => `The source only publishes months ${from} to ${to} for this type.`,
+    flatNote: 'This type charges one rate all year, regardless of date or season.',
+    colourNote: 'Dark marks the cheapest month, red the dearest.',
+    tooltip: (year, month, low, high) =>
+      `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1]} ${year}: ${low} – ${high}`,
+    source: (unpriced) => ({
+      before: 'Per room per night for two adults, compiled from',
+      link: 'CASTEL’s month-by-month rate tables',
+      after: `, a secondary source: the hotel only prices by date and publishes no monthly table. October to December are 2025 rates. A further ${unpriced} room types publish only a starting price.`,
+    }),
+  },
+};
+
+export const season = (locale: Locale): SeasonCopy => SEASON[locale];

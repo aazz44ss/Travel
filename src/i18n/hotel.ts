@@ -11,7 +11,7 @@ import type { HotelFact } from '~/data/hotel';
  * that state where a number came from.
  */
 
-export const HOTEL_KEYS = ['tdh', 'dhm'] as const;
+export const HOTEL_KEYS = ['tdh', 'dhm', 'fsh'] as const;
 export type HotelKey = (typeof HOTEL_KEYS)[number];
 
 export interface HotelCopy {
@@ -159,6 +159,62 @@ const SECTIONS: Record<HotelKey, { ids: string[]; labels: Record<Locale, string[
         'Restaurants',
         'Guest benefits',
         'FAQ',
+      ],
+    },
+  },
+  fsh: {
+    ids: [
+      'overview',
+      'sides',
+      'views',
+      'rose-court',
+      'room-explorer',
+      'rates',
+      'beds',
+      'facilities',
+      'dining',
+      'benefits',
+      'faq',
+    ],
+    labels: {
+      'zh-hant': [
+        '基本資料',
+        '四區與豪華館',
+        '景觀分級',
+        '玫瑰庭區位置圖',
+        '房型探索器',
+        '完整價目',
+        '床型尺寸',
+        '館內設施',
+        '餐廳',
+        '住宿禮遇',
+        '常見問題',
+      ],
+      ja: [
+        '基本情報',
+        '4 つのサイドとグランドシャトー',
+        '眺望の区分',
+        'ローズコートサイド配置図',
+        '客室を絞り込む',
+        '同じ日の全料金',
+        'ベッドサイズ',
+        '館内施設',
+        'レストラン',
+        '宿泊特典',
+        'よくある質問',
+      ],
+      en: [
+        'At a glance',
+        'Four sides and the Grand Chateau',
+        'View grades',
+        'Rose Court positions',
+        'Room finder',
+        'One day’s prices',
+        'Bed sizes',
+        'Facilities',
+        'Restaurants',
+        'Guest benefits',
+        'Frequently asked',
       ],
     },
   },
@@ -452,6 +508,146 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         'The full guide separates the three sides and the four harbour-side view grades by price, explains the limits of watching a water show from your room, sets Balcony Rooms against Terrace Rooms, and covers how Happy Entry and the hotel’s own park gateway fit into a day.',
     },
   },
+  fsh: {
+    'zh-hant': {
+      hotelName: '東京迪士尼海洋夢幻泉鄉大飯店',
+      titleSuffix: '房型資料庫',
+      regionLabel: '日本・千葉縣浦安市',
+      typeCount: (n) => `${n} 種`,
+      databaseLabel: '房型資料庫',
+      heroIntro: (rooms) =>
+        `兩館 ${rooms} 種房型的規格與參考價，加上玫瑰庭區 147 間客房的位置圖。訂房頁面開著的時候，把這一頁放在旁邊對照。`,
+      pageDescription: (rooms, positions) =>
+        `東京迪士尼海洋夢幻泉鄉大飯店全 ${rooms} 種房型的面積、床型、人數上限、景觀分級與同一天的完整價目，整理成可篩選的清單。另有玫瑰庭區 ${positions} 間客房的位置圖。`,
+      readArticle: '先讀完整攻略',
+      headings: {
+        overview: '基本資料',
+        sides: '四區與豪華館',
+        views: '景觀分級',
+        beds: '床型尺寸',
+        facilities: '館內設施',
+        dining: '餐廳',
+        benefits: '住宿禮遇',
+        faq: '常見問題',
+      },
+      facts: ({ rooms, types, from }) => [
+        { label: '客房總數', value: `${rooms} 間`, sub: '夢幻館 419 ＋ 豪華館 56' },
+        { label: '位置', value: '園區裡面', sub: '東京迪士尼海洋夢幻泉鄉，魔法清泉旁' },
+        { label: '客房樓層', value: '3～9 樓', sub: `${types} 種房型` },
+        { label: '入住／退房', value: '15:00 / 12:00', sub: '兩館相同' },
+        { label: '最低參考價', value: from, sub: '每室每晚・2 位大人・2026 年 10 月 1 日' },
+        { label: '官方日曆還有房的日期', value: '121 天裡 14 天', sub: '2026 年 8 月 4 日的快照' },
+      ],
+      provenance:
+        '房型、面積、床型與樓層區間取自官方繁體中文客房頁；價格是每室每晚、2 位大人的參考價，來自開賣日價格調查的二手整理。實際金額依日期大幅浮動，請以官方訂房系統為準。',
+      viewsIntro:
+        '房名括號裡寫的就是景觀等級，沒有括號代表沒有景觀保證。四個等級不會同時出現在同一區——樂園全景觀與景隅景觀只在泉鄉區，樂園景觀只在玫瑰庭區。',
+      categoriesIntro:
+        '房名的第一段就是位置。夢幻館的 419 間客房分成四區，區域決定窗外朝哪一邊、有沒有景觀分級，也決定價格；豪華館是另一個館別，不用這套分區。',
+      bedsIntro:
+        '這間飯店的加床有四種，而且尺寸差很多。房型名稱只寫「附凹室」「附陽台」，實際睡幾個人、睡得舒不舒服看這張表。',
+      bedTableCaption: '東京迪士尼海洋夢幻泉鄉大飯店床型尺寸與可睡人數',
+      explorerProvenance:
+        '名稱依官方繁體中文客房頁，玫瑰庭區採用 2026 年 10 月起適用的分類。房號只有玫瑰庭區有——那一側的 147 間客房位置已被逐間整理出來，其他三區與豪華館沒有這樣的資料。',
+      rateSourceLabel: '開賣日價格調查（二手整理）',
+      bargainNote: '',
+      articleTeaseHeading: '想知道這些數字背後的判斷？',
+      articleTease:
+        '完整攻略裡有訂房難度的實測數字、「樂園景觀」為什麼不是這裡最好的景、玫瑰庭區的樓層問題怎麼變成價格問題，以及豪華館那 56 間房到底買到了什麼。',
+    },
+    ja: {
+      hotelName: '東京ディズニーシー・ファンタジースプリングスホテル',
+      titleSuffix: ' 客室データベース',
+      regionLabel: '千葉県浦安市',
+      typeCount: (n) => `${n} タイプ`,
+      databaseLabel: '客室データベース',
+      heroIntro: (rooms) =>
+        `2 つのシャトー ${rooms} タイプの仕様と参考料金、そしてローズコートサイド 147 室の配置図。予約ページを開いたまま、このページを横に置いてください。`,
+      pageDescription: (rooms, positions) =>
+        `東京ディズニーシー・ファンタジースプリングスホテルの全 ${rooms} タイプについて、面積・ベッド・定員・眺望の区分と同じ日の全料金を絞り込めるリストにまとめました。ローズコートサイド ${positions} 室の配置図付きです。`,
+      readArticle: '先に完全ガイドを読む',
+      headings: {
+        overview: '基本情報',
+        sides: '4 つのサイドとグランドシャトー',
+        views: '眺望の区分',
+        beds: 'ベッドサイズ',
+        facilities: '館内施設',
+        dining: 'レストラン',
+        benefits: '宿泊特典',
+        faq: 'よくある質問',
+      },
+      facts: ({ rooms, types, from }) => [
+        { label: '客室数', value: `${rooms} 室`, sub: 'ファンタジーシャトー 419 ＋ グランドシャトー 56' },
+        { label: '立地', value: 'パークの中', sub: 'ファンタジースプリングス、魔法の泉のほとり' },
+        { label: '客室階', value: '3〜9 階', sub: `${types} タイプ` },
+        { label: 'チェックイン／アウト', value: '15:00 / 12:00', sub: '両シャトー共通' },
+        { label: '参考最低料金', value: from, sub: '1 室 1 泊・大人 2 名・2026 年 10 月 1 日' },
+        { label: '公式カレンダーで空きのある日', value: '121 日中 14 日', sub: '2026 年 8 月 4 日時点' },
+      ],
+      provenance:
+        '客室タイプ・面積・ベッド・階層は公式の客室ページから。料金は 1 室 1 泊・大人 2 名の参考価格で、予約開始日の価格調査という二次情報です。実際の金額は日付で大きく動くため、公式の予約システムでご確認ください。',
+      viewsIntro:
+        '客室名の括弧の中が眺望の区分で、括弧がなければ眺望の保証はありません。4 つの区分が同じサイドに揃うことはなく、パークグランドビューとパーシャルビューはスプリングスサイド、パークビューはローズコートサイドだけです。',
+      categoriesIntro:
+        '客室名の最初がその位置です。ファンタジーシャトーの 419 室は 4 つのサイドに分かれ、サイドが窓の向き、眺望の区分の有無、そして料金を決めます。グランドシャトーは別棟で、この区分を使いません。',
+      bedsIntro:
+        'このホテルの追加ベッドは 4 種類あり、サイズがかなり違います。実際に何人がどう寝るかはこの表を見てください。',
+      bedTableCaption: '東京ディズニーシー・ファンタジースプリングスホテルのベッドサイズと定員',
+      explorerProvenance:
+        '名称は公式の客室ページに従い、ローズコートサイドは 2026 年 10 月 1 日からの区分です。部屋番号があるのはローズコートサイドだけで、そのサイドの 147 室は 1 室ずつ位置が特定されています。',
+      rateSourceLabel: '予約開始日の価格調査（二次情報）',
+      bargainNote: '',
+      articleTeaseHeading: 'この数字の背景を知りたい方へ',
+      articleTease:
+        '完全ガイドでは、予約の取りにくさを実数で示し、パークビューがなぜここで一番いい眺望ではないのか、ローズコートサイドの階の問題がどう価格の問題に変わるのか、そしてグランドシャトーの 56 室で何を買うのかを扱っています。',
+    },
+    en: {
+      hotelName: 'Tokyo DisneySea Fantasy Springs Hotel',
+      titleSuffix: ' room database',
+      regionLabel: 'Urayasu, Chiba, Japan',
+      typeCount: (n) => `${n} types`,
+      databaseLabel: 'Room database',
+      heroIntro: (rooms) =>
+        `${rooms} room types across both wings with their specs and reference rates, plus a position map for all 147 rooms on the Rose Court Side. Keep it open beside the booking page.`,
+      pageDescription: (rooms, positions) =>
+        `Every one of the ${rooms} room types at the Tokyo DisneySea Fantasy Springs Hotel — area, beds, occupancy, view grade and one day's complete price list — as a filterable list, with a position map for all ${positions} Rose Court rooms.`,
+      readArticle: 'Read the full guide first',
+      headings: {
+        overview: 'At a glance',
+        sides: 'Four sides and the Grand Chateau',
+        views: 'View grades',
+        beds: 'Bed sizes',
+        facilities: 'Facilities',
+        dining: 'Restaurants',
+        benefits: 'Guest benefits',
+        faq: 'Frequently asked',
+      },
+      facts: ({ rooms, types, from }) => [
+        { label: 'Guest rooms', value: `${rooms}`, sub: '419 Fantasy Chateau + 56 Grand Chateau' },
+        { label: 'Location', value: 'Inside the park', sub: 'Fantasy Springs, beside the magic spring' },
+        { label: 'Guest floors', value: '3rd – 9th', sub: `${types} room types` },
+        { label: 'Check-in / out', value: '15:00 / 12:00', sub: 'The same in both wings' },
+        { label: 'Reference lowest rate', value: from, sub: 'Per room per night, two adults, 1 Oct 2026' },
+        { label: 'Dates still bookable', value: '14 of 121', sub: 'Snapshot of 4 August 2026' },
+      ],
+      provenance:
+        'Room types, areas, beds and floor bands follow the hotel’s official pages. Rates are reference prices per room per night for two adults, compiled from a survey taken the morning bookings opened, which is a secondary source. Actual prices move a great deal by date — confirm in the official booking system.',
+      viewsIntro:
+        'Whatever sits in brackets after a room name is its view grade; no brackets means no view is guaranteed. The four grades never appear on the same side — Park Grand View and Partial View only on the Springs Side, Park View only on the Rose Court Side.',
+      categoriesIntro:
+        'The first part of a room name is where it is. The Fantasy Chateau’s 419 rooms are split across four sides, and the side decides which way the window faces, whether there is a view grade at all, and the price. The Grand Chateau is a separate wing and does not use these divisions.',
+      bedsIntro:
+        'This hotel has four kinds of extra bed and they differ a great deal in size. A room name only tells you "alcove" or "balcony"; this table tells you who actually fits.',
+      bedTableCaption: 'Bed sizes and occupancy at the Tokyo DisneySea Fantasy Springs Hotel',
+      explorerProvenance:
+        'Names follow the hotel’s official pages, with the Rose Court Side using the categories that apply from 1 October 2026. Only the Rose Court Side has room numbers: all 147 of its rooms have been placed individually.',
+      rateSourceLabel: 'Opening-day rate survey (secondary source)',
+      bargainNote: '',
+      articleTeaseHeading: 'Want the reasoning behind these numbers?',
+      articleTease:
+        'The full guide measures how hard this hotel is to book, explains why Park View is not the best view here, how the Rose Court floor problem turns into a pricing problem, and what the Grand Chateau’s 56 rooms actually buy.',
+    },
+  },
 };
 
 export const hotelCopy = (locale: Locale, hotel: HotelKey): HotelCopy => ({
@@ -489,6 +685,12 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
     countNote:
       '「可訂組合」是把官方同一名稱下不同床型、面積或定員拆開後的數量，不等於官方宣稱的房型名稱數。價格一律是比較用的參考值，實際庫存與金額以東京迪士尼度假區訂房系統為準。',
     cards: {
+      fsh: {
+        kicker: '住在夢幻泉鄉裡面',
+        description:
+          '兩館 31 種房型的規格與同一天的完整價目，加上玫瑰庭區 147 間客房逐間定位的立面圖。',
+        facts: ['五個分區', '玫瑰庭區 147 間定位', '官方格局圖', '空房實測'],
+      },
       dhm: {
         kicker: '住在東京迪士尼海洋裡',
         description:
@@ -517,6 +719,12 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
     countNote:
       '「予約単位」は公式が同じ名前で並べているベッドや広さ、定員の違いを分けた数で、公式が掲げる客室名の数とは一致しません。料金は比較のための参考値で、実際の空室と金額は公式の予約システムでご確認ください。',
     cards: {
+      fsh: {
+        kicker: 'ファンタジースプリングスの中に泊まる',
+        description:
+          '2 つのシャトー 31 タイプの仕様と同じ日の全料金、そしてローズコートサイド 147 室を 1 室ずつ置いた立面図。',
+        facts: ['5 つの区分', 'ローズコート 147 室', '公式間取り図', '空室の実測'],
+      },
       dhm: {
         kicker: '東京ディズニーシーの中に泊まる',
         description:
@@ -545,6 +753,12 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
     countNote:
       'A “bookable combination” separates the bed layouts, areas and occupancies the hotel sells under one name, so the count is higher than the number of room names on the official site. Rates are reference figures for comparison; confirm availability and price in the Tokyo Disney Resort booking system.',
     cards: {
+      fsh: {
+        kicker: 'Sleeping inside Fantasy Springs',
+        description:
+          '31 room types across both wings with one day’s complete price list, plus an elevation placing all 147 Rose Court rooms individually.',
+        facts: ['Five divisions', '147 rooms placed', 'Official plans', 'Availability measured'],
+      },
       dhm: {
         kicker: 'Sleeping inside Tokyo DisneySea',
         description:

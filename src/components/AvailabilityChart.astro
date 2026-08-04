@@ -1,0 +1,159 @@
+---
+import { AVAILABILITY, AVAILABILITY_PEERS, AVAILABILITY_TOTAL } from '~/data/fsh-rates';
+import { HOTEL } from '~/data/fantasy-springs-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+const COPY: Record<Locale, {
+  heading: (open: number, total: number) => string;
+  snapshot: string;
+  month: (label: string) => string;
+  monthTally: (open: number, total: number) => string;
+  peersIntro: string;
+  days: (n: number) => string;
+  footnote: (total: number) => string;
+  hotelName: string;
+  months: string[];
+  peers: string[];
+}> = {
+  'zh-hant': {
+    heading: (open, total) => `官方日曆上還訂得到的日期：${total} 天裡 ${open} 天`,
+    snapshot: '2026 年 8 月 4 日的快照，逐月拆開。',
+    month: (label) => label,
+    monthTally: (open, total) => `${total} 天裡 ${open} 天`,
+    peersIntro: '同一天、同一份日曆上，其他迪士尼飯店是這樣：',
+    days: (n) => `${n} 天`,
+    footnote: (total) =>
+      `六間飯店都取同一份日曆、同一個 ${total} 天區間、同樣是 2 位大人 1 間房的條件。會變的是哪幾天有房，不太會變的是這個排序。`,
+    hotelName: '東京迪士尼海洋夢幻泉鄉大飯店',
+    months: ['2026 年 8 月', '2026 年 9 月', '2026 年 10 月', '2026 年 11 月', '2026 年 12 月'],
+    peers: [
+      '迪士尼大使大飯店',
+      '東京迪士尼樂祥飯店',
+      '東京迪士尼樂園大飯店',
+      '東京迪士尼海洋觀海景大飯店',
+      '東京迪士尼海洋夢幻泉鄉大飯店',
+      '東京迪士尼度假區玩具總動員飯店',
+    ],
+  },
+  ja: {
+    heading: (open, total) => `公式カレンダーでまだ取れる日：${total} 日のうち ${open} 日`,
+    snapshot: '2026 年 8 月 4 日時点のスナップショットを月別に。',
+    month: (label) => label,
+    monthTally: (open, total) => `${total} 日中 ${open} 日`,
+    peersIntro: '同じ日、同じカレンダーで、ほかのディズニーホテルはこうです。',
+    days: (n) => `${n} 日`,
+    footnote: (total) =>
+      `6 軒とも同じカレンダー、同じ ${total} 日間、大人 2 名 1 室という同じ条件です。変わるのはどの日が空くかで、この並び順はあまり変わりません。`,
+    hotelName: '東京ディズニーシー・ファンタジースプリングスホテル',
+    months: ['2026 年 8 月', '2026 年 9 月', '2026 年 10 月', '2026 年 11 月', '2026 年 12 月'],
+    peers: [
+      'ディズニーアンバサダーホテル',
+      '東京ディズニーセレブレーションホテル',
+      '東京ディズニーランドホテル',
+      '東京ディズニーシー・ホテルミラコスタ',
+      '東京ディズニーシー・ファンタジースプリングスホテル',
+      '東京ディズニーリゾート・トイ・ストーリーホテル',
+    ],
+  },
+  en: {
+    heading: (open, total) => `Dates still bookable on the official calendar: ${open} of ${total}`,
+    snapshot: 'A snapshot of 4 August 2026, broken down by month.',
+    month: (label) => label,
+    monthTally: (open, total) => `${open} of ${total}`,
+    peersIntro: 'On the same day, on the same calendar, the other Disney hotels looked like this:',
+    days: (n) => `${n} days`,
+    footnote: (total) =>
+      `All six read off the same calendar, the same ${total}-day window and the same two-adults-one-room query. Which dates are open changes; this ranking does not change much.`,
+    hotelName: 'Tokyo DisneySea Fantasy Springs Hotel',
+    months: ['August 2026', 'September 2026', 'October 2026', 'November 2026', 'December 2026'],
+    peers: [
+      'Disney Ambassador Hotel',
+      'Tokyo Disney Celebration Hotel',
+      'Tokyo Disneyland Hotel',
+      'Tokyo DisneySea Hotel MiraCosta',
+      'Tokyo DisneySea Fantasy Springs Hotel',
+      'Tokyo Disney Resort Toy Story Hotel',
+    ],
+  },
+};
+
+const c = COPY[locale];
+
+/**
+ * The official rate calendar shows a price only on dates that still have a room,
+ * so counting the priced days measures availability rather than price. Reading
+ * the same calendar for the other Disney hotels on the same day turns the figure
+ * from a fact about the season into a fact about this hotel.
+ */
+const peerMax = Math.max(...AVAILABILITY_PEERS.map((peer) => peer.open));
+const peerTotal = AVAILABILITY_TOTAL.dates;
+---
+
+<div class="not-prose my-10 rounded-2xl border border-line bg-card p-5 sm:p-7">
+  <h3 class="font-serif text-lg font-bold text-ink">
+    {c.heading(AVAILABILITY_TOTAL.open, AVAILABILITY_TOTAL.dates)}
+  </h3>
+  <p class="mt-2 text-[0.875rem] leading-[1.85] text-ink-soft">
+    {c.snapshot}
+  </p>
+
+  <ul class="mt-6 space-y-2.5">
+    {
+      AVAILABILITY.map((month, i) => (
+        <li class="flex items-center gap-3">
+          <span class="w-24 shrink-0 text-xs text-ink-soft tabular-nums">{c.months[i]}</span>
+          <span class="relative h-6 flex-1 overflow-hidden rounded bg-paper-deep">
+            <span
+              class="absolute inset-y-0 left-0 rounded bg-brand"
+              style={`width: ${(month.open / month.dates) * 100}%`}
+            />
+          </span>
+          <span class="w-24 shrink-0 text-right text-xs text-ink-soft tabular-nums">
+            {c.monthTally(month.open, month.dates)}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="mt-5 border-t border-line-soft pt-5 text-[0.875rem] leading-[1.85] text-ink-soft">
+    {c.peersIntro}
+  </p>
+
+  <ul class="mt-4 space-y-2">
+    {
+      AVAILABILITY_PEERS.map((peer, i) => (
+        <li class="flex items-center gap-3">
+          <span
+            class:list={[
+              'w-52 shrink-0 truncate text-xs',
+              peer.hotel === HOTEL.name ? 'font-bold text-brand-deep' : 'text-ink-soft',
+            ]}
+          >
+            {c.peers[i]}
+          </span>
+          <span class="relative h-4 flex-1 overflow-hidden rounded bg-paper-deep">
+            <span
+              class:list={[
+                'absolute inset-y-0 left-0 rounded',
+                peer.hotel === HOTEL.name ? 'bg-brand' : 'bg-line',
+              ]}
+              style={`width: ${(peer.open / peerMax) * 100}%`}
+            />
+          </span>
+          <span class="w-20 shrink-0 text-right text-xs text-ink-soft tabular-nums">
+            {c.days(peer.open)}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="mt-4 text-xs leading-relaxed text-ink-faint">{c.footnote(peerTotal)}</p>
+</div>

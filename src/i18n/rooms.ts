@@ -3,6 +3,7 @@ import type { HotelKey } from './hotel';
 import type { Room } from '~/data/hotel';
 import { TDH_NAMES } from './rooms-tdh';
 import { DHM_NAMES } from './rooms-dhm';
+import { FSH_NAMES } from './rooms-fsh';
 
 /**
  * Room, view, category, flag and bed names in each locale, per hotel.
@@ -35,7 +36,7 @@ export interface HotelNames {
   flags: LocaleMap;
 }
 
-const NAMES: Record<HotelKey, HotelNames> = { tdh: TDH_NAMES, dhm: DHM_NAMES };
+const NAMES: Record<HotelKey, HotelNames> = { tdh: TDH_NAMES, dhm: DHM_NAMES, fsh: FSH_NAMES };
 
 export const names = (hotel: HotelKey): HotelNames => NAMES[hotel];
 
@@ -73,6 +74,7 @@ export const BED_NAMES: Record<Locale, Record<string, string>> = {
   ja: {
     標準床: 'レギュラーサイズ',
     '標準床（無障礙設計）': 'レギュラーサイズ（アクセシブル）',
+    '標準床（無障礙客房）': 'レギュラーサイズ（アクセシブル）',
     雙人床: 'ダブルサイズ',
     '雙人床（頂樓陽台客房）': 'ダブルサイズ（テラスルーム）',
     '雙人床（皇家套房）': 'ダブルサイズ（イル・マニーフィコ・スイート）',
@@ -88,6 +90,7 @@ export const BED_NAMES: Record<Locale, Record<string, string>> = {
   en: {
     標準床: 'Regular',
     '標準床（無障礙設計）': 'Regular (accessible)',
+    '標準床（無障礙客房）': 'Regular (accessible)',
     雙人床: 'Double',
     '雙人床（頂樓陽台客房）': 'Double (Terrace Room)',
     '雙人床（皇家套房）': 'Double (Il Magnifico Suite)',
@@ -125,6 +128,7 @@ export function bedSummary(room: Room, locale: Locale): string {
     [/(\d) 張皇家套房專用雙人床/, '雙人床（皇家套房）'],
     [/(\d) 張雙人床/, '雙人床'],
     [/(\d) 張凹室床/, '凹室床'],
+    [/(\d) 張郵輪床/, '郵輪床'],
   ];
 
   const parts: string[] = [];
@@ -136,7 +140,7 @@ export function bedSummary(room: Room, locale: Locale): string {
   if (/凹室床/.test(room.beds) && !/\d 張凹室床/.test(room.beds))
     parts.push(`1 × ${bedName('凹室床', locale)}`);
   if (/推拉床/.test(room.beds)) parts.push(bedName('推拉床', locale));
-  if (/郵輪床/.test(room.beds)) {
+  if (/郵輪床/.test(room.beds) && !/\d 張郵輪床/.test(room.beds)) {
     const optional = /可加價/.test(room.beds);
     const cruise = bedName('郵輪床', locale);
     parts.push(optional ? (locale === 'ja' ? `${cruise}（有料）` : `${cruise} (paid extra)`) : cruise);

@@ -1,0 +1,395 @@
+---
+import {
+  ELEVATIONS,
+  ROSE_CATEGORY_LABEL,
+  ROSE_ROOMS,
+  ROSE_ROOM_COUNT,
+  categoryAt,
+  roseCourtTally,
+  type RoseCategory,
+} from '~/data/fsh-rose-court';
+import { ROOMS } from '~/data/fantasy-springs-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { roomName } from '~/i18n/rooms';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+const COPY: Record<Locale, {
+  heading: (n: number) => string;
+  intro: string;
+  categories: Record<RoseCategory, string>;
+  parkView: string;
+  count: (n: number) => string;
+  numberBand: (band: string) => string;
+  floor: (n: number) => string;
+  tableCaption: (face: string) => string;
+  floorHeader: string;
+  empty: string;
+  roomLabel: (n: string) => string;
+  ariaCell: (n: string, category: string, park: boolean) => string;
+  noView: string;
+  bookedAs: (name: string) => string;
+  unassigned: string;
+  faces: Record<string, { label: string; outlook: string }>;
+  caveat: (positions: number) => string;
+}> = {
+  'zh-hant': {
+    heading: (n) => `玫瑰庭區 ${n} 間客房的位置`,
+    intro:
+      '玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以 9103 和 3103 是同一個窗戶，差七層樓。點任何一格看它的房型。',
+    categories: {
+      superior: '精緻客房',
+      alcove: '附凹室精緻客房',
+      deluxe: '尊爵客房',
+      accessible: '尊爵無障礙客房',
+    },
+    parkView: '樂園景觀',
+    count: (n) => `${n} 間`,
+    numberBand: (band) => `房號 ${band}`,
+    floor: (n) => `${n} 樓`,
+    tableCaption: (face) => `${face}的客房位置，橫向是房號位置、縱向是樓層`,
+    floorHeader: '樓層',
+    empty: '點上面任何一格房號，這裡會顯示它的房型。',
+    roomLabel: (n) => `${n} 號房`,
+    ariaCell: (n, category, park) => `${n} 號房，${category}${park ? '，樂園景觀' : ''}`,
+    noView: '無景觀指定',
+    bookedAs: (name) => `訂房時的分類：${name}`,
+    unassigned: '官方公布的樓層區間沒有涵蓋這個位置。',
+    faces: {
+      park: {
+        label: '朝夢幻泉鄉的一面',
+        outlook: '隔著中庭正對園區，普羅米修斯火山在正中間。越往右，豪華館的外牆越擠進畫面。',
+      },
+      chateau: {
+        label: '朝豪華館的一面',
+        outlook: '窗外主要是豪華館的建築。這一面沒有任何樂園景觀客房。',
+      },
+      diagonal: {
+        label: '斜看樂園的一面',
+        outlook:
+          '正前方是對面的客房，但站到窗邊往斜向看得到樂園，而且看得到樂園景觀客房看不到的艾倫戴爾城堡。這一面只有 5 樓以上。',
+      },
+    },
+    caveat: (positions) =>
+      `位置與分類來自 fukufukusatoka 的逐間調查，該文說明其中包含作者的推測。可以信任的理由是它對得起來：上面 ${positions} 個位置拆成六種分類的間數，和飯店公布的間數完全一致，任何一格標錯都會讓總數對不上。唯一沒有歸屬的是 8301——官方的精緻客房樓層區間只到 7 樓，沒有說明 8 樓的那一間怎麼賣。`,
+  },
+  ja: {
+    heading: (n) => `ローズコートサイド ${n} 室の位置`,
+    intro:
+      'ローズコートサイドは中庭をコの字に囲み、3 つの面それぞれに部屋番号の系列があります。先頭が階、下 3 桁が位置なので、9103 と 3103 は 7 階違いの同じ窓です。どの区画でも押すと客室タイプが出ます。',
+    categories: {
+      superior: 'スーペリアルーム',
+      alcove: 'スーペリア・アルコーヴルーム',
+      deluxe: 'デラックスルーム',
+      accessible: 'デラックス・アクセシブルルーム',
+    },
+    parkView: 'パークビュー',
+    count: (n) => `${n} 室`,
+    numberBand: (band) => `部屋番号 ${band}`,
+    floor: (n) => `${n} 階`,
+    tableCaption: (face) => `${face}の客室位置。横が部屋番号の位置、縦が階です`,
+    floorHeader: '階',
+    empty: '上のどれかを押すと、その客室タイプがここに出ます。',
+    roomLabel: (n) => `${n} 号室`,
+    ariaCell: (n, category, park) => `${n} 号室、${category}${park ? '、パークビュー' : ''}`,
+    noView: '眺望指定なし',
+    bookedAs: (name) => `予約時の区分：${name}`,
+    unassigned: '公式が公表している階層の区分に、この位置は含まれていません。',
+    faces: {
+      park: {
+        label: 'ファンタジースプリングスに向く面',
+        outlook:
+          '中庭越しにパークへ正対し、プロメテウス火山が正面に来ます。右へ行くほどグランドシャトーの外壁が画面に入ってきます。',
+      },
+      chateau: {
+        label: 'グランドシャトーに向く面',
+        outlook: '窓の外は主にグランドシャトーの建物。この面にパークビューの客室はありません。',
+      },
+      diagonal: {
+        label: 'パークを斜めに見る面',
+        outlook:
+          '真正面は向かいの客室ですが、窓際に立てば斜めにパークが見え、しかもパークビューの客室からは見えないアレンデール城が見えます。この面は 5 階以上だけです。',
+      },
+    },
+    caveat: (positions) =>
+      `位置と区分は fukufukusatoka による 1 室ずつの調査で、同記事は著者の推測を含むと明記しています。それでも信頼できる理由は数が合うことです。上の ${positions} 区画を 6 つの区分に分けた室数が、ホテルの公表値と完全に一致します。1 区画でも取り違えれば合計が崩れます。唯一どこにも属さないのが 8301 で、公式のスーペリアルームの階層区分は 7 階までしかなく、8 階のこの 1 室をどう売るのかは書かれていません。`,
+  },
+  en: {
+    heading: (n) => `Where the Rose Court Side’s ${n} rooms are`,
+    intro:
+      'The Rose Court Side wraps three sides of the courtyard, and each side has its own run of room numbers. The first digit is the floor and the last three fix the position, so 9103 and 3103 are the same window seven floors apart. Select any cell to see its room type.',
+    categories: {
+      superior: 'Superior Room',
+      alcove: 'Superior Alcove Room',
+      deluxe: 'Deluxe Room',
+      accessible: 'Deluxe Accessible Room',
+    },
+    parkView: 'Park View',
+    count: (n) => `${n} rooms`,
+    numberBand: (band) => `Numbers ${band}`,
+    floor: (n) => `${n}F`,
+    tableCaption: (face) => `Room positions on the ${face}; columns are positions, rows are floors`,
+    floorHeader: 'Floor',
+    empty: 'Select any room number above to see its room type.',
+    roomLabel: (n) => `Room ${n}`,
+    ariaCell: (n, category, park) => `Room ${n}, ${category}${park ? ', Park View' : ''}`,
+    noView: 'No view designation',
+    bookedAs: (name) => `Booked as: ${name}`,
+    unassigned: 'No published floor band covers this position.',
+    faces: {
+      park: {
+        label: 'the side facing Fantasy Springs',
+        outlook:
+          'Faces the park across the courtyard, with Mount Prometheus in the middle. The further right, the more of the Grand Chateau’s wall pushes into the frame.',
+      },
+      chateau: {
+        label: 'the side facing the Grand Chateau',
+        outlook: 'Looks mainly at the Grand Chateau building. No Park View rooms on this side at all.',
+      },
+      diagonal: {
+        label: 'the side that sees the park at an angle',
+        outlook:
+          'Straight ahead are the rooms opposite, but stand at the window and the park appears at an angle — including Arendelle Castle, which the Park View rooms cannot see. This side starts on the 5th floor.',
+      },
+    },
+    caveat: (positions) =>
+      `Positions and categories come from fukufukusatoka’s room-by-room survey, which states that it contains the author’s inference. The reason to trust it anyway is that it reconciles: the ${positions} positions above split into exactly the six category totals the hotel publishes, and a single mislabelled cell would break that arithmetic. One position belongs nowhere — 8301, because the published Superior floor bands stop at the 7th floor and nothing says how the 8th-floor room is sold.`,
+  },
+};
+
+const c = COPY[locale];
+
+/**
+ * The Rose Court Side drawn the way its source records it: three elevations, one
+ * cell per window. An elevation is the honest shape here — the source marked up
+ * photographs of the three facades, not floor plans — and it happens to be the
+ * shape the reader needs, because on this side the room number is a coordinate:
+ * the leading digit is the floor and the last three fix the column.
+ *
+ * Every cell keeps its real column and its real floor. Columns that stop lower
+ * than their neighbours are drawn stopping there, because that is a fact about
+ * the building rather than a gap in the data.
+ */
+
+const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room, 'fsh', locale)]));
+
+const tally = roseCourtTally();
+
+/**
+ * The alcove room is 118 of the 147 positions, so it gets the quietest fill and
+ * the three rarer categories get tints that separate from it at a glance — the
+ * `-soft` gold token is too close to `paper-deep` to tell apart in a grid.
+ */
+const CATEGORY_TONE: Record<RoseCategory, string> = {
+  superior: 'bg-brand-soft text-brand-deep',
+  alcove: 'bg-paper-deep text-ink-soft',
+  deluxe: 'bg-gold/25 text-gold',
+  accessible: 'bg-berry/20 text-berry',
+};
+
+const faces = ELEVATIONS.map((face) => {
+  const floors = [...new Set(face.columns.flatMap((c) => c.floors))].sort((a, b) => b - a);
+  return {
+    ...face,
+    floors,
+    grid: floors.map((floor) => ({
+      floor,
+      cells: face.columns.map((column) => {
+        if (!column.floors.includes(floor)) return null;
+        const room = ROSE_ROOMS.find(
+          (r) => r.face === face.key && r.position === column.position && r.floor === floor,
+        )!;
+        return {
+          number: room.number,
+          category: categoryAt(column, floor),
+          parkView: room.parkView,
+          typeName: room.roomType ? displayName.get(room.roomType) : undefined,
+        };
+      }),
+    })),
+  };
+});
+---
+
+<section
+  id="rose-court"
+  class="not-prose scroll-mt-32"
+  data-elevation
+  data-strings={JSON.stringify({
+    roomLabel: c.roomLabel('{n}'),
+    noView: c.noView,
+    parkView: c.parkView,
+    bookedAs: c.bookedAs('{name}'),
+    unassigned: c.unassigned,
+    separator: locale === 'en' ? ', ' : '・',
+  })}
+>
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="font-serif text-2xl font-bold text-ink">{c.heading(ROSE_ROOM_COUNT)}</h2>
+      <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        {c.intro}
+      </p>
+    </div>
+  </div>
+
+  <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+    {
+      (Object.keys(ROSE_CATEGORY_LABEL) as RoseCategory[]).map((key) => (
+        <li class="flex items-center gap-1.5">
+          <span class:list={['h-3.5 w-3.5 rounded-sm', CATEGORY_TONE[key].split(' ')[0]]} />
+          <span class="text-ink-soft">{c.categories[key]}</span>
+          <span class="text-ink-faint">
+            {c.count(tally.filter((t) => t.category === key).reduce((n, t) => n + t.count, 0))}
+          </span>
+        </li>
+      ))
+    }
+    <li class="flex items-center gap-1.5">
+      <span
+        class="h-3.5 w-3.5 rounded-sm bg-paper-deep ring-2 ring-brand ring-inset"
+        aria-hidden="true"></span>
+      <span class="text-ink-soft">{c.parkView}</span>
+      <span class="text-ink-faint">
+        {c.count(tally.filter((t) => t.parkView).reduce((n, t) => n + t.count, 0))}
+      </span>
+    </li>
+  </ul>
+
+  <div class="mt-7 space-y-8">
+    {
+      faces.map((face) => (
+        <figure class="overflow-hidden rounded-2xl border border-line bg-card">
+          <figcaption class="border-b border-line bg-paper-deep/50 px-4 py-3 sm:px-5">
+            <h3 class="flex flex-wrap items-baseline gap-x-2.5 font-serif text-base font-bold text-ink">
+              {c.faces[face.key]!.label}
+              <span class="font-sans text-2xs font-medium tracking-wider text-ink-faint">
+                {c.numberBand(face.numberBand)}
+              </span>
+            </h3>
+            <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">{c.faces[face.key]!.outlook}</p>
+          </figcaption>
+
+          <div class="table-scroll px-4 py-5 sm:px-5">
+            <table class="w-full min-w-max border-separate border-spacing-1 text-center">
+              <caption class="sr-only">
+                {c.tableCaption(c.faces[face.key]!.label)}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="sr-only">
+                    {c.floorHeader}
+                  </th>
+                  {face.columns.map((column) => (
+                    <th
+                      scope="col"
+                      class="px-1 pb-1 text-2xs font-medium text-ink-faint tabular-nums"
+                    >
+                      {column.position}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {face.grid.map((row) => (
+                  <tr>
+                    <th
+                      scope="row"
+                      class="pr-2 text-right text-2xs font-medium whitespace-nowrap text-ink-faint"
+                    >
+                      {c.floor(row.floor)}
+                    </th>
+                    {row.cells.map((cell) =>
+                      cell ? (
+                        <td class="p-0">
+                          <button
+                            type="button"
+                            data-cell
+                            data-number={cell.number}
+                            data-category={c.categories[cell.category]}
+                            data-park={String(cell.parkView)}
+                            data-type={cell.typeName ?? ''}
+                            class:list={[
+                              'block w-11 rounded-sm px-1 py-1.5 text-2xs tabular-nums transition-shadow duration-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-12',
+                              CATEGORY_TONE[cell.category],
+                              cell.parkView && 'ring-2 ring-brand ring-inset font-bold',
+                            ]}
+                            aria-label={c.ariaCell(cell.number, c.categories[cell.category], cell.parkView)}
+                          >
+                            {cell.number}
+                          </button>
+                        </td>
+                      ) : (
+                        <td class="p-0">
+                          <span class="block w-11 py-1.5 text-2xs text-line sm:w-12" aria-hidden="true">
+                            ·
+                          </span>
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </figure>
+      ))
+    }
+  </div>
+
+  <div
+    class="mt-6 rounded-xl border border-brand/30 bg-brand-soft/40 px-5 py-4"
+    data-detail
+    aria-live="polite"
+  >
+    <p class="text-sm text-ink-soft" data-detail-empty>{c.empty}</p>
+    <div class="hidden" data-detail-body>
+      <p class="font-serif text-lg font-bold text-ink" data-detail-number></p>
+      <p class="mt-1 text-sm text-ink-soft" data-detail-meta></p>
+      <p class="mt-2 text-sm text-brand-deep" data-detail-type></p>
+    </div>
+  </div>
+
+  <p class="mt-5 text-xs leading-relaxed text-ink-faint">{c.caveat(ROSE_ROOM_COUNT)}</p>
+</section>
+
+<script>
+  function initElevation(root: HTMLElement) {
+    const strings = JSON.parse(root.dataset.strings!) as {
+      roomLabel: string;
+      noView: string;
+      parkView: string;
+      bookedAs: string;
+      unassigned: string;
+      separator: string;
+    };
+    const empty = root.querySelector<HTMLElement>('[data-detail-empty]');
+    const body = root.querySelector<HTMLElement>('[data-detail-body]');
+    const number = root.querySelector<HTMLElement>('[data-detail-number]');
+    const meta = root.querySelector<HTMLElement>('[data-detail-meta]');
+    const type = root.querySelector<HTMLElement>('[data-detail-type]');
+    if (!empty || !body || !number || !meta || !type) return;
+
+    root.querySelectorAll<HTMLButtonElement>('[data-cell]').forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const parkView = cell.dataset.park === 'true';
+        number.textContent = strings.roomLabel.replace('{n}', cell.dataset.number!);
+        meta.textContent = [
+          cell.dataset.category,
+          parkView ? strings.parkView : strings.noView,
+        ].join(strings.separator);
+        type.textContent = cell.dataset.type
+          ? strings.bookedAs.replace('{name}', cell.dataset.type)
+          : strings.unassigned;
+        empty.classList.add('hidden');
+        body.classList.remove('hidden');
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-elevation]').forEach((root) => initElevation(root));
+</script>
