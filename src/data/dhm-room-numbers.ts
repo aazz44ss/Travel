@@ -20,6 +20,10 @@
  *   the way along, which is why the 1xx block starts on floor 3 and only the
  *   3xx block has floor-2 rooms.
  *
+ * The plan drawings that accompany these lists are traced separately in
+ * `./dhm-plan.ts`, which is what places each number in the building; this file
+ * stays a map from room type to room numbers.
+ *
  * The survey predates two changes. `スーペリアルーム（パーシャルビュー）` is the
  * name it uses for what the Traditional Chinese pages now call 景隅景觀, and it
  * groups the Speciale balcony harbour rooms by view level where the hotel now
@@ -188,55 +192,6 @@ export const ROOM_NUMBERS: RoomNumbers = {
   },
 };
 
-export interface RoomNumberHit {
-  number: string;
-  floor: number;
-  /** The three digits after the floor; the same position on every floor. */
-  code: string;
-  roomId: string;
-  balcony: boolean;
-}
-
-const INDEX: Map<string, RoomNumberHit> = new Map(
-  Object.entries(ROOM_NUMBERS).flatMap(([roomId, entry]) =>
-    entry.numbers.map((number): [string, RoomNumberHit] => [
-      number,
-      {
-        number,
-        floor: Number(number[0]),
-        code: number.slice(1),
-        roomId,
-        balcony: entry.balcony.includes(number),
-      },
-    ]),
-  ),
-);
-
-export const KNOWN_ROOM_NUMBERS: RoomNumberHit[] = [...INDEX.values()].sort((a, b) =>
-  a.number.localeCompare(b.number),
-);
-
-/** Floors the survey reaches, highest first, as the building is read from the top. */
-export const SURVEYED_FLOORS: number[] = [
-  ...new Set(KNOWN_ROOM_NUMBERS.map((hit) => hit.floor)),
-].sort((a, b) => b - a);
-
-/**
- * The Porto Paradiso side is two runs of corridor, one numbered 1xx and one 3xx.
- * Numbers rise along each run, so sorting them is the same as walking it.
- */
-export const NUMBER_BLOCKS = [
-  {
-    key: '1',
-    label: '1xx 段',
-    summary: '只有 3–5 樓。含海港套房、無障礙客房、廣場與港灣景觀，5 樓有頂樓陽台客房',
-  },
-  {
-    key: '3',
-    label: '3xx 段',
-    summary: '2–5 樓，是唯一有 2 樓客房的一段；號碼末端是轉角的觀海景套房',
-  },
-] as const;
 
 /**
  * Category pairs the survey says can be booked as connecting rooms. It is a

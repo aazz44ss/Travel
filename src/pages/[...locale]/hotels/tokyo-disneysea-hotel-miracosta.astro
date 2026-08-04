@@ -5,7 +5,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import PriceSeasons from '~/components/PriceSeasons.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
-import MiraCostaRoomIndex from '~/components/MiraCostaRoomIndex.astro';
+import MiraCostaFloorPlan from '~/components/MiraCostaFloorPlan.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
@@ -31,7 +31,8 @@ import {
   cheapestRoom,
 } from '~/data/tokyo-disneysea-hotel-miracosta';
 import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/dhm-rates';
-import { CONNECTING_PAIRS, KNOWN_ROOM_NUMBERS, NUMBER_BLOCKS, ROOM_NUMBERS } from '~/data/dhm-room-numbers';
+import { CONNECTING_PAIRS, ROOM_NUMBERS } from '~/data/dhm-room-numbers';
+import { planRooms } from '~/data/dhm-plan';
 import { LAYOUTS } from '~/data/dhm-room-layouts';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
@@ -75,7 +76,7 @@ const sections = copy.sections.filter(
 );
 
 const title = `${copy.hotelName}${copy.titleSuffix}`;
-const description = copy.pageDescription(ROOMS.length, KNOWN_ROOM_NUMBERS.length);
+const description = copy.pageDescription(ROOMS.length, planRooms().length);
 
 const schema = [
   {
@@ -261,11 +262,10 @@ const schema = [
     </section>
 
     <section class="mt-20">
-      <MiraCostaRoomIndex
+      <MiraCostaFloorPlan
         rooms={ROOMS}
         views={VIEWS}
         roomNumbers={ROOM_NUMBERS}
-        blocks={NUMBER_BLOCKS}
         connecting={CONNECTING_PAIRS}
         locale={locale}
         sourceUrl="https://dhoteloo.com/%e3%83%9d%e3%83%ab%e3%83%88%e3%83%bb%e3%83%91%e3%83%a9%e3%83%87%e3%82%a3%e3%83%bc%e3%82%be%e3%83%bb%e3%82%b5%e3%82%a4%e3%83%89%e5%ae%a2%e5%ae%a4%e4%bd%8d%e7%bd%ae%e5%9b%b3%e3%80%90%e3%83%9f%e3%83%a9/"
