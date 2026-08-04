@@ -8,10 +8,18 @@
  *
  * What is faithful here: which corridor a room is on, its order along that
  * corridor, which side of the corridor it opens from, and therefore which way it
- * looks. What is not: the drawing is schematic. Corridors are straightened to
- * the angles the source draws them at and rooms are laid out at uniform width,
- * because the source has no scale and no coordinates. So read a cell as "this
- * position, this orientation", never as "this many metres of frontage".
+ * looks. Positions also stack, because each corridor is divided into as many
+ * slots as the fullest floor has rooms and every floor uses the same slots, so
+ * room 3313 sits directly under 5313 and a fifth-floor Terrace Room covering two
+ * positions is drawn twice as wide as the standard room below it.
+ *
+ * What is not faithful: corridor directions are the angles the source draws them
+ * at, read by eye, and every corridor's length is set from its room count at one
+ * pitch for the whole building. That keeps rooms comparable between wings — the
+ * real thing has near-constant frontage per room — but it is not measured. Two
+ * rooms of the same frontage and different floor area, a 37 m² Superior and a
+ * 60 m² Harbor Room, are drawn the same width. So read a cell as "this position,
+ * this orientation", never as "this many metres".
  *
  * Two things the plans show that the article's text does not:
  *
@@ -62,9 +70,9 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'nw',
     path: [
-      [176, 96],
-      [246, 176],
-      [330, 268],
+      [287, 80],
+      [359, 179],
+      [447, 300],
     ],
     left: {
       facing: 'inland',
@@ -87,8 +95,8 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'spine-n',
     path: [
-      [356, 300],
-      [592, 300],
+      [447, 300],
+      [600, 300],
     ],
     left: {
       facing: 'inland',
@@ -111,8 +119,8 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'east',
     path: [
-      [688, 300],
-      [872, 300],
+      [712, 300],
+      [814, 300],
     ],
     left: {
       facing: 'inland',
@@ -136,8 +144,8 @@ export const PLAN_RUNS: PlanRun[] = [
     /** The accessible rooms sit in the corner where the two spines meet. */
     key: 'corner',
     path: [
-      [600, 328],
-      [628, 356],
+      [608, 314],
+      [620, 326],
     ],
     left: { facing: 'inland', floors: {} },
     right: { facing: 'piazza', floors: { 4: ['4103'], 3: ['3103'] } },
@@ -145,8 +153,8 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'spine-s',
     path: [
-      [636, 356],
-      [636, 632],
+      [640, 344],
+      [640, 599],
     ],
     left: {
       facing: 'inland',
@@ -169,10 +177,10 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'sw',
     path: [
-      [604, 676],
-      [452, 728],
-      [316, 792],
-      [252, 872],
+      [616, 635],
+      [496, 652],
+      [389, 702],
+      [313, 792],
     ],
     left: {
       facing: 'inland',
@@ -196,8 +204,8 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'se',
     path: [
-      [700, 668],
-      [828, 776],
+      [700, 625],
+      [799, 718],
     ],
     left: {
       facing: 'inland',
@@ -222,8 +230,8 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'se-tail',
     path: [
-      [844, 800],
-      [844, 976],
+      [811, 738],
+      [811, 908],
     ],
     left: {
       facing: 'entrance',
@@ -246,12 +254,12 @@ export const PARTIAL_VIEW_FROM_PLAN: string[] = [
 ];
 
 /** The chapel's octagonal void, drawn only to orient the reader. */
-export const CHAPEL = { cx: 652, cy: 300, r: 40 };
+export const CHAPEL = { cx: 656, cy: 300, r: 40 };
 
 /** Landmarks that make the orientation readable, in plan units. */
 export const LANDMARKS = [
-  { key: 'harbour', points: '132,368 552,368 576,608 424,676 268,648 108,512' },
-  { key: 'piazza', points: '344,340 592,340 592,372 344,372' },
+  { key: 'harbour', points: '140,352 586,352 586,580 468,592 372,652 264,672 124,516' },
+  { key: 'piazza', points: '456,340 600,340 600,372 456,372' },
 ] as const;
 
 export const PLAN_FLOORS = [5, 4, 3, 2] as const;
@@ -273,17 +281,59 @@ export function planRooms(): { number: string; facing: Facing; floor: number; ru
 }
 
 /**
- * Lays a run's rooms out along its corridor: the polyline is split into equal
- * steps and each room becomes a quad offset perpendicular to its step, so bends
- * in the corridor bend the rooms with them.
+ * The slots a run's side has, in walking order.
+ *
+ * Every floor stacks on the same structure, so the fullest floor defines the
+ * positions and the others are a subset of it. Taking the union this way is what
+ * makes a room sit in the same place on every floor — and what lets a room that
+ * occupies two positions, like a fifth-floor Terrace Room, be drawn twice as
+ * wide as the standard room below it.
+ */
+export function slotsOf(run: PlanRun, side: 'left' | 'right'): string[] {
+  const floors = Object.values(run[side].floors);
+  if (floors.length === 0) return [];
+  const base = floors.reduce((longest, list) => (list.length > longest.length ? list : longest));
+  const codes = base.map((number) => number.slice(1));
+  for (const list of floors) {
+    for (const number of list) {
+      if (!codes.includes(number.slice(1))) {
+        throw new Error(`dhm-plan: ${run.key} ${side} has ${number} outside the fullest floor`);
+      }
+    }
+  }
+  return codes;
+}
+
+/** Where each room on a floor starts, and how many slots it covers. */
+export function spansOf(
+  run: PlanRun,
+  side: 'left' | 'right',
+  floor: number,
+): { number: string; start: number; span: number }[] {
+  const slots = slotsOf(run, side);
+  const numbers = run[side].floors[floor] ?? [];
+  const starts = numbers.map((number) => slots.indexOf(number.slice(1)));
+  return numbers.map((number, i) => ({
+    number,
+    start: starts[i]!,
+    span: i === numbers.length - 1 ? 1 : starts[i + 1]! - starts[i]!,
+  }));
+}
+
+/**
+ * Lays a run's rooms out along its corridor: the polyline is divided into as
+ * many equal slots as the fullest floor has rooms, and each room becomes a quad
+ * spanning its own slots, offset perpendicular to the corridor. Bends in the
+ * corridor bend the rooms with them.
  */
 export function layout(
   path: [number, number][],
-  count: number,
+  slots: number,
+  spans: { start: number; span: number }[],
   side: 'left' | 'right',
   depth: number,
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
-  if (count === 0) return [];
+  if (slots === 0) return [];
 
   const segments = path.slice(0, -1).map((from, i) => {
     const to = path[i + 1]!;
@@ -292,7 +342,7 @@ export function layout(
     return { from, to, length: Math.hypot(dx, dy) };
   });
   const total = segments.reduce((sum, segment) => sum + segment.length, 0);
-  const step = total / count;
+  const step = total / slots;
 
   /** Walks the polyline to the point and direction at distance `d` from the start. */
   const at = (d: number): { x: number; y: number; ux: number; uy: number } => {
@@ -300,13 +350,11 @@ export function layout(
     for (const segment of segments) {
       if (d <= travelled + segment.length || segment === segments[segments.length - 1]) {
         const t = (d - travelled) / segment.length;
-        const ux = (segment.to[0] - segment.from[0]) / segment.length;
-        const uy = (segment.to[1] - segment.from[1]) / segment.length;
         return {
           x: segment.from[0] + (segment.to[0] - segment.from[0]) * t,
           y: segment.from[1] + (segment.to[1] - segment.from[1]) * t,
-          ux,
-          uy,
+          ux: (segment.to[0] - segment.from[0]) / segment.length,
+          uy: (segment.to[1] - segment.from[1]) / segment.length,
         };
       }
       travelled += segment.length;
@@ -315,10 +363,11 @@ export function layout(
   };
 
   const sign = side === 'left' ? -1 : 1;
+  const round = (n: number) => Math.round(n * 10) / 10;
 
-  return Array.from({ length: count }, (_, i) => {
-    const a = at(i * step);
-    const b = at((i + 1) * step);
+  return spans.map(({ start, span }) => {
+    const a = at(start * step);
+    const b = at((start + span) * step);
     /** Perpendicular to the corridor, pointing to this side of it. */
     const na = { x: -a.uy * sign, y: a.ux * sign };
     const nb = { x: -b.uy * sign, y: b.ux * sign };
@@ -327,9 +376,8 @@ export function layout(
     const p2 = [b.x + nb.x * inner, b.y + nb.y * inner];
     const p3 = [b.x + nb.x * (inner + depth), b.y + nb.y * (inner + depth)];
     const p4 = [a.x + na.x * (inner + depth), a.y + na.y * (inner + depth)];
-    const round = (n: number) => Math.round(n * 10) / 10;
     return {
-      width: round(step),
+      width: round(step * span),
       points: [p1, p2, p3, p4].map(([x, y]) => `${round(x!)},${round(y!)}`).join(' '),
       cx: round((p1[0]! + p2[0]! + p3[0]! + p4[0]!) / 4),
       cy: round((p1[1]! + p2[1]! + p3[1]! + p4[1]!) / 4),

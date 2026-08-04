@@ -9,6 +9,8 @@ import {
   PLAN_RUNS,
   PLAN_WIDTH,
   layout,
+  slotsOf,
+  spansOf,
   type Facing,
 } from '~/data/dhm-plan';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
@@ -72,10 +74,9 @@ const TONE: Record<string, { fill: string; text: string }> = {
 const cells = PLAN_RUNS.flatMap((run) =>
   (['left', 'right'] as const).flatMap((side) =>
     PLAN_FLOORS.flatMap((floor) => {
-      const numbers = run[side].floors[floor] ?? [];
-      const depth = 26;
-      return layout(run.path, numbers.length, side, depth).map((cell, i) => {
-        const number = numbers[i]!;
+      const spans = spansOf(run, side, floor);
+      return layout(run.path, slotsOf(run, side).length, spans, side, 26).map((cell, i) => {
+        const number = spans[i]!.number;
         const sold = typeOf.get(number);
         const grade = seenFrom(number, run[side].facing);
         /** A number needs about 20 units; narrow cells get it written across. */

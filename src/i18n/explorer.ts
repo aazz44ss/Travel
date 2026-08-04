@@ -165,7 +165,7 @@ const zhHant: ExplorerCopy = {
     svgDesc:
       '飯店像一個環抱地中海港灣的馬蹄形。左上翼與上方走廊面向米老鼠廣場，中央直廊與左下翼面向港灣，右側與右下翼背對水面。每個多邊形是一間客房。',
     note: (rooms, enumerated) =>
-      `走廊走向與每間房的順序、朝向依來源的手繪平面圖描繪，房號逐格核對過；其中 ${enumerated} 間能對到官方房型（來源逐間列號的海港區），其餘畫出位置與朝向但不標房型。圖為示意：格子大小一律相同，不是實際面寬。全圖 ${rooms} 格，手機請左右滑動。`,
+      `走廊走向與每間房的順序、朝向依來源的手繪平面圖描繪，房號逐格核對過；其中 ${enumerated} 間能對到官方房型（來源逐間列號的海港區），其餘畫出位置與朝向但不標房型。走廊長度按房間數換算、全館同一節距，所以同一個位置在各樓層上下對齊，佔兩格的房型（例如 5 樓的頂樓陽台客房）也會畫成兩倍寬。但這不是實測圖：角度是照手繪圖目測的，面積也沒有反映——60 m² 的地中海客房和 37 m² 的精緻客房畫起來一樣寬。全圖 ${rooms} 格，手機請左右滑動。`,
     zones: { harbour: '地中海港灣', piazza: '米老鼠廣場', chapel: '教堂' },
     facing: { inland: '朝內側（看不到水面）', canal: '宮殿運河側', entrance: '園區入口側' },
     shows: {
@@ -272,7 +272,7 @@ const ja: ExplorerCopy = {
     svgDesc:
       'ホテルはメディテレーニアンハーバーを抱くような馬蹄形です。左上の翼と上の廊下はミッキー広場に面し、中央の縦廊下と左下の翼はハーバーに面し、右側と右下の翼は水面に背を向けます。多角形 1 つが 1 室です。',
     note: (rooms, enumerated) =>
-      `廊下の向きと各室の順序・向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合しています。うち ${enumerated} 室は公式の客室タイプに対応（出典が 1 室ずつ挙げているポルト側）、残りは位置と向きのみを示しタイプは記載していません。図は模式的で、マスの大きさは一律で実際の間口ではありません。全 ${rooms} マス。スマートフォンでは横にスクロールしてください。`,
+      `廊下の向きと各室の順序・向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合しています。うち ${enumerated} 室は公式の客室タイプに対応（出典が 1 室ずつ挙げているポルト側）、残りは位置と向きのみを示しタイプは記載していません。廊下の長さは部屋数から換算し、館内で同じピッチにしているため、同じ位置は各階で上下に重なり、2 マス分を占めるタイプ（5 階のテラスルームなど）は倍の幅で描かれます。ただし実測図ではありません。角度は手描き図を目で読んだもので、面積も反映されません——60 m² のハーバールームと 37 m² のスーペリアルームは同じ幅です。全 ${rooms} マス。スマートフォンでは横にスクロールしてください。`,
     zones: { harbour: 'メディテレーニアンハーバー', piazza: 'ミッキー広場', chapel: 'チャペル' },
     facing: { inland: '内側向き（水面は見えない）', canal: 'パラッツォ・カナル側', entrance: 'パーク入口側' },
     shows: {
@@ -382,7 +382,7 @@ const en: ExplorerCopy = {
     svgDesc:
       'The hotel is a horseshoe wrapped around Mediterranean Harbor. The north-west wing and the upper corridor face Piazza Topolino, the central spine and the south-west wing face the harbour, and the eastern and south-eastern wings turn their backs to the water. Each polygon is one guest room.',
     note: (rooms, enumerated) =>
-      `Corridor directions and each room’s order and orientation are traced from the source’s hand-drawn plans, with every room number checked cell by cell. ${enumerated} of them map to an official room type — the Porto Paradiso side, the one enumerated room by room — while the rest show position and orientation without a type. The drawing is schematic: cells are a uniform size, not measured frontage. ${rooms} cells in total; scroll sideways on a phone.`,
+      `Corridor directions and each room’s order and orientation are traced from the source’s hand-drawn plans, with every room number checked cell by cell. ${enumerated} of them map to an official room type — the Porto Paradiso side, the one enumerated room by room — while the rest show position and orientation without a type. Corridor lengths come from room counts at one pitch for the whole building, so a position stacks across floors and a room covering two positions, like a fifth-floor Terrace Room, is drawn twice as wide. It is still not a measured drawing: the angles were read off the source by eye, and floor area is not represented — a 60 m² Harbor Room is drawn as wide as a 37 m² Superior. ${rooms} cells in total; scroll sideways on a phone.`,
     zones: { harbour: 'Mediterranean Harbor', piazza: 'Piazza Topolino', chapel: 'Chapel' },
     facing: { inland: 'Faces inland (no water)', canal: 'Palazzo Canals side', entrance: 'Park entrance side' },
     shows: {
