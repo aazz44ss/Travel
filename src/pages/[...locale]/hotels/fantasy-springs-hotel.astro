@@ -180,7 +180,7 @@ const schema = [
       </p>
       <figure class="mt-6 overflow-hidden rounded-xl border border-line bg-white">
         <img
-          src={HOTEL.sideMapUrl}
+          src={HOTEL.sideMap[locale]}
           width={HOTEL.sideMapSize.width}
           height={HOTEL.sideMapSize.height}
           loading="lazy"
@@ -192,7 +192,7 @@ const schema = [
         <figcaption class="border-t border-line px-4 py-2.5 text-2xs text-ink-faint">
           {copy.sideMapCaption}
           <a
-            href={HOTEL.roomsUrl}
+            href={HOTEL.rooms[locale]}
             rel="noopener nofollow"
             target="_blank"
             class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"

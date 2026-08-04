@@ -50,9 +50,20 @@ export const HOTEL = {
   checkIn: '15:00',
   checkOut: '12:00',
   officialUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/fsh.html',
-  roomsUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu/room.html',
-  /** The official side map, hotlinked rather than redrawn. */
-  sideMapUrl: 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/room/fsh_room_map_tc.jpg',
+  rooms: {
+    'zh-hant': 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu/room.html',
+    ja: 'https://www.tokyodisneyresort.jp/hotel/fsh/fcu/room.html',
+    en: 'https://www.tokyodisneyresort.jp/en/hotel/fsh/fcu/room.html',
+  },
+  /**
+   * The official side map, hotlinked rather than redrawn. The hotel publishes one
+   * per language; the unsuffixed file is the Japanese one.
+   */
+  sideMap: {
+    'zh-hant': 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/room/fsh_room_map_tc.jpg',
+    ja: 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/room/fsh_room_map.jpg',
+    en: 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/room/fsh_room_map_en.jpg',
+  },
   sideMapSize: { width: 800, height: 450 },
 } as const;
 
