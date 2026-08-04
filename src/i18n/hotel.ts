@@ -111,7 +111,7 @@ const SECTIONS: Record<HotelKey, { ids: string[]; labels: Record<Locale, string[
       'overview',
       'categories',
       'views',
-      'room-index',
+      'floor-plan',
       'room-explorer',
       'price-seasons',
       'beds',
@@ -125,7 +125,7 @@ const SECTIONS: Record<HotelKey, { ids: string[]; labels: Record<Locale, string[
         '基本資料',
         '三區與尊榮',
         '八種景觀',
-        '海港區房號',
+        '逐間位置圖',
         '房型探索器',
         '逐月價格',
         '床型尺寸',
@@ -138,7 +138,7 @@ const SECTIONS: Record<HotelKey, { ids: string[]; labels: Record<Locale, string[
         '基本情報',
         '3 つのサイド',
         '8 種類の眺望',
-        'ポルト側の部屋番号',
+        '客室配置図',
         '客室を絞り込む',
         '月別料金',
         'ベッドサイズ',
@@ -151,7 +151,7 @@ const SECTIONS: Record<HotelKey, { ids: string[]; labels: Record<Locale, string[
         'At a glance',
         'The three sides',
         'Eight view grades',
-        'Porto room numbers',
+        'Room-by-room plan',
         'Room finder',
         'Rates by month',
         'Bed sizes',
@@ -318,7 +318,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
       typeCount: (n) => `${n} 種`,
       databaseLabel: '房型資料庫',
       heroIntro: (rooms) =>
-        `${rooms} 種可訂組合、八種景觀、官方客房格局與海港區逐間房號，放在同一頁對照。這間飯店最貴的不是房間大小，是窗外那一格。`,
+        `${rooms} 種可訂組合、八種景觀、官方客房格局，以及 2 到 5 樓的逐間窗戶朝向圖，放在同一頁對照。這間飯店最貴的不是房間大小，是窗外那一格。`,
       pageDescription: (rooms, numbered) =>
         `東京迪士尼海洋觀海景大飯店全 ${rooms} 種可訂組合的面積、床型、人數、景觀與 2026 參考價，另有海港區 ${numbered} 間房號索引、官方格局圖、設施、餐廳與住宿禮遇。`,
       readArticle: '先讀完整攻略',
@@ -364,7 +364,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
       typeCount: (n) => `${n} タイプ`,
       databaseLabel: '客室データベース',
       heroIntro: (rooms) =>
-        `${rooms} タイプの予約単位、8 種類の眺望、公式のレイアウト図、そしてポルト・パラディーゾ・サイドの部屋番号を 1 ページに並べています。このホテルで高いのは広さではなく、窓の位置です。`,
+        `${rooms} タイプの予約単位、8 種類の眺望、公式のレイアウト図、そして 2〜5 階の客室配置図を 1 ページに並べています。このホテルで高いのは広さではなく、窓の位置です。`,
       pageDescription: (rooms, numbered) =>
         `東京ディズニーシー・ホテルミラコスタの全 ${rooms} タイプについて、広さ・ベッド・定員・眺望・2026 年の参考料金を整理。ポルト・パラディーゾ・サイド ${numbered} 室の部屋番号一覧、公式レイアウト図、施設、レストラン、宿泊特典も収録しています。`,
       readArticle: '詳しい解説を読む',
@@ -411,7 +411,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
       typeCount: (n) => `${n} type${n === 1 ? '' : 's'}`,
       databaseLabel: 'Room database',
       heroIntro: (rooms) =>
-        `${rooms} bookable combinations, eight view grades, the hotel’s own layout drawings and the Porto Paradiso room numbers, side by side on one page. What costs money here is not floor area — it is which window you get.`,
+        `${rooms} bookable combinations, eight view grades, the hotel’s own layout drawings and a room-by-room plan of floors 2 to 5, side by side on one page. What costs money here is not floor area — it is which window you get.`,
       pageDescription: (rooms, numbered) =>
         `Area, beds, occupancy, view grade and 2026 reference rates for all ${rooms} Tokyo DisneySea Hotel MiraCosta booking combinations, plus an index of ${numbered} Porto Paradiso room numbers, official layout drawings, facilities, restaurants and guest benefits.`,
       readArticle: 'Read the full guide',
@@ -492,8 +492,8 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
       dhm: {
         kicker: '住在東京迪士尼海洋裡',
         description:
-          '拆解托斯卡納、威尼斯、海港與尊榮客房，並整理八種景觀、海港區逐間房號、官方格局與 2026 逐月費率。',
-        facts: ['八種景觀', '海港區房號索引', '連通房組合', '官方格局圖'],
+          '拆解托斯卡納、威尼斯、海港與尊榮客房，並整理八種景觀、2 到 5 樓逐間窗戶朝向、官方格局與 2026 逐月費率。',
+        facts: ['八種景觀', '逐間窗戶朝向圖', '連通房組合', '官方格局圖'],
       },
       tdh: {
         kicker: '東京迪士尼樂園正門前',
@@ -520,8 +520,8 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
       dhm: {
         kicker: '東京ディズニーシーの中に泊まる',
         description:
-          'トスカーナ、ヴェネツィア、ポルト・パラディーゾ、スペチアーレを分解し、8 種類の眺望、ポルト側の部屋番号、公式レイアウト、2026 年の月別料金をまとめています。',
-        facts: ['8 種類の眺望', 'ポルト側の部屋番号', 'コネクティングの組み合わせ', '公式レイアウト図'],
+          'トスカーナ、ヴェネツィア、ポルト・パラディーゾ、スペチアーレを分解し、8 種類の眺望、2〜5 階の窓の向き、公式レイアウト、2026 年の月別料金をまとめています。',
+        facts: ['8 種類の眺望', '客室配置図', 'コネクティングの組み合わせ', '公式レイアウト図'],
       },
       tdh: {
         kicker: '東京ディズニーランドの正面',
@@ -548,8 +548,8 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
       dhm: {
         kicker: 'Sleeping inside Tokyo DisneySea',
         description:
-          'Toscana, Venezia, Porto Paradiso and the Speciale grade taken apart, with the eight view grades, the Porto room numbers, the official layouts and 2026 rates by month.',
-        facts: ['Eight view grades', 'Porto room-number index', 'Connecting-room pairs', 'Official layouts'],
+          'Toscana, Venezia, Porto Paradiso and the Speciale grade taken apart, with the eight view grades, which way every window on floors 2 to 5 faces, the official layouts and 2026 rates by month.',
+        facts: ['Eight view grades', 'Room-by-room plan', 'Connecting-room pairs', 'Official layouts'],
       },
       tdh: {
         kicker: 'A minute from the Tokyo Disneyland gate',

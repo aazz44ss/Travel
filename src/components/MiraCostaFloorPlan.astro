@@ -1,0 +1,522 @@
+---
+import type { ConnectingPair, Room, RoomNumbers, RoomView } from '~/data/hotel';
+import {
+  CHAPEL,
+  LANDMARKS,
+  PARTIAL_VIEW_FROM_PLAN,
+  PLAN_FLOORS,
+  PLAN_HEIGHT,
+  PLAN_RUNS,
+  PLAN_WIDTH,
+  layout,
+  type Facing,
+} from '~/data/dhm-plan';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
+import { roomName, viewLabel } from '~/i18n/rooms';
+
+interface Props {
+  rooms: Room[];
+  views: RoomView[];
+  roomNumbers: RoomNumbers;
+  connecting: ConnectingPair[];
+  sourceUrl: string;
+  locale?: Locale;
+}
+
+const { rooms, views, roomNumbers, connecting, sourceUrl, locale = DEFAULT_LOCALE } = Astro.props;
+
+const copy = explorer(locale).harbourPlan;
+const roomById = Object.fromEntries(rooms.map((room) => [room.id, room]));
+
+/** Room number -> the type it is sold as, from the enumerated per-type lists. */
+const typeOf = new Map<string, { room: Room; balcony: boolean; ambiguous: boolean }>();
+for (const [roomId, entry] of Object.entries(roomNumbers)) {
+  const room = roomById[roomId];
+  if (!room) continue;
+  for (const number of entry.numbers) {
+    typeOf.set(number, {
+      room,
+      balcony: entry.balcony.includes(number),
+      ambiguous: (entry.ambiguousWith ?? []).length > 0,
+    });
+  }
+}
+
+/**
+ * What a window actually looks at. The view grade the hotel sells decides it
+ * wherever a room number is enumerated; elsewhere the corridor's own side does,
+ * which is how the inland half of every corridor gets described at all.
+ */
+const seenFrom = (number: string, facing: Facing): string => {
+  const sold = typeOf.get(number)?.room.view;
+  if (sold) return sold;
+  if (PARTIAL_VIEW_FROM_PLAN.includes(number)) return 'partial';
+  return facing === 'harbour' || facing === 'piazza' ? 'unknown' : facing;
+};
+
+/** Warm for what sees the water, cool and flat for what does not. */
+const TONE: Record<string, { fill: string; text: string }> = {
+  'harbour-grand': { fill: '#0a353f', text: '#ffffff' },
+  harbour: { fill: '#0f4c5c', text: '#ffffff' },
+  'piazza-grand': { fill: '#5b93a1', text: '#ffffff' },
+  piazza: { fill: '#b4832c', text: '#ffffff' },
+  canal: { fill: '#8c2f4a', text: '#ffffff' },
+  entrance: { fill: '#a9b8bd', text: '#22333a' },
+  partial: { fill: '#cdc2ae', text: '#4f4739' },
+  inland: { fill: '#e6dfd3', text: '#6b6152' },
+  unknown: { fill: '#e6dfd3', text: '#6b6152' },
+};
+
+/** Every cell on the plan, per floor, ready to draw. */
+const cells = PLAN_RUNS.flatMap((run) =>
+  (['left', 'right'] as const).flatMap((side) =>
+    PLAN_FLOORS.flatMap((floor) => {
+      const numbers = run[side].floors[floor] ?? [];
+      const depth = 26;
+      return layout(run.path, numbers.length, side, depth).map((cell, i) => {
+        const number = numbers[i]!;
+        const sold = typeOf.get(number);
+        const grade = seenFrom(number, run[side].facing);
+        /** A number needs about 20 units; narrow cells get it written across. */
+        const across = cell.width < 22;
+        /** Whatever the run's direction, the label has to end up upright. */
+        const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
+        return {
+          number,
+          across,
+          labelAngle: upright(across ? cell.angle + 90 : cell.angle),
+          floor,
+          run: run.key,
+          facing: run[side].facing,
+          grade,
+          ...cell,
+          roomId: sold?.room.id ?? null,
+          balcony: sold?.balcony ?? false,
+          ambiguous: sold?.ambiguous ?? false,
+        };
+      });
+    }),
+  ),
+);
+
+const byFloor = Object.fromEntries(
+  PLAN_FLOORS.map((floor) => [floor, cells.filter((cell) => cell.floor === floor)]),
+);
+
+const enumerated = cells.filter((cell) => cell.roomId).length / PLAN_FLOORS.length;
+const harbourGrades = ['harbour-grand', 'harbour', 'piazza-grand'];
+
+/** The legend only lists what the plan actually contains. */
+const legend = (
+  ['harbour', 'piazza-grand', 'piazza', 'partial', 'canal', 'entrance', 'inland'] as const
+).filter((grade) => cells.some((cell) => cell.grade === grade));
+
+const gradeLabel = (grade: string): string =>
+  grade === 'inland' || grade === 'unknown' || grade === 'entrance' || grade === 'canal'
+    ? copy.facing[grade === 'unknown' ? 'inland' : (grade as 'inland' | 'entrance' | 'canal')]
+    : viewLabel('dhm', locale, grade);
+
+const showAnswer = (grade: string): string =>
+  grade === 'harbour' || grade === 'harbour-grand'
+    ? copy.shows.full
+    : grade === 'piazza-grand'
+      ? copy.shows.partial
+      : grade === 'piazza'
+        ? copy.shows.piazza
+        : copy.shows.none;
+
+const connectingPairs = connecting
+  .map((pair) => ({
+    rooms: pair.types.map((id) => roomById[id]).filter((room): room is Room => Boolean(room)),
+    note: pair.note,
+  }))
+  .filter((pair) => pair.rooms.length === 2);
+
+/** Handed to the browser so a click can describe a room without another request. */
+const payload = Object.fromEntries(
+  cells.map((cell) => [
+    `${cell.floor}:${cell.number}`,
+    {
+      number: cell.number,
+      floor: cell.floor,
+      name: cell.roomId ? roomName(roomById[cell.roomId]!, 'dhm', locale) : copy.unlisted,
+      grade: gradeLabel(cell.grade),
+      shows: showAnswer(cell.grade),
+      size: cell.roomId ? `${roomById[cell.roomId]!.size} m²` : '',
+      capacity: cell.roomId ? String(roomById[cell.roomId]!.capacity) : '',
+      balcony: cell.balcony,
+      ambiguous: cell.ambiguous,
+      fromPlan: !cell.roomId && PARTIAL_VIEW_FROM_PLAN.includes(cell.number),
+    },
+  ]),
+);
+
+const totalOnPlan = cells.length;
+const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
+---
+
+<section id="floor-plan" class="not-prose scroll-mt-32" data-miracosta-plan>
+  <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{copy.heading}</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
+          {copy.intro(totalOnPlan, harbourRooms)}
+        </p>
+      </div>
+      <p
+        class="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-medium text-brand-deep"
+        data-plan-floor-label
+      >
+        {copy.floorLabel(PLAN_FLOORS[0])}
+      </p>
+    </div>
+
+    <div class="mt-5 flex flex-wrap items-center gap-2">
+      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{copy.floors}</span>
+      {
+        PLAN_FLOORS.map((floor, index) => (
+          <label class="cursor-pointer">
+            <input
+              type="radio"
+              name="plan-floor"
+              value={floor}
+              checked={index === 0}
+              class="peer sr-only"
+            />
+            <span class="block rounded-full border border-line px-3 py-1 text-sm text-ink-soft tabular-nums transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+              {floor}F
+            </span>
+          </label>
+        ))
+      }
+      <form class="ml-auto flex gap-2" data-room-lookup>
+        <label for="miracosta-room-number" class="sr-only">{copy.lookupLabel}</label>
+        <input
+          id="miracosta-room-number"
+          name="room-number"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]{4}"
+          maxlength="4"
+          autocomplete="off"
+          placeholder={copy.lookupPlaceholder}
+          class="w-28 rounded-lg border border-line bg-paper px-3 py-1.5 text-sm text-ink tabular-nums placeholder:text-ink-faint focus-visible:outline-brand"
+        />
+        <button
+          type="submit"
+          class="rounded-lg bg-brand px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+        >
+          {copy.lookupSubmit}
+        </button>
+      </form>
+    </div>
+
+    <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+      {
+        legend.map((grade) => (
+          <li class="flex items-center gap-2 text-xs">
+            <span
+              class="h-3.5 w-3.5 shrink-0 rounded-sm"
+              style={`background:${TONE[grade]!.fill}`}
+              aria-hidden="true"
+            />
+            <span class="font-bold text-ink">{gradeLabel(grade)}</span>
+            <span class="text-ink-faint">{showAnswer(grade)}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-5 space-y-5">
+      <div class="table-scroll rounded-xl border border-line bg-[#f7f4ee] p-2">
+        <svg
+          viewBox={`0 0 ${PLAN_WIDTH} ${PLAN_HEIGHT}`}
+          class="h-auto w-full min-w-[46rem]"
+          role="img"
+          aria-labelledby="dhm-plan-title dhm-plan-desc"
+        >
+          <title id="dhm-plan-title">{copy.svgTitle}</title>
+          <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
+
+          {
+            LANDMARKS.map((landmark) => (
+              <polygon
+                points={landmark.points}
+                fill={landmark.key === 'harbour' ? '#cfe6ea' : '#efe4cd'}
+                stroke={landmark.key === 'harbour' ? '#a8ccd3' : '#e0d2b4'}
+                stroke-width="1.5"
+              />
+            ))
+          }
+          <text x="300" y="540" font-size="19" font-weight="700" fill="#4d8b98" text-anchor="middle">
+            {copy.zones.harbour}
+          </text>
+          <text x="468" y="362" font-size="13" font-weight="700" fill="#9a7a3c" text-anchor="middle">
+            {copy.zones.piazza}
+          </text>
+
+          <circle
+            cx={CHAPEL.cx}
+            cy={CHAPEL.cy}
+            r={CHAPEL.r}
+            fill="#ffffff"
+            stroke="#c9c0b0"
+            stroke-width="1.5"
+          />
+          <text x={CHAPEL.cx} y={CHAPEL.cy + 4} font-size="10" fill="#8b8f99" text-anchor="middle">
+            {copy.zones.chapel}
+          </text>
+
+          {
+            PLAN_FLOORS.map((floor) => (
+              <g
+                data-floor-layer={floor}
+                style={floor === PLAN_FLOORS[0] ? undefined : 'display:none'}
+              >
+                {byFloor[floor]!.map((cell) => (
+                  <g data-cell={`${cell.floor}:${cell.number}`} class="cursor-pointer">
+                    <polygon
+                      points={cell.points}
+                      fill={TONE[cell.grade]!.fill}
+                      stroke="#ffffff"
+                      stroke-width="1.2"
+                      data-shape
+                    />
+                    <text
+                      x={cell.cx}
+                      y={cell.cy + 3}
+                      text-anchor="middle"
+                      font-size={cell.across ? 7.5 : 8.5}
+                      font-weight="700"
+                      fill={TONE[cell.grade]!.text}
+                      transform={`rotate(${cell.labelAngle} ${cell.cx} ${cell.cy})`}
+                      pointer-events="none"
+                    >
+                      {cell.number}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            ))
+          }
+        </svg>
+      </div>
+
+      <div
+        class="grid gap-5 rounded-xl border border-line bg-paper-deep/40 p-5 sm:grid-cols-[1.3fr_1fr] sm:p-6"
+      >
+        <div>
+          <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-plan-kicker>
+            {copy.tapHint}
+          </p>
+          <h3 class="mt-2 font-serif text-lg leading-snug font-bold text-ink" data-plan-name>
+            {copy.readTitle}
+          </h3>
+          <p class="mt-2 text-[0.8125rem] leading-relaxed text-ink-soft" data-plan-blurb>
+            {copy.readBody}
+          </p>
+          <p class="mt-2 min-h-4 text-xs text-ink-faint" data-lookup-status aria-live="polite"></p>
+        </div>
+        <dl
+          class="hidden space-y-2.5 border-t border-line pt-4 text-[0.8125rem] sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5"
+          data-plan-facts
+        >
+        </dl>
+      </div>
+
+      <p class="text-xs leading-relaxed text-ink-faint">
+        {copy.note(totalOnPlan, enumerated)}
+      </p>
+    </div>
+
+    <section class="mt-8 rounded-xl border border-line bg-paper-deep/25 p-5 sm:p-6">
+      <h3 class="font-serif text-base font-bold text-ink">{copy.connectingHeading}</h3>
+      <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+        {copy.connectingIntro(connectingPairs.length)}<strong class="font-bold text-ink"
+          >{copy.connectingEmphasis}</strong
+        >{copy.connectingTail}
+      </p>
+      <ul class="mt-4 space-y-2.5">
+        {
+          connectingPairs.map((pair) => (
+            <li class="rounded-lg border border-line-soft bg-card px-4 py-3">
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-ink">
+                <span class="font-medium">{roomName(pair.rooms[0]!, 'dhm', locale)}</span>
+                <span class="text-ink-faint" aria-hidden="true">
+                  ●―●
+                </span>
+                <span class="font-medium">{roomName(pair.rooms[1]!, 'dhm', locale)}</span>
+              </p>
+              {locale === 'zh-hant' && pair.note && (
+                <p class="mt-1.5 text-2xs leading-relaxed text-ink-faint">{pair.note}</p>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div
+      class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-line-soft pt-5 text-xs text-ink-faint"
+    >
+      <span>{copy.balconyLegend}</span>
+      <a
+        href={sourceUrl}
+        rel="noopener nofollow"
+        target="_blank"
+        class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+      >
+        {copy.sourceLabel}
+      </a>
+    </div>
+  </div>
+</section>
+
+<script
+  is:inline
+  define:vars={{
+    payload,
+    text: {
+      floorLabel: copy.floorLabel(0),
+      tapHint: copy.tapHint,
+      readTitle: copy.readTitle,
+      readBody: copy.readBody,
+      missing: copy.lookupMissing,
+      incomplete: copy.lookupIncomplete,
+      balcony: copy.detail.balcony,
+      ambiguous: copy.detail.ambiguous,
+      fromPlan: copy.detail.fromPlan,
+      plain: copy.detail.plain,
+      fields: copy.fields,
+    },
+  }}
+>
+  (() => {
+    const root = document.querySelector('[data-miracosta-plan]');
+    if (!root) return;
+
+    const layers = Array.from(root.querySelectorAll('[data-floor-layer]'));
+    const facts = root.querySelector('[data-plan-facts]');
+    const status = root.querySelector('[data-lookup-status]');
+    const input = root.querySelector('[name="room-number"]');
+    let active = null;
+
+    const set = (selector, value) => {
+      const node = root.querySelector(selector);
+      if (node) node.textContent = value;
+    };
+
+    const floor = () => {
+      const checked = root.querySelector('input[name="plan-floor"]:checked');
+      return checked ? Number(checked.value) : 0;
+    };
+
+    function paintFloor() {
+      const current = floor();
+      layers.forEach((layer) => {
+        layer.style.display = Number(layer.dataset.floorLayer) === current ? '' : 'none';
+      });
+      set('[data-plan-floor-label]', text.floorLabel.replace('0', String(current)));
+    }
+
+    function clearActive() {
+      root.querySelectorAll('[data-cell] [data-shape]').forEach((shape) => {
+        shape.setAttribute('stroke', '#ffffff');
+        shape.setAttribute('stroke-width', '1.2');
+      });
+    }
+
+    function select(key) {
+      const room = payload[key];
+      if (!room) return false;
+      active = key;
+      clearActive();
+      const shape = root.querySelector(`[data-cell="${key}"] [data-shape]`);
+      if (shape) {
+        shape.setAttribute('stroke', '#15181d');
+        shape.setAttribute('stroke-width', '2.6');
+      }
+
+      set('[data-plan-kicker]', `${room.floor}F · ${room.number}`);
+      set('[data-plan-name]', room.name);
+      set(
+        '[data-plan-blurb]',
+        room.ambiguous
+          ? text.ambiguous
+          : room.fromPlan
+            ? text.fromPlan
+            : room.balcony
+              ? text.balcony
+              : text.plain,
+      );
+
+      if (facts) {
+        const rows = [[text.fields.sees, room.grade], [text.fields.shows, room.shows]];
+        if (room.size) rows.push([text.fields.area, room.size]);
+        if (room.capacity) rows.push([text.fields.capacity, room.capacity]);
+        facts.innerHTML = rows
+          .map(
+            ([term, value]) =>
+              `<div class="flex justify-between gap-3"><dt class="shrink-0 text-ink-faint">${term}</dt><dd class="text-right font-bold text-ink">${value}</dd></div>`,
+          )
+          .join('');
+        facts.classList.remove('hidden');
+      }
+      return true;
+    }
+
+    root.querySelectorAll('[data-cell]').forEach((node) => {
+      node.addEventListener('click', () => select(node.dataset.cell));
+    });
+
+    root.addEventListener('change', (event) => {
+      if (event.target && event.target.name === 'plan-floor') {
+        paintFloor();
+        if (active && !payload[`${floor()}:${active.split(':')[1]}`]) {
+          active = null;
+          clearActive();
+          set('[data-plan-kicker]', text.tapHint);
+          set('[data-plan-name]', text.readTitle);
+          set('[data-plan-blurb]', text.readBody);
+          if (facts) facts.classList.add('hidden');
+        } else if (active) {
+          select(`${floor()}:${active.split(':')[1]}`);
+        }
+      }
+    });
+
+    if (input) {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '').slice(0, 4);
+      });
+    }
+
+    const form = root.querySelector('[data-room-lookup]');
+    if (form) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const number = input ? input.value : '';
+        if (number.length !== 4) {
+          if (status) status.textContent = text.incomplete;
+          return;
+        }
+        const key = `${number[0]}:${number}`;
+        if (!payload[key]) {
+          if (status) status.textContent = text.missing;
+          return;
+        }
+        const target = root.querySelector(`input[name="plan-floor"][value="${number[0]}"]`);
+        if (target) target.checked = true;
+        paintFloor();
+        select(key);
+        if (status) status.textContent = '';
+        const cell = root.querySelector(`[data-cell="${key}"]`);
+        if (cell) cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    paintFloor();
+  })();
+</script>
