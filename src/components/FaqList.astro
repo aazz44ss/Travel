@@ -1,18 +1,11 @@
 ---
-import { FAQS } from '~/data/tokyo-disneyland-hotel';
-import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { FAQ_COPY, pick } from '~/i18n/hotel-content';
+import type { Faq } from '~/data/hotel';
 
 interface Props {
-  locale?: Locale;
+  faqs: Faq[];
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
-
-const faqs = FAQS.map((faq, i) => ({
-  question: pick(FAQ_COPY[i]?.question, faq.question, locale),
-  answer: pick(FAQ_COPY[i]?.answer, faq.answer, locale),
-}));
+const { faqs } = Astro.props;
 ---
 
 <div class="not-prose my-8 divide-y divide-line overflow-hidden rounded-xl border border-line bg-card">

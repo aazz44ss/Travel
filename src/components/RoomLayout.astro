@@ -1,23 +1,20 @@
 ---
-import type { Room } from '~/data/tokyo-disneyland-hotel';
+import type { Room, RoomLayoutSet } from '~/data/hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { roomName } from '~/i18n/rooms';
 import { explorer } from '~/i18n/explorer';
-import {
-  LAYOUT_IMAGE_SIZE,
-  ROOM_LAYOUTS,
-  layoutImageUrl,
-  layoutPageUrl,
-} from '~/data/tdh-room-layouts';
+import { roomName } from '~/i18n/rooms';
+import type { HotelKey } from '~/i18n/hotel';
 
 interface Props {
   room: Room;
+  layouts: RoomLayoutSet;
+  hotel: HotelKey;
   locale?: Locale;
 }
 
-const { room, locale = DEFAULT_LOCALE } = Astro.props;
+const { room, layouts, hotel, locale = DEFAULT_LOCALE } = Astro.props;
 const ex = explorer(locale);
-const ref = ROOM_LAYOUTS[room.id];
+const ref = layouts.refs[room.id];
 
 /**
  * The hotel's own plan drawing for this room type, served from the resort's CDN
@@ -25,7 +22,7 @@ const ref = ROOM_LAYOUTS[room.id];
  * variants, in which case the drawing shows both plans side by side.
  */
 const shared = ref
-  ? Object.entries(ROOM_LAYOUTS).filter(
+  ? Object.entries(layouts.refs).filter(
       ([, other]) => other.slug === ref.slug && (other.layout ?? 1) === (ref.layout ?? 1),
     ).length > 1
   : false;
@@ -35,20 +32,20 @@ const shared = ref
   ref && (
     <figure class="not-prose mt-3 overflow-hidden rounded-lg border border-line-soft bg-white">
       <img
-        src={layoutImageUrl(ref)}
-        width={LAYOUT_IMAGE_SIZE.width}
-        height={LAYOUT_IMAGE_SIZE.height}
+        src={layouts.imageUrl(ref)}
+        width={layouts.imageSize.width}
+        height={layouts.imageSize.height}
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
-        alt={`${roomName(room, locale)} — ${ex.layoutCaption.official}`}
+        alt={`${roomName(room, hotel, locale)} — ${ex.layoutCaption.official}`}
         class="block h-auto w-full"
       />
       <figcaption class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint">
         <span class="font-medium text-ink-soft">{room.size} m²</span>
         {shared && <span>{ex.layoutCaption.shared}</span>}
         <a
-          href={layoutPageUrl(ref)}
+          href={layouts.pageUrl(ref)}
           rel="noopener nofollow"
           target="_blank"
           class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"

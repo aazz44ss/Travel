@@ -1,32 +1,16 @@
 ---
-import { DINING } from '~/data/tokyo-disneyland-hotel';
-import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { DINING_COPY, pick } from '~/i18n/hotel-content';
+import type { Dining } from '~/data/hotel';
 
 interface Props {
-  locale?: Locale;
+  dining: Dining[];
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
-
-const venues = DINING.map((venue) => {
-  const copy = DINING_COPY[venue.nameEn];
-  return {
-    ...venue,
-    name: pick(copy?.name, venue.name, locale),
-    type: pick(copy?.type, venue.type, locale),
-    hours: venue.hours.map((slot, i) => pick(copy?.hours[i], slot, locale)),
-    seats: venue.seats ? pick(copy?.seats, venue.seats, locale) : undefined,
-
-    description: pick(copy?.description, venue.description, locale),
-    reservation: pick(copy?.reservation, venue.reservation ?? '', locale),
-  };
-});
+const { dining } = Astro.props;
 ---
 
 <div class="not-prose my-8 space-y-4">
   {
-    venues.map((venue) => (
+    dining.map((venue) => (
       <article class="rounded-xl border border-line bg-card p-5 sm:p-6">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h4 class="font-serif text-base font-bold text-ink">{venue.name}</h4>

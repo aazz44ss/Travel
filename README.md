@@ -2,14 +2,19 @@
 
 把功課做完，剩下的交給旅行。
 
-一個以深度內容為主的繁體中文旅遊誌。每一篇都從官方資料出發，用當地部落格與 TikTok、Instagram 上的第一手分享交叉查證，最後整理成出發前真的用得上的判斷依據——能做成表格與工具的資料就不寫成散文。
+一個以深度內容為主的旅遊誌，提供繁體中文、日文與英文三種版本。每一篇都從官方資料出發，用當地部落格與 TikTok、Instagram 上的第一手分享交叉查證，最後整理成出發前真的用得上的判斷依據——能做成表格與工具的資料就不寫成散文。
 
 ## 目前收錄
 
+繁體中文不加語言前綴，日文與英文分別在 `/ja/` 與 `/en/` 之下，下表列的是繁中路徑。
+
 | 內容 | 路徑 |
 | --- | --- |
+| 東京迪士尼海洋觀海景大飯店完全指南 | `/articles/tokyo-disneysea-hotel-miracosta` |
+| 東京迪士尼海洋觀海景大飯店房型資料庫（37 種組合、海港區房號索引） | `/hotels/tokyo-disneysea-hotel-miracosta` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
-| 東京迪士尼樂園大飯店房型資料庫（38 種房型，可篩選） | `/hotels/tokyo-disneyland-hotel` |
+| 東京迪士尼樂園大飯店房型資料庫（38 種房型、逐間比例平面圖） | `/hotels/tokyo-disneyland-hotel` |
+| 房型資料庫總覽 | `/hotels` |
 
 ## 技術
 
@@ -31,17 +36,23 @@ npm run preview  # 預覽 build 結果
 
 ```
 src/
-├── components/       UI 元件（房型探索器、視線剖面圖、價格階梯、資料表格等）
+├── components/       UI 元件（房型探索器、房號索引、價格階梯、資料表格等）
 ├── content/
-│   └── articles/     文章（MDX，可直接嵌入元件）
-├── content.config.ts 文章的 schema 定義
+│   └── articles/     文章（MDX），依語言分目錄：zh-hant / ja / en
+├── content.config.ts 文章 schema，以及從 id 拆出語言與 slug 的工具
 ├── data/             結構化資料集，與文章分離維護
-│   └── tokyo-disneyland-hotel.ts
+│   ├── hotel.ts      各飯店共用型別與價格工具
+│   ├── tokyo-disneyland-hotel.ts
+│   └── tokyo-disneysea-hotel-miracosta.ts
+├── i18n/             語言設定與各語言的介面、頁面、飯店頁文案
 ├── layouts/          BaseLayout / ArticleLayout
-├── pages/            路由
+├── pages/
+│   └── [...locale]/  一個檔案產出三種語言的路由
 ├── styles/           設計 token 與長文排版
-└── consts.ts         站台設定、路徑與日期工具
+└── consts.ts         站台設定與路徑工具
 ```
+
+同一個房型元件服務所有飯店：資料從 `src/data/<hotel>.ts` 以 props 傳進去，頁面文案從 `src/i18n/hotel.ts` 依語言取出。新增一間飯店＝新增資料與文案，不必複製 UI。翻譯一篇文章＝在另一個語言目錄放同名 `.mdx`，語言切換器就會自動配對。
 
 ### 為什麼資料要和文章分開
 

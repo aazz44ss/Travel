@@ -1,21 +1,11 @@
 ---
-
-import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
-import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { SOCIAL_COPY, pick } from '~/i18n/hotel-content';
+import type { SocialInsight } from '~/data/hotel';
 
 interface Props {
-  locale?: Locale;
+  insights: SocialInsight[];
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
-
-const insights = SOCIAL_INSIGHTS.map((item, i) => ({
-  ...item,
-  headline: pick(SOCIAL_COPY[i]?.headline, item.headline, locale),
-  body: pick(SOCIAL_COPY[i]?.body, item.body, locale),
-  verdict: pick(SOCIAL_COPY[i]?.verdict, item.verdict, locale),
-}));
+const { insights } = Astro.props;
 
 const platformStyle: Record<string, string> = {
   TikTok: 'bg-ink text-white',

@@ -1,41 +1,22 @@
 ---
-import { FACILITIES } from '~/data/tokyo-disneyland-hotel';
-import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { FACILITY_COPY, pick } from '~/i18n/hotel-content';
+import type { Facility } from '~/data/hotel';
 
 interface Props {
-  locale?: Locale;
+  facilities: Facility[];
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
-
-const GUEST_ONLY: Record<Locale, string> = {
-  'zh-hant': '住客限定',
-  ja: '宿泊者限定',
-  en: 'Guests only',
-};
-
-const items = FACILITIES.map((facility) => {
-  const copy = FACILITY_COPY[facility.nameEn];
-  return {
-    ...facility,
-    name: pick(copy?.name, facility.name, locale),
-    location: pick(copy?.location, facility.location, locale),
-    description: pick(copy?.description, facility.description, locale),
-    photoTip: facility.photoTip ? pick(copy?.photoTip, facility.photoTip, locale) : undefined,
-  };
-});
+const { facilities } = Astro.props;
 ---
 
 <div class="not-prose my-8 grid gap-4 sm:grid-cols-2">
   {
-    items.map((facility) => (
+    facilities.map((facility) => (
       <article class="flex flex-col rounded-xl border border-line bg-card p-5">
         <div class="flex flex-wrap items-center gap-2">
           <h4 class="font-serif text-base font-bold text-ink">{facility.name}</h4>
           {facility.guestOnly && (
             <span class="rounded-full bg-gold px-2 py-0.5 text-2xs font-bold text-white">
-              {GUEST_ONLY[locale]}
+              住客限定
             </span>
           )}
         </div>

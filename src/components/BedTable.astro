@@ -1,21 +1,22 @@
 ---
-import { BED_SPECS } from '~/data/tokyo-disneyland-hotel';
+import type { BedSpec } from '~/data/hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
 import { bedName } from '~/i18n/rooms';
-import { BED_NOTE_COPY, pick } from '~/i18n/hotel-content';
 
 interface Props {
+  beds: BedSpec[];
+  caption: string;
   locale?: Locale;
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
+const { beds, caption, locale = DEFAULT_LOCALE } = Astro.props;
 const ex = explorer(locale);
 
 /** The occupancy strings are structured, so they can be restated per locale. */
 const capacityText = (text: string): string => {
   if (locale === 'zh-hant') return text;
-  const max = /以 (\d) 位為限/.exec(text)?.[1];
+  const max = /(\d) 位/.exec(text)?.[1];
   const share = /含 (\d) 位不佔床/.exec(text)?.[1];
   if (!max) {
     /* The crib row states an age limit rather than a headcount. */
@@ -38,33 +39,39 @@ const FOOTNOTE: Record<Locale, string> = {
 <div class="not-prose my-8">
   <div class="table-scroll overflow-hidden rounded-xl border border-line bg-card">
     <table class="w-full min-w-[42rem] text-sm">
-      <caption class="sr-only">{ex.beds.name} — {ex.beds.size}</caption>
+      <caption class="sr-only">{caption}</caption>
       <thead>
         <tr class="bg-paper-deep text-left">
           <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.name}</th>
           <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.size}</th>
           <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.capacity}</th>
-          <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.note}</th>
+          {locale === 'zh-hant' && (
+            <th scope="col" class="px-4 py-3 font-bold text-ink">
+              {ex.beds.note}
+            </th>
+          )}
         </tr>
       </thead>
       <tbody class="divide-y divide-line-soft">
         {
-          BED_SPECS.map((bed) => (
+          beds.map((bed) => (
             <tr class="align-top transition-colors hover:bg-paper-deep/40">
               <th scope="row" class="px-4 py-3.5 text-left font-bold text-ink">
                 {bedName(bed.name, locale)}
-                <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{locale === 'ja' ? '' : locale === 'en' ? bed.nameJa : bed.nameJa}</span>
+                {locale !== 'ja' && (
+                  <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{bed.nameJa}</span>
+                )}
               </th>
               <td class="px-4 py-3.5 whitespace-nowrap text-ink-soft tabular-nums">{bed.size}</td>
               <td class="px-4 py-3.5 text-ink-soft">{capacityText(bed.capacity)}</td>
-              <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{pick(BED_NOTE_COPY[bed.name], bed.note ?? '', locale)}</td>
+              {locale === 'zh-hant' && (
+                <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{bed.note}</td>
+              )}
             </tr>
           ))
         }
       </tbody>
     </table>
   </div>
-  <p class="mt-3 text-xs leading-relaxed text-ink-faint">
-    {FOOTNOTE[locale]}
-  </p>
+  <p class="mt-3 text-xs leading-relaxed text-ink-faint">{FOOTNOTE[locale]}</p>
 </div>

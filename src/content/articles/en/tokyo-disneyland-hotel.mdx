@@ -80,6 +80,30 @@ import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import SocialWall from '~/components/SocialWall.astro';
 import { localePath } from '~/i18n/config';
+import { ROOMS, VIEWS } from '~/data/tokyo-disneyland-hotel';
+
+export const priceOf = (id) => ROOMS.find((room) => room.id === id).priceFrom;
+export const viewName = (key) => VIEWS.find((view) => view.key === key).labelEn;
+export const viewLadder = [
+  {
+    view: viewName('none'),
+    price: priceOf('std-superior-twin'),
+    note: 'The window faces a courtyard, the main entrance or the side of the building',
+    tone: 'muted',
+  },
+  {
+    view: viewName('park'),
+    price: priceOf('std-superior-pv'),
+    note: 'The park at an angle: fireworks are visible, the framing is not',
+    tone: 'mid',
+  },
+  {
+    view: viewName('grand'),
+    price: priceOf('std-superior-pgv-twin'),
+    note: 'Straight at the park, and always on the fifth floor or above',
+    tone: 'full',
+  },
+];
 
 The Tokyo Disneyland Hotel has 706 guest rooms in four categories, and 457 of them are Standard. The official room page lists 27 names, but one name often hides variants with different beds or occupancy — "Superior Room" covers both a 48 m² room with one double bed and a 40 m² room with two regular beds. Counted apart, that comes to 38 combinations. That number, not the price, is this hotel's real barrier to entry.
 
@@ -149,7 +173,12 @@ The conclusion is clean: **if your goal is the projection show, watch it in the 
 
 ### What the view premium looks like
 
-<PriceLadder locale="en" />
+<PriceLadder
+  title="One Superior Room, three view grades"
+  caption="Compared on 2026 reference starting rates. The room is identical; only the window changes."
+  rungs={viewLadder}
+  footnote="Put another way: moving from no designated view to Park View costs about ¥6,000, and going on to Park Grand View costs about ¥8,500 more. The middle step is the button almost everyone should press; the last one is the spend that actually deserves thought."
+/>
 
 View is only one axis of price, though. The gap between a room's cheapest and dearest date is usually 40 to 60 percent, wider than any view upgrade.
 

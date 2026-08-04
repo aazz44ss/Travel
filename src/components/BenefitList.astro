@@ -1,20 +1,11 @@
 ---
-import { BENEFITS } from '~/data/tokyo-disneyland-hotel';
-import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { BENEFIT_COPY, pick } from '~/i18n/hotel-content';
+import type { Benefit } from '~/data/hotel';
 
 interface Props {
-  locale?: Locale;
+  benefits: Benefit[];
 }
 
-const { locale = DEFAULT_LOCALE } = Astro.props;
-
-const benefits = BENEFITS.map((benefit, i) => ({
-  ...benefit,
-  title: pick(BENEFIT_COPY[i]?.title, benefit.title, locale),
-  description: pick(BENEFIT_COPY[i]?.description, benefit.description, locale),
-  caveat: benefit.caveat ? pick(BENEFIT_COPY[i]?.caveat, benefit.caveat, locale) : undefined,
-}));
+const { benefits } = Astro.props;
 ---
 
 <ol class="not-prose my-8 space-y-3">
