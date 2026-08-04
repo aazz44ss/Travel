@@ -3,16 +3,9 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
-import { hotelCopy, hotelIndexCopy, type HotelKey } from '~/i18n/hotel';
+import { hotelCopy, hotelIndexCopy } from '~/i18n/hotel';
 import { categoryLabel } from '~/i18n/rooms';
-import {
-  CATEGORIES as TDH_CATEGORIES,
-  ROOMS as TDH_ROOMS,
-} from '~/data/tokyo-disneyland-hotel';
-import {
-  CATEGORIES as DHM_CATEGORIES,
-  ROOMS as DHM_ROOMS,
-} from '~/data/tokyo-disneysea-hotel-miracosta';
+import { HOTELS, TOTAL_ROOM_TYPES } from '~/data/hotels';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
@@ -20,29 +13,7 @@ const { locale } = Astro.props;
 const ui = t(locale);
 const copy = hotelIndexCopy(locale);
 
-/** Newest hotel first, which is also the order the cards are written for. */
-const hotels: {
-  key: HotelKey;
-  slug: string;
-  rooms: typeof TDH_ROOMS;
-  categories: typeof TDH_CATEGORIES;
-  gradient: string;
-}[] = [
-  {
-    key: 'dhm',
-    slug: 'tokyo-disneysea-hotel-miracosta',
-    rooms: DHM_ROOMS,
-    categories: DHM_CATEGORIES,
-    gradient: 'from-[#4c1826] via-berry to-[#9a6840]',
-  },
-  {
-    key: 'tdh',
-    slug: 'tokyo-disneyland-hotel',
-    rooms: TDH_ROOMS,
-    categories: TDH_CATEGORIES,
-    gradient: 'from-brand-deep to-brand',
-  },
-];
+const hotels = HOTELS;
 
 const cards = hotels.map((hotel) => ({
   ...hotel,
@@ -50,7 +21,7 @@ const cards = hotels.map((hotel) => ({
   card: copy.cards[hotel.key],
 }));
 
-const totalTypes = hotels.reduce((sum, hotel) => sum + hotel.rooms.length, 0);
+const totalTypes = TOTAL_ROOM_TYPES;
 const description = copy.intro(hotels.length, totalTypes);
 
 const schema = {

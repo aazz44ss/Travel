@@ -7,9 +7,8 @@ import ArticleCard from '~/components/ArticleCard.astro';
 import { LOCALE_META, localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { page } from '~/i18n/pages';
-import { hotelCopy, hotelIndexCopy, type HotelKey } from '~/i18n/hotel';
-import { ROOMS as TDH_ROOMS } from '~/data/tokyo-disneyland-hotel';
-import { ROOMS as DHM_ROOMS } from '~/data/tokyo-disneysea-hotel-miracosta';
+import { hotelCopy, hotelIndexCopy } from '~/i18n/hotel';
+import { HOTELS, TOTAL_ROOM_TYPES } from '~/data/hotels';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
@@ -28,21 +27,7 @@ const rest = articles.filter((article) => article.id !== featured?.id);
 const principles = copy.method;
 const upcoming = copy.pipeline;
 
-/** Newest database first; each card's prose lives in the locale dictionary. */
-const databases: { key: HotelKey; slug: string; rooms: typeof TDH_ROOMS; gradient: string }[] = [
-  {
-    key: 'dhm',
-    slug: 'tokyo-disneysea-hotel-miracosta',
-    rooms: DHM_ROOMS,
-    gradient: 'from-[#4c1826] via-berry to-[#9a6840]',
-  },
-  {
-    key: 'tdh',
-    slug: 'tokyo-disneyland-hotel',
-    rooms: TDH_ROOMS,
-    gradient: 'from-brand-deep to-brand',
-  },
-];
+const databases = HOTELS;
 
 const cards = databases.map((entry) => ({
   ...entry,
@@ -50,7 +35,7 @@ const cards = databases.map((entry) => ({
   card: hotels.cards[entry.key],
 }));
 
-const totalTypes = databases.reduce((sum, entry) => sum + entry.rooms.length, 0);
+const totalTypes = TOTAL_ROOM_TYPES;
 
 const schema = {
   '@context': 'https://schema.org',

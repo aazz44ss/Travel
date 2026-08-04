@@ -34,6 +34,7 @@ const ok = (msg) => console.log(`  ok   ${msg}`);
 console.log('\nroutes');
 // Traditional Chinese is unprefixed; the other two live under their own segment.
 const PREFIXES = ['', 'ja/', 'en/'];
+// Kept in step with src/data/hotels.ts; the check below is what notices if it drifts.
 const HOTELS = ['fantasy-springs-hotel', 'tokyo-disneyland-hotel', 'tokyo-disneysea-hotel-miracosta'];
 const PER_LOCALE = [
   'index.html',
@@ -121,6 +122,21 @@ legendSum === cells.length
 fshDb.includes('官方公布的樓層區間沒有涵蓋這個位置')
   ? ok('the position no published band covers is disclosed')
   : fail('unassigned position not disclosed');
+
+// A hotel with a page nobody links to is a hotel nobody finds. Both listing pages
+// enumerate the same registry, so the check is that every hotel appears on both.
+console.log('\nevery hotel is listed where hotels are listed');
+for (const prefix of PREFIXES) {
+  for (const listing of ['index.html', 'hotels/index.html']) {
+    const html = read(prefix + listing);
+    for (const slug of HOTELS) {
+      html.includes(`/hotels/${slug}`)
+        ? null
+        : fail(`${prefix}${listing} does not link to /hotels/${slug}`);
+    }
+  }
+}
+ok(`all ${HOTELS.length} hotels linked from the home page and the index, in every locale`);
 
 console.log('\nevery locale renders the position map');
 for (const prefix of PREFIXES) {
