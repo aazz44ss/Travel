@@ -81,6 +81,14 @@ const ROOM_PITCH_M = 4.37;
 const STRETCH_LIMIT_M = 5.5;
 /** How deep a room is drawn. */
 const ROOM_DEPTH_M = 6.7;
+/**
+ * How far the photograph is washed out before the rooms go on top of it.
+ *
+ * At full strength the roofs and the paving carry as much contrast as the cells
+ * do, and a reader looking for one room has to find it among them. The point of
+ * the photograph here is where the building is, not what colour its tiles are.
+ */
+const PHOTO_WASH = 0.55;
 
 /** The similarity that carries a measured run's sketch onto its wall. */
 const frameOf = (key: string) => {
@@ -356,7 +364,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
     <div class="mt-5 space-y-5">
       <div class="table-scroll rounded-xl border border-line bg-[#f7f4ee] p-2">
         <div
-          class="relative min-w-[68rem] overflow-hidden bg-[#25303a]"
+          class="relative min-w-[68rem] overflow-hidden bg-[#e9e3d7]"
           style={`aspect-ratio:${view.width}/${view.height}`}
         >
           {
@@ -382,7 +390,9 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
             <title id="dhm-plan-title">{copy.svgTitle}</title>
             <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
 
-            <g stroke="#f4efe4" stroke-width={2.5 * ui} stroke-linecap="round">
+            <rect width={view.width} height={view.height} fill="#f4efe4" opacity={PHOTO_WASH} />
+
+            <g stroke="#4f4739" stroke-width={2.5 * ui} stroke-linecap="round">
               <line x1={scaleBar.x} y1={scaleBar.y} x2={scaleBar.x + scaleBar.length} y2={scaleBar.y} />
               <line x1={scaleBar.x} y1={scaleBar.y - 6 * ui} x2={scaleBar.x} y2={scaleBar.y + 6 * ui} />
               <line
@@ -397,10 +407,10 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
               y={scaleBar.y - 11 * ui}
               font-size={15 * ui}
               font-weight="700"
-              fill="#f4efe4"
+              fill="#4f4739"
               text-anchor="middle"
               style="paint-order:stroke"
-              stroke="#00000055"
+              stroke="#f4efe4cc"
               stroke-width={3 * ui}
             >
               {siteCopy.scaleBar(SITE_SCALE_BAR)}
@@ -418,7 +428,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
                         <polygon
                           points={cell.points}
                           fill={TONE[cell.grade]!.fill}
-                          fill-opacity="0.88"
+                          fill-opacity="0.95"
                           stroke="#ffffff"
                           stroke-width="0.3"
                           data-shape
