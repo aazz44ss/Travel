@@ -1,9 +1,74 @@
 ---
-/**
- * Cross-section of the sight line from the hotel to Tokyo Disneyland, showing
- * why the Disney Resort Line station building makes floors below 5 unreliable
- * for a park view.
- */
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+const COPY: Record<
+  Locale,
+  {
+    title: string;
+    desc: string;
+    hotel: string;
+    line: string;
+    station: string;
+    blocks: string;
+    bazaar: string;
+    castle: string;
+    f8: string;
+    f5: string;
+    f3: string;
+    note: string;
+  }
+> = {
+  'zh-hant': {
+    title: '飯店客房到東京迪士尼樂園的視線剖面圖',
+    desc: '剖面圖顯示飯店 9 層樓、中間的迪士尼度假區線車站站體，以及遠方的世界市集與灰姑娘城堡。8 樓與 5 樓的視線越過車站看到城堡，3 樓的視線被車站站體擋住。',
+    hotel: '東京迪士尼樂園大飯店',
+    line: '度假區線',
+    station: '樂園站站體',
+    blocks: '遮蔽低樓層視線',
+    bazaar: '世界市集',
+    castle: '灰姑娘城堡',
+    f8: '8F：城堡與海洋火山全都看得到',
+    f5: '5F：勉強越過站體，看得到城堡',
+    f3: '3F：整片被站體擋住',
+    note: '示意剖面圖，非等比例。飯店與樂園之間隔著迪士尼度假區線的東京迪士尼樂園站，這是低樓層房間看不到樂園的主因。「樂園全景觀」房型全部位在 5 樓以上，就是為了避開這座站體。',
+  },
+  ja: {
+    title: '客室から東京ディズニーランドへの視線の断面図',
+    desc: 'ホテル 9 層、その手前のディズニーリゾートラインの駅舎、奥のワールドバザールとシンデレラ城を示した断面図。8 階と 5 階の視線は駅舎を越えて城に届き、3 階の視線は駅舎に遮られます。',
+    hotel: '東京ディズニーランドホテル',
+    line: 'リゾートライン',
+    station: '駅舎',
+    blocks: '低層階の視線を遮る',
+    bazaar: 'ワールドバザール',
+    castle: 'シンデレラ城',
+    f8: '8F：城もプロメテウス火山も見える',
+    f5: '5F：ぎりぎり駅舎を越えて城が見える',
+    f3: '3F：一面が駅舎で遮られる',
+    note: 'イメージ断面図で、縮尺は正確ではありません。ホテルとパークの間にディズニーリゾートラインの東京ディズニーランド・ステーションがあり、これが低層階からパークが見えない主な理由です。パークグランドビューがすべて 5 階以上にあるのは、この駅舎を越えるためです。',
+  },
+  en: {
+    title: 'Sightline from a guest room to Tokyo Disneyland, in section',
+    desc: 'A section showing the hotel’s nine floors, the Disney Resort Line station building in between, and World Bazaar and Cinderella Castle beyond. The sightlines from the 8th and 5th floors clear the station and reach the castle; the 3rd floor is blocked by it.',
+    hotel: 'Tokyo Disneyland Hotel',
+    line: 'Resort Line',
+    station: 'Station building',
+    blocks: 'Blocks the lower floors',
+    bazaar: 'World Bazaar',
+    castle: 'Cinderella Castle',
+    f8: '8F: castle and the DisneySea volcano both visible',
+    f5: '5F: just clears the station, castle visible',
+    f3: '3F: the whole view is blocked',
+    note: 'A schematic section, not to scale. The Disney Resort Line’s Tokyo Disneyland Station sits between the hotel and the park, which is the main reason low floors cannot see it. Park Grand View rooms are all on the 5th floor or above precisely to clear that building.',
+  },
+};
+
+const c = COPY[locale];
 ---
 
 <figure class="not-prose my-10">
@@ -14,11 +79,9 @@
       role="img"
       aria-labelledby="view-diagram-title view-diagram-desc"
     >
-      <title id="view-diagram-title">飯店客房到東京迪士尼樂園的視線剖面圖</title>
+      <title id="view-diagram-title">{c.title}</title>
       <desc id="view-diagram-desc">
-        剖面圖顯示飯店 9 層樓、中間的迪士尼度假區線車站站體，以及遠方的世界市集與灰姑娘城堡。
-        8 樓與 5 樓的視線越過車站看到城堡，3 樓的視線被車站站體擋住。
-      </desc>
+        {c.desc}</desc>
 
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
@@ -72,16 +135,16 @@
         })
       }
       <text x="130" y="360" font-size="13" fill="#545a66" text-anchor="middle" font-weight="700">
-        東京迪士尼樂園大飯店
+        {c.hotel}
       </text>
 
       <!-- Disney Resort Line station -->
       <rect x="255" y="228" width="150" height="112" fill="#e4ddd0" stroke="#c9bda8"
         stroke-width="1.5" rx="3"></rect>
       <rect x="243" y="216" width="174" height="14" fill="#cfc4b1" rx="3"></rect>
-      <text x="330" y="290" font-size="12" fill="#6b6255" text-anchor="middle">度假區線</text>
-      <text x="330" y="308" font-size="12" fill="#6b6255" text-anchor="middle">樂園站站體</text>
-      <text x="330" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">遮蔽低樓層視線</text>
+      <text x="330" y="290" font-size="12" fill="#6b6255" text-anchor="middle">{c.line}</text>
+      <text x="330" y="308" font-size="12" fill="#6b6255" text-anchor="middle">{c.station}</text>
+      <text x="330" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">{c.blocks}</text>
 
       <!-- World Bazaar rooftops -->
       <path
@@ -90,7 +153,7 @@
         stroke="#c9bda8"
         stroke-width="1.5"
         stroke-linejoin="round"></path>
-      <text x="530" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">世界市集</text>
+      <text x="530" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">{c.bazaar}</text>
 
       <!-- Cinderella Castle -->
       <g stroke="#b9a98f" stroke-width="1.5" stroke-linejoin="round" fill="#f3ece0">
@@ -103,7 +166,7 @@
       </g>
       <line x1="700" y1="190" x2="700" y2="168" stroke="#b4832c" stroke-width="2"></line>
       <circle cx="700" cy="164" r="4" fill="#b4832c"></circle>
-      <text x="700" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">灰姑娘城堡</text>
+      <text x="700" y="360" font-size="12" fill="#8b8f99" text-anchor="middle">{c.castle}</text>
 
       <!-- Sight lines -->
       <g stroke-linecap="round">
@@ -118,18 +181,16 @@
       <!-- Sight line labels -->
       <g font-size="12.5" font-weight="700">
         <rect x="214" y="80" width="196" height="22" rx="11" fill="#0f4c5c"></rect>
-        <text x="312" y="95" fill="#ffffff" text-anchor="middle">8F：城堡與海洋火山全都看得到</text>
+        <text x="312" y="95" fill="#ffffff" text-anchor="middle">{c.f8}</text>
 
         <rect x="230" y="172" width="176" height="22" rx="11" fill="#0f4c5c" opacity="0.82"></rect>
-        <text x="318" y="187" fill="#ffffff" text-anchor="middle">5F：勉強越過站體，看得到城堡</text>
+        <text x="318" y="187" fill="#ffffff" text-anchor="middle">{c.f5}</text>
 
         <rect x="214" y="236" width="150" height="22" rx="11" fill="#8c2f4a"></rect>
-        <text x="289" y="251" fill="#ffffff" text-anchor="middle">3F：整片被站體擋住</text>
+        <text x="289" y="251" fill="#ffffff" text-anchor="middle">{c.f3}</text>
       </g>
     </svg>
   </div>
   <figcaption class="mt-3 text-center text-xs leading-relaxed text-ink-faint">
-    示意剖面圖，非等比例。飯店與樂園之間隔著迪士尼度假區線的東京迪士尼樂園站，這是低樓層房間看不到樂園的主因。
-    「樂園全景觀」房型全部位在 5 樓以上，就是為了避開這座站體。
-  </figcaption>
+    {c.note}</figcaption>
 </figure>

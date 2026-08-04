@@ -11,6 +11,9 @@ export interface PageCopy {
     statArticles: string;
     statRooms: string;
     statSources: string;
+    countRooms: (n: number) => string;
+    countArticles: (n: number) => string;
+    countSources: (n: number) => string;
     latest: string;
     allArticles: string;
     methodHeading: string;
@@ -47,6 +50,9 @@ const zhHant: PageCopy = {
     statArticles: '目前文章',
     statRooms: '已收錄房型',
     statSources: '交叉查證來源',
+    countRooms: (n) => `${n} 種`,
+    countArticles: (n) => `${n} 篇`,
+    countSources: (n) => `${n} 筆`,
     latest: '最新一篇',
     allArticles: '所有文章 →',
     methodHeading: '這裡怎麼寫東西',
@@ -148,6 +154,9 @@ const ja: PageCopy = {
     statArticles: '記事数',
     statRooms: '収録客室タイプ',
     statSources: '突き合わせた資料',
+    countRooms: (n) => `${n} タイプ`,
+    countArticles: (n) => `${n} 本`,
+    countSources: (n) => `${n} 件`,
     latest: '最新の記事',
     allArticles: '記事一覧 →',
     methodHeading: 'このサイトの書き方',
@@ -252,6 +261,9 @@ const en: PageCopy = {
     statArticles: 'Guides so far',
     statRooms: 'Room types catalogued',
     statSources: 'Sources cross-checked',
+    countRooms: (n) => `${n}`,
+    countArticles: (n) => `${n}`,
+    countSources: (n) => `${n}`,
     latest: 'Latest guide',
     allArticles: 'All articles →',
     methodHeading: 'How things get written here',

@@ -1,4 +1,5 @@
 import type { Locale } from './config';
+import type { HotelFact } from '~/data/hotel';
 
 /**
  * Copy for the room database pages, one entry per hotel per locale.
@@ -24,6 +25,11 @@ export interface HotelCopy {
   readArticle: string;
   sections: { id: string; label: string }[];
   headings: Record<string, string>;
+  /**
+   * The headline numbers on the page's "at a glance" grid. Counts are passed in
+   * from the dataset rather than written here, so they cannot drift from it.
+   */
+  facts: (counts: { rooms: number; types: number; from: string }) => HotelFact[];
   provenance: string;
   viewsIntro: string;
   categoriesIntro: string;
@@ -184,6 +190,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: '住宿禮遇',
         faq: '常見問題',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: '客房總數', value: `${rooms} 間`, sub: `${types} 種房型` },
+        { label: '到樂園正門', value: '步行 1 分鐘', sub: '4 座迪士尼飯店中最近' },
+        { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
+        { label: '入住／退房', value: '15:00 / 12:00', sub: '退房時間比多數飯店晚' },
+        { label: '最低參考價', value: from, sub: '每室每晚・2 位大人' },
+        { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
+      ],
       provenance:
         '房型、面積與床型取自官方繁體中文客房頁；價格是每室每晚、2 位大人的參考起價，來自公開費率表的二手整理。實際金額依日期大幅浮動，請以官方訂房系統為準。',
       viewsIntro:
@@ -222,6 +236,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: '宿泊特典',
         faq: 'よくある質問',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: '客室数', value: `${rooms} 室`, sub: `${types} タイプ` },
+        { label: 'パーク正面まで', value: '徒歩 1 分', sub: '4 座のディズニーホテルで最短' },
+        { label: 'JR 舞浜駅まで', value: '徒歩 8 分', sub: '東京駅から電車で約 15 分' },
+        { label: 'チェックイン／アウト', value: '15:00 / 12:00', sub: 'チェックアウトは遅め' },
+        { label: '参考最低料金', value: from, sub: '1 室 1 泊・大人 2 名' },
+        { label: '予約開始', value: '4 か月前 11:00', sub: '日本時間・最大 5 泊 3 室' },
+      ],
       provenance:
         '客室名・広さ・ベッドは公式の客室ページに従っています。料金は 1 室 1 泊・大人 2 名の参考最低料金で、公開されている料金表の二次整理です。実際の金額は日付で大きく変わるため、公式の予約システムでご確認ください。',
       viewsIntro:
@@ -261,6 +283,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: 'Guest benefits',
         faq: 'Frequently asked',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: 'Guest rooms', value: `${rooms}`, sub: `${types} room types` },
+        { label: 'To the park gate', value: '1 min walk', sub: 'Closest of the four Disney hotels' },
+        { label: 'To JR Maihama', value: '8 min walk', sub: 'About 15 min by train from Tokyo Station' },
+        { label: 'Check in / out', value: '15:00 / 12:00', sub: 'Later checkout than most hotels' },
+        { label: 'From', value: from, sub: 'Per room per night, two adults' },
+        { label: 'Booking opens', value: '4 months ahead, 11:00', sub: 'Japan time, up to 5 nights and 3 rooms' },
+      ],
       provenance:
         'Room names, areas and bed types follow the hotel’s official pages. Rates are reference starting prices per room per night for two adults, compiled from a published rate table, which is a secondary source. Actual prices move a great deal by date — confirm in the official booking system.',
       viewsIntro:
@@ -302,6 +332,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: '住宿禮遇',
         faq: '常見問題',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: '客房總數', value: `${rooms} 間`, sub: `${types} 種可訂組合` },
+        { label: '最大特色', value: '住在園區裡', sub: '飯店建築就是東京迪士尼海洋的一部分' },
+        { label: '最近車站', value: '東京迪士尼海洋站', sub: '2 樓空中走廊直達飯店' },
+        { label: '入住／退房', value: '15:00 / 12:00', sub: '退房日仍可使用歡樂入園' },
+        { label: '最低參考價', value: from, sub: '每室每晚・2 位大人' },
+        { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
+      ],
       provenance:
         '房型名稱、面積、定員、床型與格局圖取自官方繁體中文及日文客房頁。價格是每室每晚、2 位大人的公開費率二手整理，不是報價；房號只涵蓋有逐間調查的海港區，實際房價與房間分配以官方為準。',
       viewsIntro:
@@ -340,6 +378,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: '宿泊特典',
         faq: 'よくある質問',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: '客室数', value: `${rooms} 室`, sub: `${types} タイプ` },
+        { label: '最大の特徴', value: 'パークの中に泊まる', sub: '建物が東京ディズニーシーの一部' },
+        { label: '最寄り駅', value: '東京ディズニーシー・ステーション', sub: '2 階の空中通路で直結' },
+        { label: 'チェックイン／アウト', value: '15:00 / 12:00', sub: 'チェックアウト日もハッピーエントリー可' },
+        { label: '参考最低料金', value: from, sub: '1 室 1 泊・大人 2 名' },
+        { label: '予約開始', value: '4 か月前 11:00', sub: '日本時間・最大 5 泊 3 室' },
+      ],
       provenance:
         '客室名・広さ・定員・ベッド・レイアウト図は公式の客室ページに従っています。料金は 1 室 1 泊・大人 2 名の参考料金で、公開料金表の二次整理です。部屋番号は 1 室ずつの調査があるポルト・パラディーゾ・サイドのみで、実際の料金と客室の割り当ては公式にご確認ください。',
       viewsIntro:
@@ -379,6 +425,14 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         benefits: 'Guest benefits',
         faq: 'Frequently asked',
       },
+      facts: ({ rooms, types, from }) => [
+        { label: 'Guest rooms', value: `${rooms}`, sub: `${types} bookable combinations` },
+        { label: 'What sets it apart', value: 'Inside the park', sub: 'The building is part of Tokyo DisneySea' },
+        { label: 'Nearest station', value: 'Tokyo DisneySea Station', sub: 'Walkway straight to the second floor' },
+        { label: 'Check in / out', value: '15:00 / 12:00', sub: 'Happy Entry still applies on departure day' },
+        { label: 'From', value: from, sub: 'Per room per night, two adults' },
+        { label: 'Booking opens', value: '4 months ahead, 11:00', sub: 'Japan time, up to 5 nights and 3 rooms' },
+      ],
       provenance:
         'Room names, areas, occupancies, bed layouts and plan drawings follow the hotel’s official pages. Rates are reference prices per room per night for two adults, compiled from a published table rather than quoted. Room numbers cover only Porto Paradiso, the side that has been surveyed room by room; confirm prices and room assignment with the hotel.',
       viewsIntro:

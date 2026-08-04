@@ -8,10 +8,24 @@ import type {
   RoomNumbers,
   RoomView,
 } from '~/data/hotel';
-import { annualRangeOf, formatYen, toTwd } from '~/data/hotel';
+import { annualRangeOf, formatYen } from '~/data/hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
+import type { HotelKey } from '~/i18n/hotel';
+import {
+  bedSummary,
+  categoryLabel,
+  fieldSeparator,
+  flagLabel,
+  floorRange,
+  roomName,
+  roomNameSecondary,
+  viewLabel,
+} from '~/i18n/rooms';
 import RoomLayout from '~/components/RoomLayout.astro';
 
 interface Props {
+  hotel: HotelKey;
   rooms: Room[];
   categories: RoomCategory[];
   views: RoomView[];
@@ -19,16 +33,17 @@ interface Props {
   rates: MonthlyRates;
   roomNumbers: RoomNumbers;
   layouts: RoomLayoutSet;
-  jpyPerTwd: number;
   /** Tone for each view key, darkest for the best view. */
   viewStyle: Record<string, string>;
   /** Border and text colour for each category key. */
   categoryStyle: Record<string, string>;
   /** Explains where the room names and the room numbers came from. */
   provenance: string;
+  locale?: Locale;
 }
 
 const {
+  hotel,
   rooms,
   categories,
   views,
@@ -36,23 +51,29 @@ const {
   rates,
   roomNumbers,
   layouts,
-  jpyPerTwd,
   viewStyle,
   categoryStyle,
   provenance,
+  locale = DEFAULT_LOCALE,
 } = Astro.props;
 
-const categoryLabel = Object.fromEntries(categories.map((c) => [c.key, c.label]));
-const viewLabel = Object.fromEntries(views.map((v) => [v.key, v.label]));
+const ex = explorer(locale);
+const label = {
+  view: (key: string) => viewLabel(hotel, locale, key),
+  category: (key: string) => categoryLabel(hotel, locale, key),
+  flag: (key: string) => flagLabel(hotel, locale, key),
+};
+
 const badgeFlags = flags.filter((flag) => flag.badge !== false);
 const filterFlags = flags.filter((flag) => flag.filter);
 
+/** Built from the data, since one hotel stops at four guests and another at five. */
 const capacityCeiling = Math.max(...rooms.map((room) => room.capacity));
 const capacityOptions = [
-  { value: '0', label: '不限' },
+  { value: '0', label: ex.capacityAny },
   ...Array.from({ length: capacityCeiling - 1 }, (_, i) => i + 2).map((n) => ({
     value: String(n),
-    label: n === capacityCeiling ? `${n} 人` : `${n} 人以上`,
+    label: n === capacityCeiling ? ex.capacityExact(n) : ex.capacityAtLeast(n),
   })),
 ];
 
@@ -66,7 +87,8 @@ const numbered = Object.values(roomNumbers).reduce((sum, entry) => sum + entry.n
  */
 const grouped = categories
   .map((category) => ({
-    ...category,
+    key: category.key,
+    label: label.category(category.key),
     rooms: rooms
       .filter((room) => room.category === category.key)
       .sort((a, b) => a.priceFrom - b.priceFrom),
@@ -74,17 +96,22 @@ const grouped = categories
   .filter((group) => group.rooms.length > 0);
 
 const features = (room: Room): string[] =>
-  badgeFlags.filter((flag) => room.flags.includes(flag.key)).map((flag) => flag.label);
+  badgeFlags.filter((flag) => room.flags.includes(flag.key)).map((flag) => label.flag(flag.key));
+
+const rangeOf = (room: Room) => annualRangeOf(rates, room.id);
 ---
 
-<section id="room-explorer" class="not-prose scroll-mt-24" data-room-explorer>
+<section
+  id="room-explorer"
+  class="not-prose scroll-mt-24"
+  data-room-explorer
+  data-type-count={ex.typeCount(0).replace('0', '{n}')}
+>
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">房型探索器</h2>
-        <p class="mt-1.5 text-sm text-ink-soft">
-          {rooms.length} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。
-        </p>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{ex.heading}</h2>
+        <p class="mt-1.5 text-sm text-ink-soft">{ex.intro(rooms.length)}</p>
         <p class="mt-2 max-w-2xl text-xs leading-relaxed text-ink-faint">
           {provenance.replace('{numbered}', String(numbered))}
         </p>
@@ -94,55 +121,61 @@ const features = (room: Room): string[] =>
         data-result-count
         aria-live="polite"
       >
-        {rooms.length} 種房型
+        {ex.typeCount(rooms.length)}
       </p>
     </div>
 
     <div class="mt-6 space-y-5 border-t border-line-soft pt-6">
       <fieldset>
-        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">分類</legend>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
+          {ex.filters.category}
+        </legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...categories.map((c) => ({ key: c.key, label: c.label }))].map(
-              (option, index) => (
-                <label class="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="filter-category"
-                    value={option.key}
-                    checked={index === 0}
-                    class="peer sr-only"
-                  />
-                  <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
-                    {option.label}
-                  </span>
-                </label>
-              ),
-            )
+            [
+              { key: 'all', label: ex.filters.all },
+              ...categories.map((c) => ({ key: c.key, label: label.category(c.key) })),
+            ].map((option, index) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="filter-category"
+                  value={option.key}
+                  checked={index === 0}
+                  class="peer sr-only"
+                />
+                <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                  {option.label}
+                </span>
+              </label>
+            ))
           }
         </div>
       </fieldset>
 
       <fieldset>
-        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
+        <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
+          {ex.filters.view}
+        </legend>
         <div class="mt-2.5 flex flex-wrap gap-2">
           {
-            [{ key: 'all', label: '全部' }, ...views.map((v) => ({ key: v.key, label: v.label }))].map(
-              (option, index) => (
-                <label class="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="filter-view"
-                    value={option.key}
-                    checked={index === 0}
-                    class="peer sr-only"
-                  />
-                  <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
-                    {option.label}
-                  </span>
-                </label>
-              ),
-            )
+            [
+              { key: 'all', label: ex.filters.all },
+              ...views.map((v) => ({ key: v.key, label: label.view(v.key) })),
+            ].map((option, index) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="filter-view"
+                  value={option.key}
+                  checked={index === 0}
+                  class="peer sr-only"
+                />
+                <span class="block rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
+                  {option.label}
+                </span>
+              </label>
+            ))
           }
         </div>
       </fieldset>
@@ -150,7 +183,7 @@ const features = (room: Room): string[] =>
       <div class="grid gap-5 sm:grid-cols-2">
         <fieldset>
           <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
-            入住人數
+            {ex.filters.capacity}
           </legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
@@ -174,7 +207,7 @@ const features = (room: Room): string[] =>
 
         <fieldset>
           <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
-            必要條件
+            {ex.filters.features}
           </legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
@@ -182,7 +215,7 @@ const features = (room: Room): string[] =>
                 <label class="cursor-pointer">
                   <input type="checkbox" name="filter-flag" value={option.key} class="peer sr-only" />
                   <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition-colors peer-checked:border-gold peer-checked:bg-gold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold hover:bg-paper-deep">
-                    {option.label}
+                    {label.flag(option.key)}
                   </span>
                 </label>
               ))
@@ -192,13 +225,13 @@ const features = (room: Room): string[] =>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-5">
-        <p class="text-sm text-ink-soft">依分類排列，每一類裡由便宜到貴</p>
+        <p class="text-sm text-ink-soft">{ex.order}</p>
         <button
           type="button"
           data-reset
           class="ml-auto rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
         >
-          清除條件
+          {ex.reset}
         </button>
       </div>
     </div>
@@ -211,161 +244,166 @@ const features = (room: Room): string[] =>
           <h3 class="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-line pb-2 font-serif text-base font-bold text-ink">
             {group.label}
             <span class="text-xs font-normal text-ink-faint" data-group-count>
-              {group.rooms.length} 種
+              {ex.typeCount(group.rooms.length)}
             </span>
           </h3>
         </li>,
         ...group.rooms.map((room) => (
-        <li
-          class="group flex h-full flex-col rounded-xl border border-line bg-card p-5 transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5"
-          data-room
-          data-category={room.category}
-          data-view={room.view}
-          data-capacity={room.capacity}
-          data-flags={room.flags.join(' ')}
-        >
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span
-              class:list={[
-                'rounded-full px-2.5 py-1 text-2xs font-bold',
-                viewStyle[room.view],
-              ]}
-            >
-              {viewLabel[room.view]}
-            </span>
-            <span
-              class:list={[
-                'rounded-full border px-2.5 py-1 text-2xs font-medium',
-                categoryStyle[room.category],
-              ]}
-            >
-              {categoryLabel[room.category]}
-            </span>
-            {features(room).map((feature) => (
-              <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
-                {feature}
+          <li
+            class="group flex h-full flex-col rounded-xl border border-line bg-card p-5 transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5"
+            data-room
+            data-category={room.category}
+            data-view={room.view}
+            data-capacity={room.capacity}
+            data-flags={room.flags.join(' ')}
+          >
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class:list={['rounded-full px-2.5 py-1 text-2xs font-bold', viewStyle[room.view]]}>
+                {label.view(room.view)}
               </span>
-            ))}
-          </div>
-
-          <h3 class="mt-3 font-serif text-[1.0625rem] leading-snug font-bold text-ink">
-            {room.name}
-          </h3>
-          <p class="mt-1 text-xs text-ink-faint">{room.nameJa}</p>
-
-          <RoomLayout room={room} layouts={layouts} />
-
-          <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
-            <div>
-              <dt class="text-2xs text-ink-faint">面積</dt>
-              <dd class="mt-0.5 text-sm font-bold text-ink">
-                {room.size}
-                <span class="text-xs font-normal"> m²</span>
-              </dd>
+              <span
+                class:list={[
+                  'rounded-full border px-2.5 py-1 text-2xs font-medium',
+                  categoryStyle[room.category],
+                ]}
+              >
+                {label.category(room.category)}
+              </span>
+              {features(room).map((feature) => (
+                <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
+                  {feature}
+                </span>
+              ))}
             </div>
-            <div class="border-x border-line-soft">
-              <dt class="text-2xs text-ink-faint">人數上限</dt>
-              <dd class="mt-0.5 text-sm font-bold text-ink">
-                {room.capacity}
-                <span class="text-xs font-normal"> 位</span>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-2xs text-ink-faint">價格區間</dt>
-              <dd class="mt-0.5 text-sm font-bold text-brand">
-                {annualRangeOf(rates, room.id)
-                  ? `${formatYen(annualRangeOf(rates, room.id)![0])}–${formatYen(annualRangeOf(rates, room.id)![1])}`
-                  : `${formatYen(room.priceFrom)} 起`}
-              </dd>
-            </div>
-          </dl>
 
-          <p class="mt-3 text-[0.8125rem] leading-relaxed text-ink-soft">
-            <span class="font-medium text-ink">床型：</span>
-            {room.beds}
-          </p>
-          {room.floors && (
-            <p class="mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
-              <span class="font-medium text-ink">分佈樓層：</span>
-              {room.floors}
-            </p>
-          )}
+            <h3 class="mt-3 font-serif text-[1.0625rem] leading-snug font-bold text-ink">
+              {roomName(room, hotel, locale)}
+            </h3>
+            <p class="mt-1 text-xs text-ink-faint">{roomNameSecondary(room, hotel, locale)}</p>
 
-          <p class="mt-3 border-l-2 border-gold pl-3 text-[0.8125rem] leading-relaxed text-ink">
-            {room.verdict}
-          </p>
+            <RoomLayout room={room} layouts={layouts} hotel={hotel} locale={locale} />
 
-          {room.note && (
-            <p class="mt-3 rounded-lg bg-paper-deep/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
-              {room.note}
-            </p>
-          )}
-
-          {roomNumbers[room.id] && (
-            <details class="group/numbers mt-3 rounded-lg border border-line-soft">
-              <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-ink-soft transition-colors hover:bg-paper-deep/50">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  class="shrink-0 transition-transform duration-200 group-open/numbers:rotate-45"
-                  aria-hidden="true"
-                >
-                  <path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                </svg>
-                房號
-                {roomNumbers[room.id]!.numbers.length > 0 ? (
-                  <span class="font-medium text-ink">
-                    {roomNumbers[room.id]!.numbers.length} 間
-                  </span>
-                ) : (
-                  <span class="text-ink-faint">未逐間公布</span>
-                )}
-                {!roomNumbers[room.id]!.complete && (
-                  <span class="rounded-full bg-paper-deep px-1.5 py-0.5 text-2xs text-ink-faint">
-                    不完整
-                  </span>
-                )}
-              </summary>
-              <div class="border-t border-line-soft px-3 py-2.5">
-                {roomNumbers[room.id]!.numbers.length > 0 && (
-                  <ul class="flex flex-wrap gap-1">
-                    {roomNumbers[room.id]!.numbers.map((number) => (
-                      <li
-                        class:list={[
-                          'rounded px-1.5 py-0.5 text-2xs tabular-nums',
-                          roomNumbers[room.id]!.balcony.includes(number)
-                            ? 'bg-gold-soft font-bold text-gold'
-                            : 'bg-paper-deep text-ink-soft',
-                        ]}
-                        title={
-                          roomNumbers[room.id]!.balcony.includes(number)
-                            ? '可以走到戶外陽台'
-                            : undefined
-                        }
-                      >
-                        {number}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {roomNumbers[room.id]!.balcony.length > 0 && (
-                  <p class="mt-2 text-2xs text-gold">金色標示的房號可以走到戶外陽台。</p>
-                )}
-                {roomNumbers[room.id]!.note && (
-                  <p class="mt-2 text-2xs leading-relaxed text-ink-faint">
-                    {roomNumbers[room.id]!.note}
-                  </p>
-                )}
+            <dl class="mt-4 grid grid-cols-3 gap-3 border-y border-line-soft py-3 text-center">
+              <div>
+                <dt class="text-2xs text-ink-faint">{ex.fields.area}</dt>
+                <dd class="mt-0.5 text-sm font-bold text-ink">
+                  {room.size}
+                  <span class="text-xs font-normal"> m²</span>
+                </dd>
               </div>
-            </details>
-          )}
+              <div class="border-x border-line-soft">
+                <dt class="text-2xs text-ink-faint">{ex.fields.capacity}</dt>
+                <dd class="mt-0.5 text-sm font-bold text-ink">
+                  {room.capacity}
+                  <span class="text-xs font-normal">{ex.guests}</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-2xs text-ink-faint">{ex.fields.priceRange}</dt>
+                <dd class="mt-0.5 text-sm font-bold text-brand">
+                  {rangeOf(room)
+                    ? `${formatYen(rangeOf(room)![0])}–${formatYen(rangeOf(room)![1])}`
+                    : ex.from(formatYen(room.priceFrom))}
+                </dd>
+              </div>
+            </dl>
 
-          <p class="mt-auto pt-4 text-2xs text-ink-faint">
-            最低約新台幣 {toTwd(room.priceFrom, jpyPerTwd).toLocaleString('en-US')} 元／每室每晚
-          </p>
-        </li>
+            <p class="mt-3 text-[0.8125rem] leading-relaxed text-ink-soft">
+              <span class="font-medium text-ink">
+                {ex.fields.beds}
+                {fieldSeparator(locale)}
+              </span>
+              {bedSummary(room, locale)}
+            </p>
+            {room.floors && (
+              <p class="mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
+                <span class="font-medium text-ink">
+                  {ex.fields.floors}
+                  {fieldSeparator(locale)}
+                </span>
+                {floorRange(room.floors, locale)}
+              </p>
+            )}
+
+            {/* The verdict and the note are our editorial voice, written in Chinese. */}
+            {locale === 'zh-hant' && (
+              <p class="mt-3 border-l-2 border-gold pl-3 text-[0.8125rem] leading-relaxed text-ink">
+                {room.verdict}
+              </p>
+            )}
+
+            {locale === 'zh-hant' && room.note && (
+              <p class="mt-3 rounded-lg bg-paper-deep/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+                {room.note}
+              </p>
+            )}
+
+            {roomNumbers[room.id] && (
+              <details class="group/numbers mt-3 rounded-lg border border-line-soft">
+                <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-ink-soft transition-colors hover:bg-paper-deep/50">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    class="shrink-0 transition-transform duration-200 group-open/numbers:rotate-45"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 1v8M1 5h8"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  {ex.roomNumbers}
+                  {roomNumbers[room.id]!.numbers.length > 0 ? (
+                    <span class="font-medium text-ink">
+                      {ex.roomCount(roomNumbers[room.id]!.numbers.length)}
+                    </span>
+                  ) : (
+                    <span class="text-ink-faint">{ex.notListed}</span>
+                  )}
+                  {!roomNumbers[room.id]!.complete && (
+                    <span class="rounded-full bg-paper-deep px-1.5 py-0.5 text-2xs text-ink-faint">
+                      {ex.incomplete}
+                    </span>
+                  )}
+                </summary>
+                <div class="border-t border-line-soft px-3 py-2.5">
+                  {roomNumbers[room.id]!.numbers.length > 0 && (
+                    <ul class="flex flex-wrap gap-1">
+                      {roomNumbers[room.id]!.numbers.map((number) => (
+                        <li
+                          class:list={[
+                            'rounded px-1.5 py-0.5 text-2xs tabular-nums',
+                            roomNumbers[room.id]!.balcony.includes(number)
+                              ? 'bg-gold-soft font-bold text-gold'
+                              : 'bg-paper-deep text-ink-soft',
+                          ]}
+                          title={
+                            roomNumbers[room.id]!.balcony.includes(number)
+                              ? ex.balconyTitle
+                              : undefined
+                          }
+                        >
+                          {number}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {roomNumbers[room.id]!.balcony.length > 0 && (
+                    <p class="mt-2 text-2xs text-gold">{ex.balconyNumbers}</p>
+                  )}
+                  {locale === 'zh-hant' && roomNumbers[room.id]!.note && (
+                    <p class="mt-2 text-2xs leading-relaxed text-ink-faint">
+                      {roomNumbers[room.id]!.note}
+                    </p>
+                  )}
+                </div>
+              </details>
+            )}
+          </li>
         )),
       ])
     }
@@ -375,7 +413,7 @@ const features = (room: Room): string[] =>
     class="hidden rounded-xl border border-dashed border-line bg-paper-deep/40 px-5 py-10 text-center text-sm text-ink-soft"
     data-empty
   >
-    沒有符合條件的房型。試著放寬景觀或必要條件。
+    {ex.empty}
   </p>
 </section>
 
@@ -390,6 +428,7 @@ const features = (room: Room): string[] =>
     const roomList = list;
     const emptyState = empty;
     const resultCount = count;
+    const template = root.dataset.typeCount ?? '{n}';
     const cards = Array.from(roomList.querySelectorAll<HTMLElement>('[data-room]'));
     const groups = Array.from(roomList.querySelectorAll<HTMLElement>('[data-group]'));
 
@@ -423,7 +462,7 @@ const features = (room: Room): string[] =>
         if (matches) visible += 1;
       }
 
-      resultCount.textContent = `${visible} 種房型`;
+      resultCount.textContent = template.replace('{n}', String(visible));
       emptyState.classList.toggle('hidden', visible > 0);
       roomList.classList.toggle('hidden', visible === 0);
 
@@ -434,7 +473,7 @@ const features = (room: Room): string[] =>
         ).length;
         group.hidden = shown === 0;
         const tally = group.querySelector('[data-group-count]');
-        if (tally) tally.textContent = `${shown} 種`;
+        if (tally) tally.textContent = template.replace('{n}', String(shown));
       }
     }
 
