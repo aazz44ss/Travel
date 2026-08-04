@@ -1,12 +1,9 @@
 ---
 import type { ConnectingPair, Room, RoomNumbers, RoomView } from '~/data/hotel';
 import {
-  CHAPEL,
   PARTIAL_VIEW_FROM_PLAN,
   PLAN_FLOORS,
-  PLAN_HEIGHT,
   PLAN_RUNS,
-  PLAN_WIDTH,
   layout,
   MEASURED_FACES,
   corridorFromFace,
@@ -17,7 +14,8 @@ import {
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
 import { roomName, viewLabel } from '~/i18n/rooms';
-import { ANCHORS, HARBOUR, HOTEL_FOOTPRINT, SITE_SCALE_BAR } from '~/data/dhm-site';
+import { ANCHORS, SITE_SCALE_BAR } from '~/data/dhm-site';
+import { PHOTO } from '~/data/dhm-photo';
 
 interface Props {
   rooms: Room[];
@@ -101,18 +99,48 @@ const place = ([x, y]: readonly [number, number]): [number, number] => [
   pA[0] + (x - mA[0]) * cos - (y - mA[1]) * sin,
   pA[1] + (x - mA[0]) * sin + (y - mA[1]) * cos,
 ];
-const asPoints = (ring: readonly (readonly [number, number])[]) =>
-  ring
-    .map(place)
-    .map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)
-    .join(' ');
-const harbourPoints = asPoints(HARBOUR);
-/** The real footprint, over the water and under the cells, so the two agree. */
-const footprintPoints = asPoints(HOTEL_FOOTPRINT);
+/**
+ * The drawing sits on aerial photography, so its frame is the tile grid: pixels
+ * at PHOTO.zoom, north up. The rooms are still built in the plan's own units, so
+ * one matrix carries them across — the inverse of `place`, then metres to pixels.
+ */
+const mpp = PHOTO.metresPerPixel;
+const view = {
+  x: PHOTO.originX + PHOTO.window.x0 / mpp,
+  y: PHOTO.originY + PHOTO.window.y0 / mpp,
+  width: (PHOTO.window.x1 - PHOTO.window.x0) / mpp,
+  height: (PHOTO.window.y1 - PHOTO.window.y0) / mpp,
+};
+const tiles = [];
+for (let tx = PHOTO.tiles.x0; tx <= PHOTO.tiles.x1; tx += 1) {
+  for (let ty = PHOTO.tiles.y0; ty <= PHOTO.tiles.y1; ty += 1) {
+    tiles.push({ href: PHOTO.url(tx, ty, PHOTO.zoom), x: tx * PHOTO.size, y: ty * PHOTO.size });
+  }
+}
+
+/** Plan units to photo pixels: undo `place`, then metres to pixels. */
+const planToPhoto = (() => {
+  const k = 1 / (unitsPerMetre * mpp);
+  const c = Math.cos(-turn) * k;
+  const sn = Math.sin(-turn) * k;
+  /** Where the plan's anchor sits in pixels, so the two frames share that point. */
+  const ax = PHOTO.originX + mA[0] / mpp;
+  const ay = PHOTO.originY + mA[1] / mpp;
+  return {
+    a: c,
+    b: sn,
+    c: -sn,
+    d: c,
+    e: ax - (pA[0] * c - pA[1] * sn),
+    f: ay - (pA[0] * sn + pA[1] * c),
+  };
+})();
+const matrix = `matrix(${planToPhoto.a} ${planToPhoto.b} ${planToPhoto.c} ${planToPhoto.d} ${planToPhoto.e} ${planToPhoto.f})`;
+
 const scaleBar = {
-  x: 60,
-  y: PLAN_HEIGHT - 40,
-  length: Math.round(SITE_SCALE_BAR * unitsPerMetre),
+  x: view.x + 30,
+  y: view.y + view.height - 26,
+  length: SITE_SCALE_BAR / mpp,
 };
 
 /**
@@ -305,7 +333,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
     <div class="mt-5 space-y-5">
       <div class="table-scroll rounded-xl border border-line bg-[#f7f4ee] p-2">
         <svg
-          viewBox={`0 0 ${PLAN_WIDTH} ${PLAN_HEIGHT}`}
+          viewBox={`${view.x} ${view.y} ${view.width} ${view.height}`}
           class="h-auto w-full min-w-[46rem]"
           role="img"
           aria-labelledby="dhm-plan-title dhm-plan-desc"
@@ -313,16 +341,18 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
           <title id="dhm-plan-title">{copy.svgTitle}</title>
           <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
 
-          <polygon points={harbourPoints} fill="#bfdde3" stroke="#8fbfc9" stroke-width="1.5" />
-          <polygon
-            points={footprintPoints}
-            fill="#f7f4ee"
-            stroke="#c9bda6"
-            stroke-width="1.5"
-          />
-          <text x="150" y="470" font-size="19" font-weight="700" fill="#3f7d8a">
-            {copy.zones.harbour}
-          </text>
+          {
+            tiles.map((tile) => (
+              <image
+                href={tile.href}
+                x={tile.x}
+                y={tile.y}
+                width={PHOTO.size}
+                height={PHOTO.size}
+                preserveAspectRatio="none"
+              />
+            ))
+          }
 
           <g>
             <line
@@ -360,18 +390,8 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
             </text>
           </g>
 
-          <circle
-            cx={CHAPEL.cx}
-            cy={CHAPEL.cy}
-            r={CHAPEL.r}
-            fill="#ffffff"
-            stroke="#c9c0b0"
-            stroke-width="1.5"
-          />
-          <text x={CHAPEL.cx} y={CHAPEL.cy + 4} font-size="10" fill="#8b8f99" text-anchor="middle">
-            {copy.zones.chapel}
-          </text>
 
+          <g transform={matrix}>
           {
             PLAN_FLOORS.map((floor) => (
               <g
@@ -404,6 +424,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
               </g>
             ))
           }
+          </g>
         </svg>
       </div>
 
@@ -431,6 +452,14 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
 
       <p class="text-xs leading-relaxed text-ink-faint">
         {copy.note(totalOnPlan, enumerated)}
+        <a
+          href={PHOTO.creditUrl}
+          rel="noopener nofollow"
+          target="_blank"
+          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+        >
+          出典：{PHOTO.credit}
+        </a>
       </p>
     </div>
 
