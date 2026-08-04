@@ -256,11 +256,50 @@ export const PARTIAL_VIEW_FROM_PLAN: string[] = [
 /** The chapel's octagonal void, drawn only to orient the reader. */
 export const CHAPEL = { cx: 656, cy: 300, r: 40 };
 
-/** Landmarks that make the orientation readable, in plan units. */
-export const LANDMARKS = [
-  { key: 'harbour', points: '140,352 586,352 586,580 468,592 372,652 264,672 124,516' },
-  { key: 'piazza', points: '456,340 600,340 600,372 456,372' },
-] as const;
+/**
+ * Which side the water and the square are on — and deliberately not how far away.
+ *
+ * An earlier version drew Mediterranean Harbor and Piazza Topolino as filled
+ * shapes, which put a number on something no source here supports: the official
+ * park map is an illustration with no consistent scale, and the hand-drawn floor
+ * plans stop at the building line. A room's distance to the water was therefore
+ * whatever I had sketched. These markers run parallel to the frontage instead, so
+ * the drawing says "the water is on this side of this corridor" and says nothing
+ * about the metres in between.
+ */
+export const SIDE_MARKERS: { run: string; side: 'left' | 'right'; label: 'harbour' | 'piazza' }[] = [
+  { run: 'nw', side: 'right', label: 'piazza' },
+  { run: 'spine-n', side: 'right', label: 'piazza' },
+  { run: 'spine-s', side: 'right', label: 'harbour' },
+  { run: 'sw', side: 'right', label: 'harbour' },
+];
+
+/** A dashed line just beyond a run's rooms, on the side the water or square is on. */
+export function marker(
+  path: [number, number][],
+  side: 'left' | 'right',
+  offset: number,
+): { points: string; mid: [number, number]; angle: number } {
+  const sign = side === 'left' ? -1 : 1;
+  const shifted = path.map(([x, y], i) => {
+    const next = path[Math.min(i + 1, path.length - 1)]!;
+    const prev = path[Math.max(i - 1, 0)]!;
+    const dx = next[0] - prev[0];
+    const dy = next[1] - prev[1];
+    const len = Math.hypot(dx, dy) || 1;
+    return [x - (dy / len) * sign * offset, y + (dx / len) * sign * offset] as [number, number];
+  });
+  const a = shifted[0]!;
+  const b = shifted[shifted.length - 1]!;
+  return {
+    points: shifted.map(([x, y]) => `${Math.round(x)},${Math.round(y)}`).join(' '),
+    mid: [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)],
+    angle: (() => {
+      const raw = Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI);
+      return raw > 90 ? raw - 180 : raw <= -90 ? raw + 180 : raw;
+    })(),
+  };
+}
 
 export const PLAN_FLOORS = [5, 4, 3, 2] as const;
 
