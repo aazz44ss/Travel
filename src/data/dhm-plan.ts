@@ -247,22 +247,40 @@ export const PLAN_RUNS: PlanRun[] = [
 ];
 
 /**
- * The measured outline stretch each harbour-side run's rooms open from, in metres,
- * walking in the order the room numbers run. Taken from the OpenStreetMap
- * footprint in `./dhm-site`, at the corners where the hand-drawn plans put the
- * junctions between corridors.
+ * The wall each run's rooms open from, in metres, walking the way the room
+ * numbers run. Read off the OpenStreetMap footprint in `./dhm-site`, then
+ * simplified to 4 m: the bays and balconies in between turn a wall into a zigzag,
+ * and a 90 degree jog in it makes the cells at that jog cross each other. At 4 m
+ * the sharpest bend left is 55 degrees and no room moves more than a room's width.
  *
- * Dividing a stretch by its room count is the check that decides whether a run
- * belongs here. The south spine comes out at 3.9 m per room and the south-west
- * wing at 4.4 m, which is what a 37 m² room's frontage is, so both are laid on
- * the survey. The north-west wing gives 7.1 m and the north spine 7.8 m: those
- * facades carry more than guest rooms — the plans show a service block past the
- * wing's last room, and the chapel and the lounge past the spine's — and without
- * knowing where the rooms stop, placing them on the measured line would only move
- * the guesswork somewhere less visible. Those two stay on the sketched line.
+ * Four walls make up the Porto Paradiso side, and the room counts are what
+ * identify them: dividing each wall by the rooms the plans put on it gives 3.3,
+ * 4.0 and 4.4 m for the north spine, the south spine and the south-west wing,
+ * against the 4.4 m frontage a 37 m² room has. The north-west wing gives 5.1 m,
+ * so its rooms march at the true pitch instead of stretching to fill it: the
+ * plans show a service block past its last room, and the wall carries that too.
  */
-export const MEASURED_FACES: Record<string, [number, number][]> = {"spine-s": [[-24.8, -24.1], [-6.3, 31.0]],
-  "sw": [[-6.3, 31.0], [-34.5, 38.0], [-60.6, 62.7], [-70.8, 88.2]]};
+export const MEASURED_FACES: Record<string, [number, number][]> = {
+  "nw": [[-125.1, -34.6], [-85.5, -12.3], [-50.5, -17.2]],
+  "spine-n": [[-50.5, -17.2], [-32.2, -27.6], [-24.8, -24.1]],
+  "spine-s": [[-24.8, -24.1], [-27.3, -18.8], [-6.3, 31.0]],
+  "sw": [[-6.3, 31.0], [-34.5, 38.0], [-52.6, 53.2], [-70.8, 88.2]],
+};
+
+/**
+ * The four runs no wall could be matched to, and the measured corner each hangs
+ * off. Their rooms face the canals and the park entrance, where the footprint
+ * gives no stretch whose length matches their room count, so their shape is
+ * still the source's hand-drawn one — placed by the similarity that carries the
+ * neighbouring run's sketch onto its measured wall, which keeps the error local
+ * instead of letting one fit over the whole building drag them tens of metres.
+ */
+export const SKETCH_PARENT: Record<string, string> = {
+  east: 'spine-n',
+  corner: 'spine-s',
+  se: 'sw',
+  'se-tail': 'sw',
+};
 
 /** Rooms the plan marks as Partial View although the type lists never number them. */
 export const PARTIAL_VIEW_FROM_PLAN: string[] = [
@@ -449,6 +467,8 @@ export function layout(
   spans: { start: number; span: number }[],
   side: 'left' | 'right',
   depth: number,
+  /** Gap between the corridor line and the room, so cells sit against the wall. */
+  inner: number,
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
   if (slots === 0) return [];
 
@@ -488,7 +508,6 @@ export function layout(
     /** Perpendicular to the corridor, pointing to this side of it. */
     const na = { x: -a.uy * sign, y: a.ux * sign };
     const nb = { x: -b.uy * sign, y: b.ux * sign };
-    const inner = 8;
     const p1 = [a.x + na.x * inner, a.y + na.y * inner];
     const p2 = [b.x + nb.x * inner, b.y + nb.y * inner];
     const p3 = [b.x + nb.x * (inner + depth), b.y + nb.y * (inner + depth)];

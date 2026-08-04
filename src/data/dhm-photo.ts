@@ -2,7 +2,7 @@
  * Aerial photography under the room plan, instead of shapes drawn by hand.
  *
  * Zoom 19 is the sharpest imagery available over Urayasu: 0.24 m per pixel, so a
- * 4.4 m room front is 18 px wide. Esri's World Imagery serves it; the Geospatial
+ * 4.4 m room front is 18 image pixels wide. Esri's World Imagery serves it; the Geospatial
  * Information Authority of Japan's seamless photo layer stops at zoom 18, half
  * this detail, and zoom 20 here answers "map data not yet available". Google's
  * tiles are not an option — taking them this way is outside their terms, and
@@ -22,9 +22,14 @@ export const PHOTO = {
   /** Pixel coordinates of the metre frame's origin. */
   originX: 119262909.58,
   originY: 52876959.08,
-  /** The window drawn, in metres about that origin. */
-  window: { x0: -330.0, y0: -170.0, x1: 150.0, y1: 190.0 },
-  tiles: { x0: 465865, y0: 206548, x1: 465873, y1: 206553 },
+  /**
+   * The window drawn, in metres about that origin. Cropped to the rooms and the
+   * water in front of them: at 480 m across, a 4.4 m room front was 7 px on a
+   * phone and could not carry its number. At 290 m it is 17 px wide and 25 deep,
+   * which a four-digit number fits across.
+   */
+  window: { x0: -200.0, y0: -80.0, x1: 90.0, y1: 140.0 },
+  tiles: { x0: 465867, y0: 206549, x1: 465872, y1: 206552 },
   size: 256,
   url: (x: number, y: number, z: number) =>
     `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,

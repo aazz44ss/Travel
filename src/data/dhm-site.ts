@@ -9,27 +9,16 @@
  *
  * This is the one figure on the page that carries a distance. Google's maps could
  * not be used for it: measuring their imagery to build geometry is not something
- * their terms allow, and no key is available here either. The room-by-room plan
- * below stays schematic, because what it needs — which window sits where along a
- * corridor — is in the hand-drawn floor plans and not in any survey.
+ * their terms allow, and no key is available here either. What the survey cannot
+ * give is which window sits where along a corridor; that is in the hand-drawn
+ * floor plans. So the walls a room sits against are measured, and the order of
+ * the rooms along them is the plans'.
  */
 
 /** Metres about the hotel centre, y south-positive, as a plan is read. */
 export type Point = readonly [number, number];
 
 export const SITE_VIEW = { x0: -330.0, y0: -170.0, x1: 150.0, y1: 190.0 } as const;
-
-/**
- * Two points on the measured frontage that also exist on the schematic room plan:
- * the top of the harbour-facing spine, and the south-western tip. Matching this
- * pair fixes the scale and the rotation for laying the measured water over that
- * plan, and the fit is self-checking — it puts the plan's 17-unit room pitch at
- * 4.37 m, which is what a 37 m² room's frontage actually is.
- */
-export const ANCHORS: readonly [Point, Point] = [
-  [-24.8, -24.1],
-  [-70.8, 88.2],
-];
 
 /** 100 m, for the scale bar. */
 export const SITE_SCALE_BAR = 100;
@@ -437,3 +426,33 @@ export const LAGOON: Point[] = [[-427.5, 264.5],
   [-386.5, 240.1],
   [-394.9, 248.1],
   [-424.3, 244.2]];
+
+
+/** Whether a point is within the measured building. */
+export function inFootprint(p: Point): boolean {
+  let hit = false;
+  for (let i = 0, j = HOTEL_FOOTPRINT.length - 1; i < HOTEL_FOOTPRINT.length; j = i, i += 1) {
+    const a = HOTEL_FOOTPRINT[i]!;
+    const b = HOTEL_FOOTPRINT[j]!;
+    if (a[1] > p[1] !== b[1] > p[1] && p[0] < a[0] + ((p[1] - a[1]) / (b[1] - a[1])) * (b[0] - a[0])) {
+      hit = !hit;
+    }
+  }
+  return hit;
+}
+
+/** Which side of a line the building is on, tested rather than assumed. */
+export function interiorSide(line: readonly Point[]): 'left' | 'right' {
+  let right = 0;
+  for (let i = 1; i < line.length; i += 1) {
+    const a = line[i - 1]!;
+    const b = line[i]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const mid: Point = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const nx = -(b[1] - a[1]) / len;
+    const ny = (b[0] - a[0]) / len;
+    if (inFootprint([mid[0] + nx * 4, mid[1] + ny * 4])) right += 1;
+    if (inFootprint([mid[0] - nx * 4, mid[1] - ny * 4])) right -= 1;
+  }
+  return right >= 0 ? 'right' : 'left';
+}

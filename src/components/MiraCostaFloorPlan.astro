@@ -6,6 +6,7 @@ import {
   PLAN_RUNS,
   layout,
   MEASURED_FACES,
+  SKETCH_PARENT,
   corridorFromFace,
   slotsOf,
   spansOf,
@@ -14,7 +15,7 @@ import {
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
 import { roomName, viewLabel } from '~/i18n/rooms';
-import { ANCHORS, SITE_SCALE_BAR } from '~/data/dhm-site';
+import { SITE_SCALE_BAR, interiorSide } from '~/data/dhm-site';
 import { PHOTO } from '~/data/dhm-photo';
 
 interface Props {
@@ -72,38 +73,33 @@ const TONE: Record<string, { fill: string; text: string }> = {
 };
 
 /**
- * Mediterranean Harbor, measured, laid over the plan.
- *
- * The transform is the similarity that carries two points of the measured
- * frontage onto the same two points of this plan: the head of the harbour-facing
- * spine and the south-western tip. Everything else follows, so the water sits at
- * its surveyed distance from the rooms, and the scale bar measures the drawing.
+ * Everything is drawn in metres about the hotel, so the drawing carries no frame
+ * of its own: a room's position is either a measured wall or a sketch hung off
+ * one, and the scale bar measures both.
  */
-/** Runs whose rooms are placed on the measured facade rather than a sketched line. */
 const ROOM_PITCH_M = 4.37;
 const STRETCH_LIMIT_M = 5.5;
+/** How deep a room is drawn. */
+const ROOM_DEPTH_M = 6.7;
 
-const spine = PLAN_RUNS.find((run) => run.key === 'spine-s')!.path;
-const wing = PLAN_RUNS.find((run) => run.key === 'sw')!.path;
-const [mA, mB] = ANCHORS;
-const pA = spine[0]!;
-const pB = wing[wing.length - 1]!;
-const mLen = Math.hypot(mB[0] - mA[0], mB[1] - mA[1]);
-/** Plan units per metre: about 3.9, which puts the 17-unit room pitch at 4.37 m. */
-const unitsPerMetre = Math.hypot(pB[0] - pA[0], pB[1] - pA[1]) / mLen;
-const turn =
-  Math.atan2(pB[1] - pA[1], pB[0] - pA[0]) - Math.atan2(mB[1] - mA[1], mB[0] - mA[0]);
-const cos = Math.cos(turn) * unitsPerMetre;
-const sin = Math.sin(turn) * unitsPerMetre;
-const place = ([x, y]: readonly [number, number]): [number, number] => [
-  pA[0] + (x - mA[0]) * cos - (y - mA[1]) * sin,
-  pA[1] + (x - mA[0]) * sin + (y - mA[1]) * cos,
-];
-/**
- * The drawing sits on aerial photography, so its frame is the tile grid: pixels
- * at PHOTO.zoom, north up. The rooms are still built in the plan's own units, so
- * one matrix carries them across — the inverse of `place`, then metres to pixels.
- */
+/** The similarity that carries a measured run's sketch onto its wall. */
+const frameOf = (key: string) => {
+  const face = MEASURED_FACES[key]!;
+  const path = PLAN_RUNS.find((run) => run.key === key)!.path;
+  const [sA, sB] = [path[0]!, path[path.length - 1]!];
+  const [mA, mB] = [face[0]!, face[face.length - 1]!];
+  const k =
+    Math.hypot(mB[0] - mA[0], mB[1] - mA[1]) / Math.hypot(sB[0] - sA[0], sB[1] - sA[1]);
+  const turn =
+    Math.atan2(mB[1] - mA[1], mB[0] - mA[0]) - Math.atan2(sB[1] - sA[1], sB[0] - sA[0]);
+  const cos = Math.cos(turn) * k;
+  const sin = Math.sin(turn) * k;
+  return ([x, y]: readonly [number, number]): [number, number] => [
+    mA[0] + (x - sA[0]) * cos - (y - sA[1]) * sin,
+    mA[1] + (x - sA[0]) * sin + (y - sA[1]) * cos,
+  ];
+};
+
 const mpp = PHOTO.metresPerPixel;
 /**
  * Absolute tile pixels run to about 60 million here, which is past the precision
@@ -136,23 +132,15 @@ for (let tx = PHOTO.tiles.x0; tx <= PHOTO.tiles.x1; tx += 1) {
 /** Sizes are tuned on a 1000-unit-wide drawing; scaling keeps them constant on screen. */
 const ui = view.width / 1000;
 
-/** Plan units to photo pixels: undo `place`, then metres to pixels. */
-const planToPhoto = (() => {
-  const k = 1 / (unitsPerMetre * mpp);
-  const c = Math.cos(-turn) * k;
-  const sn = Math.sin(-turn) * k;
-  /** Where the plan's anchor sits in the window, so the two frames share it. */
-  const ax = PHOTO.originX + mA[0] / mpp - originX;
-  const ay = PHOTO.originY + mA[1] / mpp - originY;
-  return {
-    a: c,
-    b: sn,
-    c: -sn,
-    d: c,
-    e: ax - (pA[0] * c - pA[1] * sn),
-    f: ay - (pA[0] * sn + pA[1] * c),
-  };
-})();
+/** Metres about the hotel to pixels in the window. North is up in both. */
+const planToPhoto = {
+  a: 1 / mpp,
+  b: 0,
+  c: 0,
+  d: 1 / mpp,
+  e: PHOTO.originX - originX,
+  f: PHOTO.originY - originY,
+};
 const matrix = `matrix(${planToPhoto.a} ${planToPhoto.b} ${planToPhoto.c} ${planToPhoto.d} ${planToPhoto.e} ${planToPhoto.f})`;
 
 const scaleBar = {
@@ -161,43 +149,81 @@ const scaleBar = {
   length: Math.round(SITE_SCALE_BAR / mpp),
 };
 
+const metres = (line: readonly [number, number][]): number =>
+  line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0] - line[i]![0], p[1] - line[i]![1]), 0);
+
 /**
- * Corridor lines in plan units. Where a measured facade exists, the line comes
- * from it, so a cell's position and its distance to the water are the survey's;
- * elsewhere it stays the sketched line and the drawing says so.
+ * Where a run's rooms sit: the line they are measured from, and how far in from
+ * it each side of the corridor is.
+ *
+ * A wing is a slab with a corridor down it and rooms against both faces. The side
+ * the survey matched sits on the wall itself. The other sits directly behind it,
+ * one room deep plus a corridor, rather than against the far wall. Casting across
+ * the block for that wall gives 25 to 38 m, but the outline carries the
+ * courtyards as building rather than as holes, so a cast crosses a garden as
+ * readily as a corridor; and swinging a bent wall out that far makes the cells fan
+ * apart and cross at every bend. A row behind the first is right for the shape of
+ * the wing, and a few metres short of its back wall.
  */
-const runPath = (run: (typeof PLAN_RUNS)[number]): [number, number][] => {
-  const face = MEASURED_FACES[run.key];
-  if (!face) return run.path;
-  const side = run.left.facing === 'inland' ? 'right' : 'left';
-  const rooms = Math.max(
-    ...(['left', 'right'] as const).map((s) => slotsOf(run, s).length),
-  );
-  const metres = face
-    .slice(1)
-    .reduce((sum, point, i) => sum + Math.hypot(point[0] - face[i]![0], point[1] - face[i]![1]), 0);
-  /** Stretch when the facade is all rooms; otherwise march at the true pitch. */
-  const fits = metres / rooms <= STRETCH_LIMIT_M;
-  const inUnits = face.map((point) => place(point as [number, number]));
-  const depth = 34;
-  return corridorFromFace(
-    inUnits,
-    side,
-    depth,
-    fits ? null : rooms * ROOM_PITCH_M * unitsPerMetre,
-  );
+const placementOf = (run: (typeof PLAN_RUNS)[number]) => {
+  const rooms = Math.max(...(['left', 'right'] as const).map((s) => slotsOf(run, s).length));
+  const matched = MEASURED_FACES[run.key];
+  const inland = ROOM_DEPTH_M + 2;
+  if (matched) {
+    /** Cut a wall that carries more than rooms back to what the rooms need. */
+    const fits = metres(matched) / rooms <= STRETCH_LIMIT_M;
+    const wall = fits
+      ? [...matched]
+      : corridorFromFace(matched, interiorSide(matched), 0, rooms * ROOM_PITCH_M);
+    const faceSide: 'left' | 'right' = run.left.facing === 'inland' ? 'right' : 'left';
+    return {
+      line: wall,
+      inward: interiorSide(wall),
+      inset: { [faceSide]: 0, [faceSide === 'right' ? 'left' : 'right']: inland } as Record<
+        'left' | 'right',
+        number
+      >,
+      measured: true,
+    };
+  }
+  /** No wall matched: the sketched corridor, hung off a neighbour's measured one. */
+  const line = run.path.map(frameOf(SKETCH_PARENT[run.key]!));
+  const faceSide: 'left' | 'right' = run.left.facing === 'inland' ? 'right' : 'left';
+  return {
+    line,
+    inward: interiorSide(line),
+    inset: { [faceSide]: 0, [faceSide === 'right' ? 'left' : 'right']: inland } as Record<
+      'left' | 'right',
+      number
+    >,
+    measured: false,
+  };
 };
 
 /** Every cell on the plan, per floor, ready to draw. */
-const cells = PLAN_RUNS.flatMap((run) =>
-  (['left', 'right'] as const).flatMap((side) =>
+const cells = PLAN_RUNS.flatMap((run) => {
+  const at = placementOf(run);
+  return (['left', 'right'] as const).flatMap((side) =>
     PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
-      return layout(runPath(run), slotsOf(run, side).length, spans, side, 26).map((cell, i) => {
+      return layout(
+        at.line,
+        slotsOf(run, side).length,
+        spans,
+        at.inward,
+        ROOM_DEPTH_M,
+        at.inset[side],
+      ).map((cell, i) => {
         const number = spans[i]!.number;
         const sold = typeOf.get(number);
         const grade = seenFrom(number, run[side].facing);
+        /** Four digits need about 19 px and a room front is 17: write it across. */
+        const across = cell.width < ROOM_PITCH_M * 1.6;
+        /** Whatever direction the run is walked, the number reads upright. */
+        const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
         return {
+          across,
+          labelAngle: upright(across ? cell.angle + 90 : cell.angle),
           number,
           floor,
           run: run.key,
@@ -213,8 +239,8 @@ const cells = PLAN_RUNS.flatMap((run) =>
         };
       });
     }),
-  ),
-);
+  );
+});
 
 const byFloor = Object.fromEntries(
   PLAN_FLOORS.map((floor) => [floor, cells.filter((cell) => cell.floor === floor)]),
@@ -350,7 +376,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
     <div class="mt-5 space-y-5">
       <div class="table-scroll rounded-xl border border-line bg-[#f7f4ee] p-2">
         <div
-          class="relative min-w-[46rem] overflow-hidden bg-[#25303a]"
+          class="relative min-w-[68rem] overflow-hidden bg-[#25303a]"
           style={`aspect-ratio:${view.width}/${view.height}`}
         >
           {
@@ -412,11 +438,24 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
                         <polygon
                           points={cell.points}
                           fill={TONE[cell.grade]!.fill}
-                          fill-opacity="0.86"
+                          fill-opacity="0.88"
                           stroke="#ffffff"
-                          stroke-width="1.2"
+                          stroke-width="0.3"
                           data-shape
                         />
+                        <text
+                          x={cell.cx}
+                          y={cell.cy}
+                          text-anchor="middle"
+                          dominant-baseline="central"
+                          font-size="2.1"
+                          font-weight="700"
+                          fill={TONE[cell.grade]!.text}
+                          transform={`rotate(${cell.labelAngle} ${cell.cx} ${cell.cy})`}
+                          pointer-events="none"
+                        >
+                          {cell.number}
+                        </text>
                       </g>
                     ))}
                   </g>
