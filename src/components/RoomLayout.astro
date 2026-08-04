@@ -1,48 +1,63 @@
 ---
-import type { Room } from '~/data/hotel-schema';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
 
+/**
+ * The hotel's own plan drawing for one room type, served from the resort's CDN
+ * rather than copied here, so the drawing is always the current official one.
+ * Which drawing belongs to which room type is the hotel dataset's business, so
+ * the caller resolves it and passes the result in.
+ */
 interface Props {
-  room: Room;
-  /** Absolute URL of the hotel's own plan drawing, served from the resort CDN. */
-  src?: string;
+  /** Localised room name, used for the alt text. */
+  name: string;
+  size: string;
+  src: string;
   /** Official room page the drawing came from. */
-  href?: string;
+  href: string;
   width: number;
   height: number;
   /** Set when the official page's drawing covers more than one of our variants. */
   shared?: boolean;
+  locale?: Locale;
 }
 
-const { room, src, href, width, height, shared = false } = Astro.props;
+const {
+  name,
+  size,
+  src,
+  href,
+  width,
+  height,
+  shared = false,
+  locale = DEFAULT_LOCALE,
+} = Astro.props;
+const ex = explorer(locale);
 ---
 
-{
-  src && (
-    <figure class="not-prose mt-3 overflow-hidden rounded-lg border border-line-soft bg-white">
-      <img
-        src={src}
-        width={width}
-        height={height}
-        loading="lazy"
-        decoding="async"
-        referrerpolicy="no-referrer"
-        alt={`${room.name}的官方平面圖`}
-        class="block h-auto w-full"
-      />
-      <figcaption class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint">
-        <span class="font-medium text-ink-soft">{room.size} m²</span>
-        {shared && <span>官方同一頁涵蓋數種床型，圖上並列</span>}
-        {href && (
-          <a
-            href={href}
-            rel="noopener nofollow"
-            target="_blank"
-            class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >
-            官方平面圖
-          </a>
-        )}
-      </figcaption>
-    </figure>
-  )
-}
+<figure class="not-prose mt-3 overflow-hidden rounded-lg border border-line-soft bg-white">
+  <img
+    src={src}
+    width={width}
+    height={height}
+    loading="lazy"
+    decoding="async"
+    referrerpolicy="no-referrer"
+    alt={`${name} — ${ex.layoutCaption.official}`}
+    class="block h-auto w-full"
+  />
+  <figcaption
+    class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs text-ink-faint"
+  >
+    <span class="font-medium text-ink-soft">{size} m²</span>
+    {shared && <span>{ex.layoutCaption.shared}</span>}
+    <a
+      href={href}
+      rel="noopener nofollow"
+      target="_blank"
+      class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+    >
+      {ex.layoutCaption.official}
+    </a>
+  </figcaption>
+</figure>

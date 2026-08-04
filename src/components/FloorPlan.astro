@@ -1,5 +1,8 @@
 ---
 import { HOTEL, ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
+import { CATEGORY_LABELS, VIEW_LABELS, roomName } from '~/i18n/rooms';
 import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
 import { PLAN_HEIGHT, PLAN_ROOMS, PLAN_WIDTH, type Tone } from '~/data/tdh-plan';
 
@@ -8,6 +11,14 @@ import { PLAN_HEIGHT, PLAN_ROOMS, PLAN_WIDTH, type Tone } from '~/data/tdh-plan'
  * angle, so the family rooms really are three times a standard room and the
  * corridors really do run at the angles the building runs at.
  */
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+const ex = explorer(locale);
+const plan = ex.plan;
 
 const roomById = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
 
@@ -20,19 +31,24 @@ for (const hit of KNOWN_ROOM_NUMBERS) {
 }
 
 const TONE: Record<Tone, { fill: string; text: string; label: string; note: string }> = {
-  grand: { fill: '#0f4c5c', text: '#ffffff', label: '樂園全景觀', note: '正面看得到城堡' },
-  park: { fill: '#5b93a1', text: '#ffffff', label: '樂園景觀', note: '斜角看得到樂園' },
-  entrance: { fill: '#d8a9b7', text: '#5c3140', label: '迪士尼明星房', note: '面向飯店正門' },
-  inner: { fill: '#cdc2ae', text: '#4f4739', label: '無景觀分類', note: '中庭或側面' },
-  turret: { fill: '#b4832c', text: '#ffffff', label: '角塔', note: '景隅／塔樓／套房' },
+  grand: { fill: '#0f4c5c', text: '#ffffff', label: VIEW_LABELS[locale].grand!, note: '' },
+  park: { fill: '#5b93a1', text: '#ffffff', label: VIEW_LABELS[locale].park!, note: '' },
+  entrance: {
+    fill: '#d8a9b7',
+    text: '#5c3140',
+    label: CATEGORY_LABELS[locale].character!,
+    note: '',
+  },
+  inner: { fill: '#cdc2ae', text: '#4f4739', label: VIEW_LABELS[locale].none!, note: '' },
+  turret: { fill: '#b4832c', text: '#ffffff', label: plan.turretLabel, note: '' },
 };
 
 /** Sales category, using the same pink / yellow / blue as the published plans. */
 const CATEGORY = {
-  standard: { fill: '#f3c9dc', text: '#7a4658', label: '標準房' },
-  character: { fill: '#f7e491', text: '#6b5a12', label: '迪士尼明星房' },
-  concierge: { fill: '#b6dcec', text: '#1d5468', label: '禮賓房' },
-  suite: { fill: '#4a90a8', text: '#ffffff', label: '套房' },
+  standard: { fill: '#f3c9dc', text: '#7a4658', label: CATEGORY_LABELS[locale].standard! },
+  character: { fill: '#f7e491', text: '#6b5a12', label: CATEGORY_LABELS[locale].character! },
+  concierge: { fill: '#b6dcec', text: '#1d5468', label: CATEGORY_LABELS[locale].concierge! },
+  suite: { fill: '#4a90a8', text: '#ffffff', label: CATEGORY_LABELS[locale].suite! },
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY;
@@ -102,7 +118,7 @@ const cells = PLAN_ROOMS.map((room) => {
     names: Object.fromEntries(
       [...(byCode.get(room.code)?.entries() ?? [])].map(([floor, id]) => [
         floor,
-        roomById[id]?.name ?? '',
+        roomById[id] ? roomName(roomById[id]!, locale) : '',
       ]),
     ),
   };
@@ -165,19 +181,16 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
 
 <section id="floor-plan" class="not-prose scroll-mt-32">
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
-    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">逐間客房平面圖</h2>
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{plan.heading}</h2>
     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-      這張圖是從原始平面圖描出來的，{cells.length}
-      間客房的位置、大小和角度都照實際比例畫——所以家庭客房看起來就是標準房的三倍大，走廊的轉角也是真的轉角。
-      飯店大部分的走廊兩側都有房間，同一棟裡因此會出現「一邊是明星房、另一邊面對樂園」的情況。
-    </p>
+      {plan.blurbIntro}</p>
 
     <div class="mt-5 flex flex-wrap items-center gap-2">
-      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">上色依據</span>
+      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{plan.colourLabel}</span>
       {
         [
-          { value: 'view', label: '看得到什麼' },
-          { value: 'category', label: '房型分類' },
+          { value: 'view', label: plan.colourBy.view },
+          { value: 'category', label: plan.colourBy.category },
         ].map((option, index) => (
           <label class="cursor-pointer">
             <input
@@ -224,15 +237,15 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
           </li>
         ))
       }
-      <li class="text-xs text-ink-faint">選定樓層後，顏色是該樓層實際販售的分類</li>
+      <li class="text-xs text-ink-faint">{plan.legendNote}</li>
     </ul>
 
     <div class="mt-5 flex flex-wrap items-center gap-2">
-      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">樓層</span>
+      <span class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{plan.floors}</span>
       <label class="cursor-pointer">
         <input type="radio" name="plan-floor" value="all" checked class="peer sr-only" />
         <span class="block rounded-full border border-line px-3 py-1 text-sm text-ink-soft transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
-          全部
+          {plan.allFloors}
         </span>
       </label>
       {
@@ -255,10 +268,9 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
           role="img"
           aria-labelledby="plan-title plan-desc"
         >
-          <title id="plan-title">東京迪士尼樂園大飯店逐間客房平面圖</title>
+          <title id="plan-title">{plan.svgTitle}</title>
           <desc id="plan-desc">
-            依實際比例描繪的平面圖。上方是飯店正門側的中庭，左右是西翼與東翼，中央兩隻腳往下（樂園方向）延伸，末端是正面客房與角塔。每一個多邊形是一間客房。
-          </desc>
+            {plan.svgDesc}</desc>
 
           <text
             x={PLAN_WIDTH / 2}
@@ -266,7 +278,7 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
             text-anchor="middle"
             font-size="13"
             font-weight="700"
-            fill="#8b8f99">飯店正門側・幻想曲廣場</text
+            fill="#8b8f99">{plan.entranceSide}</text
           >
 
           {
@@ -306,7 +318,7 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
             text-anchor="middle"
             font-size="13"
             font-weight="700"
-            fill="#0f4c5c">東京迪士尼樂園</text
+            fill="#0f4c5c">{plan.parkSide}</text
           >
         </svg>
       </div>
@@ -316,12 +328,12 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
       >
         <div>
           <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-plan-hint>
-            點圖上任一間房
+            {plan.tapHint}
           </p>
-          <h3 class="mt-2 font-serif text-lg font-bold text-ink" data-plan-label>整層平面</h3>
+          <h3 class="mt-2 font-serif text-lg font-bold text-ink" data-plan-label>{plan.wholeFloor}</h3>
           <p class="mt-1 hidden w-fit rounded-full px-2.5 py-1 text-2xs font-bold" data-plan-tone />
           <p class="mt-2 text-[0.875rem] leading-[1.9] text-ink-soft" data-plan-blurb>
-            上方是飯店正門與幻想曲廣場，下方是東京迪士尼樂園。格子裡的三位數是房號的後三碼，前面加上樓層就是完整房號。
+            {plan.intro}
           </p>
         </div>
         <dl
@@ -331,14 +343,12 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
       </div>
 
       <p class="text-xs leading-relaxed text-ink-faint">
-        依原始平面圖逐間描出位置與大小，房號沿走廊推得。圖上涵蓋 {planRooms} 間，全館 {HOTEL.totalRooms}
-        間；差額是來源未標示的位置，1、2 樓最不完整。手機請左右滑動。
-      </p>
+        {plan.note(planRooms, HOTEL.totalRooms, cells.length, cells.filter((c) => c.floors.length > 0).length)}</p>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload, planRooms, totalRooms: HOTEL.totalRooms }}>
+<script is:inline define:vars={{ payload, planRooms, totalRooms: HOTEL.totalRooms, s: plan }}>
   (() => {
     const root = document.querySelector('#floor-plan');
     if (!root) return;
@@ -350,8 +360,7 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
     const toneBadge = root.querySelector('[data-plan-tone]');
     const nodes = Array.from(root.querySelectorAll('[data-cell]'));
 
-    const DEFAULT_BLURB =
-      '上方是飯店正門與幻想曲廣場，下方是東京迪士尼樂園。格子裡的三位數是房號的後三碼，前面加上樓層就是完整房號。';
+    const DEFAULT_BLURB = s.intro;
 
     let active = null;
 
@@ -404,8 +413,8 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
 
       if (active === null) {
         const onThisFloor = payload.filter((c) => onFloor(c, f)).length;
-        if (hint) hint.textContent = f === null ? '點圖上任一間房' : `${f} 樓`;
-        if (label) label.textContent = '整層平面';
+        if (hint) hint.textContent = f === null ? s.tapHint : s.floorRooms(f);
+        if (label) label.textContent = s.wholeFloor;
         if (blurb) blurb.textContent = DEFAULT_BLURB;
         if (toneBadge) toneBadge.classList.add('hidden');
         if (facts) {
@@ -413,9 +422,9 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
             `<div class="flex justify-between gap-3"><dt class="text-ink-faint">${term}</dt><dd class="font-bold text-ink">${value}</dd></div>`;
           facts.innerHTML =
             (f === null
-              ? row('圖上位置', `${onThisFloor} 處`) + row('這些位置的客房', `${planRooms} 間`)
-              : row(`${f} 樓客房`, `${onThisFloor} 間`)) +
-            row('全館客房', `${totalRooms} 間`);
+              ? row(s.positions, String(onThisFloor)) + row(s.roomsOnPlan, String(planRooms))
+              : row(s.floorRooms(f), String(onThisFloor))) +
+            row(s.totalRooms, String(totalRooms));
         }
         return;
       }
@@ -427,13 +436,13 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
       const badge = byCategory ? cat.label : cell.toneLabel;
       const where =
         cell.facing === 'park'
-          ? '窗戶在面向東京迪士尼樂園的那一側。'
+          ? s.facing.park
           : cell.facing === 'entrance'
-            ? '窗戶在面向飯店正門的那一側。'
-            : '窗戶在建築側面。';
+            ? s.facing.entrance
+            : s.facing.side;
 
-      if (hint) hint.textContent = f === null ? '全部樓層' : `${f} 樓`;
-      if (label) label.textContent = `位置 ${cell.code}`;
+      if (hint) hint.textContent = f === null ? s.allFloors : s.floorRooms(f);
+      if (label) label.textContent = s.positionLabel(cell.code);
       if (toneBadge) {
         toneBadge.textContent = badge;
         toneBadge.style.background = fill;
@@ -444,18 +453,18 @@ const median = [...cells.map((c) => c.area)].sort((a, b) => a - b)[Math.floor(ce
 
       if (facts) {
         const rows = [];
-        if (cell.bed) rows.push(['床型', cell.bed]);
+        if (cell.bed) rows.push([s.bedField, cell.bed]);
         const nameForFloor = f !== null ? cell.names[String(f)] : null;
-        if (nameForFloor) rows.push([`${f} 樓官方房型`, nameForFloor]);
+        if (nameForFloor) rows.push([s.officialName(f), nameForFloor]);
         else if (f === null) {
           const names = [...new Set(Object.values(cell.names))].filter(Boolean);
-          if (names.length) rows.push(['官方房型名稱', names.join('、')]);
+          if (names.length) rows.push([s.officialNames, names.join('、')]);
         }
         const numbers = cell.floors.map((fl) => `${fl}${cell.code}`);
         const visible = f === null ? numbers : numbers.filter((n) => Number(n[0]) === f);
         rows.push([
-          f === null ? '房號' : `${f} 樓房號`,
-          visible.length ? visible.join('、') : '這一層沒有這個位置',
+          s.numbersField(f),
+          visible.length ? visible.join('、') : s.noneOnFloor,
         ]);
         facts.innerHTML = rows
           .map(

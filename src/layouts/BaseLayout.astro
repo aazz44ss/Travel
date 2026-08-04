@@ -2,6 +2,8 @@
 import BaseHead from '~/components/BaseHead.astro';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
+import { DEFAULT_LOCALE, LOCALE_META, type Locale } from '~/i18n/config';
+import { t } from '~/i18n/ui';
 
 interface Props {
   title: string;
@@ -10,27 +12,33 @@ interface Props {
   publishedAt?: Date;
   updatedAt?: Date;
   type?: 'website' | 'article';
+  locale?: Locale;
+  /** Passed through to the language switcher; see Header. */
+  switchTo?: string;
+  /** Path of this page written as if the site were single-language. */
+  path?: string;
 }
 
-const props = Astro.props;
+const { locale = DEFAULT_LOCALE, path = '/', switchTo, ...props } = Astro.props;
+const ui = t(locale);
 ---
 
 <!doctype html>
-<html lang="zh-Hant-TW">
+<html lang={LOCALE_META[locale].htmlLang}>
   <head>
-    <BaseHead {...props} />
+    <BaseHead {...props} locale={locale} path={path} />
   </head>
   <body class="flex min-h-screen flex-col">
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-100 focus:rounded-full focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:text-white"
     >
-      跳到主要內容
+      {ui.common.skipToContent}
     </a>
-    <Header />
+    <Header locale={locale} switchTo={switchTo} />
     <main id="main" class="flex-1">
       <slot />
     </main>
-    <Footer />
+    <Footer locale={locale} />
   </body>
 </html>

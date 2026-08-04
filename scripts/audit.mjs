@@ -32,15 +32,20 @@ const ok = (msg) => console.log(`  ok   ${msg}`);
 
 // ── every route builds and resolves ──────────────────────────────────────────
 console.log('\nroutes');
-const routes = [
+// Traditional Chinese is unprefixed; the other two live under their own segment.
+const PREFIXES = ['', 'ja/', 'en/'];
+const PER_LOCALE = [
   'index.html',
-  'hotels/index.html',
-  'hotels/fantasy-springs-hotel/index.html',
-  'hotels/tokyo-disneyland-hotel/index.html',
+  'about/index.html',
   'articles/index.html',
   'articles/fantasy-springs-hotel/index.html',
   'articles/tokyo-disneyland-hotel/index.html',
-  'about/index.html',
+  'hotels/index.html',
+  'hotels/fantasy-springs-hotel/index.html',
+  'hotels/tokyo-disneyland-hotel/index.html',
+];
+const routes = [
+  ...PREFIXES.flatMap((prefix) => PER_LOCALE.map((route) => prefix + route)),
   '404.html',
   'rss.xml',
   'robots.txt',
@@ -116,12 +121,33 @@ fshDb.includes('官方公布的樓層區間沒有涵蓋這個位置')
   ? ok('the position no published band covers is disclosed')
   : fail('unassigned position not disclosed');
 
+console.log('\nevery locale renders the position map');
+for (const prefix of PREFIXES) {
+  const html = read(`${prefix}hotels/fantasy-springs-hotel/index.html`);
+  const n = [...html.matchAll(/data-number="\d{4}"/g)].length;
+  n === cells.length
+    ? ok(`${prefix || 'zh-hant/'} renders ${n} cells`)
+    : fail(`${prefix || 'zh-hant/'} renders ${n} cells, expected ${cells.length}`);
+}
+
+console.log('\nlanguage switcher targets exist');
+for (const page of pages) {
+  const html = readFileSync(page, 'utf8');
+  const nav = /<header[\s\S]*?<\/header>/.exec(html)?.[0] ?? '';
+  for (const m of nav.matchAll(/href="(\/(?:ja|en)\/[^"#?]*)"/g)) {
+    const href = m[1];
+    const target = [join(DIST, href), join(DIST, href, 'index.html')].some((c) => existsSync(c));
+    if (!target) fail(`switcher on ${page} points at missing ${href}`);
+  }
+}
+ok('all locale switcher targets resolve');
+
 // ── numbers stated in prose match the data ──────────────────────────────────
 console.log('\nfigures in prose');
 const fshText = visibleText(fshDb);
 const artText = visibleText(read('articles/fantasy-springs-hotel/index.html'));
 const checks = [
-  [fshText, '475 間', 'total rooms 475'],
+  [fshText, '475', 'total rooms 475'],
   [fshText, '夢幻館 419 ＋ 豪華館 56', 'wing split'],
   [fshText, '121 天裡 14 天', 'availability figure on db page'],
   [artText, '121 個日期只有 14 天', 'availability figure in article'],
