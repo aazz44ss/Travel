@@ -14,11 +14,14 @@
  * of its rows of rooms are written out against those same bays. That is what makes
  * the figure agree with the drawing rather than merely resemble it: a floor's row is
  * a bay-by-bay line, so 4306 lands opposite 4305 with the two lift lobbies above it
- * written out as gaps, 3313 sits directly under 5313, and a fifth-floor Terrace Room
- * over two bays comes out twice as wide as the standard room below it. Rows that
- * are shorter than the one opposite — because a stair core or a lift lobby takes
- * part of them — stay the width of a room instead of being stretched to fill the
- * wing.
+ * written out as gaps, 4405 lands opposite 4406 and not 4404, 3313 sits directly
+ * under 5313, and a fifth-floor Terrace Room over two bays comes out twice as wide
+ * as the standard room below it. A row that is shorter than the one opposite because
+ * a stair core or a lift lobby takes part of it keeps the width of a room rather than
+ * being stretched to fill the wing; a row that is shorter because it runs round the
+ * inside of a bend, where there is less wall to go at, closes up over the room the
+ * bend costs it, as the plans draw it closing up — no 4346, no 4360, and no gap where
+ * they would be.
  *
  * Where those corridors run is measured rather than drawn. The plans' lengths and
  * angles are not used, because they are schematic: on one sheet the south spine's
@@ -26,16 +29,14 @@
  * building is anything like that. What the plans are trusted for is the count — how
  * many bays a corridor has and which of them it turns at — and each corridor is then
  * stood on the wall of the surveyed outline in `./dhm-site` that runs where the plans
- * put it. The two agree to within a tenth on three walls of the four, which is the
- * check on both.
+ * put it. Wall by wall that gives 3.99, 4.11, 4.39 and 4.47 m of frontage a room,
+ * against the 4.37 m a 37 m² room has if it is 8.5 m deep, and nothing was fitted to
+ * make it come out: it is the check on both the counting and the survey.
  *
  * What is still not faithful: two rooms of the same frontage and different floor
  * area, a 37 m² Superior and a 60 m² Harbor Room, are drawn the same size, and the
- * inland row's own back wall is nowhere measured. So read a cell as "this
- * position, this orientation", and read its depth as a standard room's. The
- * north-west wing's rooms also come out an eighth wider than the rest, and nothing
- * available here settles whether they are wider or the plans miscount the wing by a
- * room.
+ * inland row's own back wall is nowhere measured. So read a cell as "this position,
+ * this orientation", and read its depth as a standard room's.
  *
  * Two things the plans show that the article's text does not:
  *
@@ -76,8 +77,15 @@ export interface PlanRun {
   facing: { left: Facing; right: Facing };
   /**
    * A corridor's two rows of rooms, floor by floor, one word per slot in walking
-   * order: a room number, `-` for a slot that holds no guest room, or a number
-   * written twice where one room takes two slots.
+   * order:
+   *
+   * - a room number, or one written twice where a room takes two slots;
+   * - `-` where the building uses the slot for something else — a lift lobby, a
+   *   stair core, a lounge — and the slot is there but holds no guest room;
+   * - `/` where the corridor turns and this row has no slot at all. A row set back
+   *   from the wall runs round the inside of a bend, where there is less wall to go
+   *   at, and the plans show it losing a whole room to each: 4344 is followed by
+   *   4348, with no 4346 and no gap where one would be.
    *
    * Both rows of a run have the same number of slots, because they are the same
    * structural bays seen from either side of the corridor, so the two lines can be
@@ -110,24 +118,25 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     /**
      * Slots 0 to 3 are round the dog-leg at the wing's far end, on a wall of their
-     * own. Blank slots 9 to 11 are the wing's stair and lift core, 14 the corner
-     * where the wing meets the north spine.
+     * own. Slot 4 is the dog-leg: the plans draw a wedge of dead wall there on the
+     * harbour side and nothing at all on the inland side. Blank slots 10 to 12 are
+     * the wing's stair and lift core, 15 the corner where it meets the north spine.
      */
     key: 'nw',
     lead: 4,
     facing: { left: 'inland', right: 'piazza' },
     floors: {
       5: {
-        left:  '5154 5152 5150 5148 5146 5144 5142 5140 5138    -    -    - 5130 5128    -',
-        right: '5153 5153 5149 5149 5145 5145 5141 5141 5137 5135 5133 5131 5129 5127 5125',
+        left:  '5154 5152 5150 5148    / 5146 5144 5142 5140 5138    -    -    - 5130 5128    -',
+        right: '5153 5153 5149 5149    - 5145 5145 5141 5141 5137 5135 5133 5131 5129 5127 5125',
       },
       4: {
-        left:  '4154 4152 4150 4148 4146 4144 4142 4140 4138    -    -    - 4130 4128    -',
-        right: '4153 4151 4149 4147 4145 4143 4141 4139 4137 4135 4133 4131 4129 4127 4125',
+        left:  '4154 4152 4150 4148    / 4146 4144 4142 4140 4138    -    -    - 4130 4128    -',
+        right: '4153 4151 4149 4147    - 4145 4143 4141 4139 4137 4135 4133 4131 4129 4127 4125',
       },
       3: {
-        left:  '3154 3152 3150 3148 3146 3144 3142 3140 3138    -    -    - 3130 3128    -',
-        right: '3153 3151 3149 3147 3145 3143 3141 3139 3137 3135 3133 3131 3129 3127 3125',
+        left:  '3154 3152 3150 3148    / 3146 3144 3142 3140 3138    -    -    - 3130 3128    -',
+        right: '3153 3151 3149 3147    - 3145 3143 3141 3139 3137 3135 3133 3131 3129 3127 3125',
       },
     },
   },
@@ -189,52 +198,57 @@ export const PLAN_RUNS: PlanRun[] = [
   },
   {
     /**
-     * Slots 0 to 2 wrap the corner out of the south spine, 8 and 15 are the two
-     * bends in the wing, and 20 and 21 are the stair at the tip. The harbour row
-     * loses a room to each of those; the inland row gains three at the corner.
+     * Slots 0 to 2 wrap the corner out of the south spine, which the inland row
+     * turns before the harbour row does. Slots 8, 15 and 20 are where the wing bends
+     * and the plans stop the inland row a room short — no 4346, no 4360, no 4370 —
+     * and 21 is the stair the corridor turns round at the tip.
      */
     key: 'sw',
     lead: 3,
     facing: { left: 'inland', right: 'harbour' },
     floors: {
       5: {
-        left:  '5330 5332 5334 5336 5338 5340 5342 5344    - 5348 5348 5352 5352 5356 5356    - 5362 5362 5366 5366    -    -    -    -',
+        left:  '5330 5332 5334 5336 5338 5340 5342 5344    / 5348 5348 5352 5352 5356 5356    / 5362 5362 5366 5366    /    -    -    -',
         right: '   -    -    - 5335 5337 5339 5341 5343 5345 5349 5349 5353 5353 5357 5357 5361 5361 5365 5365 5369 5369 5371 5371    -',
       },
       4: {
-        left:  '4330 4332 4334 4336 4338 4340 4342 4344    - 4348 4350 4352 4354 4356 4358    - 4362 4364 4366 4368    -    - 4374 4376',
+        left:  '4330 4332 4334 4336 4338 4340 4342 4344    / 4348 4350 4352 4354 4356 4358    / 4362 4364 4366 4368    /    - 4374 4376',
         right: '   -    -    - 4335 4337 4339 4341 4343 4345 4347 4349 4351 4353 4355 4357 4359 4361 4363 4365 4367 4369 4371 4373 4375',
       },
       3: {
-        left:  '3330 3332 3334 3336 3338 3340 3342 3344    - 3348 3350 3352 3354 3356 3358    - 3362 3364 3366 3368    -    - 3374 3376',
+        left:  '3330 3332 3334 3336 3338 3340 3342 3344    / 3348 3350 3352 3354 3356 3358    / 3362 3364 3366 3368    /    - 3374 3376',
         right: '   -    -    - 3335 3337 3339 3341 3343 3345 3347 3349 3351 3353 3355 3357 3359 3361 3363 3365 3367 3369 3371 3373 3375',
       },
       2: {
-        left:  '2330 2332 2334 2336 2338 2340 2342 2344    - 2348 2350 2352 2354 2356 2358    - 2362 2364 2366 2368    -    - 2374 2376',
+        left:  '2330 2332 2334 2336 2338 2340 2342 2344    / 2348 2350 2352 2354 2356 2358    / 2362 2364 2366 2368    /    - 2374 2376',
         right: '   -    -    - 2335 2337 2339 2341 2343 2345 2347 2349 2351 2353 2355 2357 2359 2361 2363 2365 2367 2369 2371 2373 2375',
       },
     },
   },
   {
-    /** Slot 0 is the wing's lift lobby; the last three are where the tail leaves. */
+    /**
+     * Slots 0 and 1 are the head of the wing and its lift lobby, which is why the
+     * plans put 4405 opposite 4406 and not opposite 4404; the last two are where the
+     * tail leaves, so 4422 and 4424 have nothing across the corridor from them.
+     */
     key: 'se',
     facing: { left: 'inland', right: 'entrance' },
     floors: {
       5: {
         left:  '5402 5404 5406 5408 5410 5412 5414 5416 5418 5420 5422 5424',
-        right: '   - 5405 5407 5409 5411 5413 5415 5417 5419    -    -    -',
+        right: '   -    - 5405 5407 5409 5411 5413 5415 5417 5419    -    -',
       },
       4: {
         left:  '4402 4404 4406 4408 4410 4412 4414 4416 4418 4420 4422 4424',
-        right: '   - 4405 4407 4409 4411 4413 4415 4417 4419    -    -    -',
+        right: '   -    - 4405 4407 4409 4411 4413 4415 4417 4419    -    -',
       },
       3: {
         left:  '3402 3404 3406 3408 3410 3412 3414 3416 3418 3420 3422 3424',
-        right: '   - 3405 3407 3409 3411 3413 3415 3417 3419    -    -    -',
+        right: '   -    - 3405 3407 3409 3411 3413 3415 3417 3419    -    -',
       },
       2: {
         left:  '2402 2404 2406 2408 2410 2412 2414 2416 2418 2420 2422 2424',
-        right: '   - 2405 2407 2409 2411 2413 2415 2417 2419    -    -    -',
+        right: '   -    - 2405 2407 2409 2411 2413 2415 2417 2419    -    -',
       },
     },
   },
@@ -252,10 +266,13 @@ export const PLAN_RUNS: PlanRun[] = [
 
 export const PLAN_FLOORS = [5, 4, 3, 2] as const;
 
+/** The slot a corridor's turn takes out of a row, which has no length on it. */
+const TURN = '/';
+
 /** One slot of one side of one floor: a room number, or nothing. */
 function readSlots(line: string | undefined): (string | null)[] {
   if (line === undefined) return [];
-  return line.trim().split(/\s+/).map((word) => (word === '-' ? null : word));
+  return line.trim().split(/\s+/).map((word) => (word === '-' || word === TURN ? null : word));
 }
 
 /**
@@ -278,6 +295,30 @@ export function slotsOf(run: PlanRun): number {
     }
   }
   return slots;
+}
+
+/**
+ * Which slots the corridor's turn takes out of one row of a run.
+ *
+ * A property of the building rather than of a floor, so every floor that has the row
+ * at all has to name the same slots; a floor that disagrees is a miscount in the
+ * transcription and is thrown rather than merged away.
+ */
+export function turnsOf(run: PlanRun, side: 'left' | 'right'): ReadonlySet<number> {
+  let turns: Set<number> | null = null;
+  for (const [floor, rows] of Object.entries(run.floors)) {
+    const line = rows[side];
+    if (line === undefined) continue;
+    const here = new Set<number>();
+    line.trim().split(/\s+/).forEach((word, at) => {
+      if (word === TURN) here.add(at);
+    });
+    if (turns === null) turns = here;
+    else if (here.size !== turns.size || [...here].some((slot) => !turns!.has(slot))) {
+      throw new Error(`dhm-plan: ${run.key} ${side} turns at other slots on ${floor}`);
+    }
+  }
+  return turns ?? new Set<number>();
 }
 
 /** Where each room on a floor starts, and how many slots it covers. */
@@ -313,12 +354,12 @@ export const CORRIDOR = 2.0;
  * round it. It is also what fixes the north-west wing, which the old share-out ran
  * three rooms past its own corner and out along the north spine.
  *
- * That the match works at all is the check on the plans. Wall by wall it gives
- * 3.99, 4.12, 4.39 and 4.87 m of frontage a room, against the 4.37 m a 37 m² room
- * has if it is 8.5 m deep. Three of the four are within a tenth of that; the
- * north-west wing's are an eighth wider, and nothing available here says whether
- * its rooms really are wider or the plans miscount it by a room. Nothing was fitted
- * to make any of this come out.
+ * That the match works at all is the check on the plans. Wall by wall it gives 3.99,
+ * 4.11, 4.39 and 4.47 m of frontage a room, against the 4.37 m a 37 m² room has if it
+ * is 8.5 m deep — all four within a tenth of it, and nothing fitted to make them come
+ * out. The north-west wing used to be the one that did not, at 4.87 m; reading the
+ * plans again found the reason, a bay of dead wall at the dog-leg near its far end
+ * that had been left out of the count.
  */
 const FRONTAGE_GROUPS: { keys: string[]; from: number; to: number }[] = [
   { keys: ['nw'], from: 0, to: 1 },
@@ -592,81 +633,70 @@ export function planRooms(): { number: string; facing: Facing; floor: number; ru
 }
 
 /**
- * Where each slot along a wall begins, in metres.
+ * Where each slot of a row begins, in metres along that row's own line.
  *
- * Dividing the wall evenly would leave a bend of it in the middle of a room, and a
- * room that turns a bend loses depth × tan(half the turn) off its back on each side
- * — 3.4 m of a 4.1 m room where the north-west wing and the north spine turn 43
- * degrees apart, which turns it inside out. So each bend is moved onto the nearest
- * slot boundary, never further than half a room, and the two rooms that then meet at
- * it are widened by what their backs lose to it, out of the rooms between that bend
- * and the next.
+ * Two things are settled here.
  *
- * Both rows of a corridor are given the same bends at the same slot boundaries,
- * which is why the pins come in by wall vertex and not by distance: the row set back
- * from the wall is shorter than the wall at every bend that turns towards it, so on
- * its own arc length the bend would round to a different slot and the two rows would
- * walk out of step.
+ * Every bend of the wall is put on the nearest slot boundary, never further than half
+ * a room, because a room that folds through a bend loses depth × tan(half the turn)
+ * off its back on each side — 3.4 m of a 4.1 m room where the north-west wing and the
+ * north spine turn 43 degrees apart, which turns it inside out. The boundary is chosen
+ * on the wall and then read off each row's own line, so both rows of the corridor bend
+ * at the same slot rather than each rounding to its own.
+ *
+ * The rooms then keep the width the wall gives them, and a slot the corridor's turn
+ * takes out is given only what line is left over. That is what keeps the two rows of a
+ * corridor level with each other, and it is what the drawing shows: a row set back from
+ * a wall that bends towards it has less line to stand on, by twice its distance from
+ * the wall times the tangent of half the turn, so the plans stop it a whole room short
+ * at every bend of the harbour arm — no 4346, no 4360 — and close the rooms up over
+ * what is missing rather than leaving a hole. Given a room's width instead, that slot
+ * opens a hole the drawing has none of, which was the most visible way this figure
+ * differed from it.
  */
 function slotBounds(
+  wall: readonly Point[],
   path: readonly Point[],
   slots: number,
-  pins: Map<number, number>,
-  side: 'left' | 'right',
-  depth: number,
+  turns: ReadonlySet<number>,
 ): number[] {
-  const total = lineLength(path);
-  const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
-
-  const marks = new Map<number, number>([[0, 0], [slots, total]]);
-  const allow = new Map<number, number>();
-  for (const [slot, vertex] of pins) {
-    marks.set(slot, arc[vertex]!);
-    const lost = lostAtBend(path, vertex, side, depth);
-    for (const at of [slot - 1, slot]) allow.set(at, (allow.get(at) ?? 0) + lost);
+  const step = lineLength(wall) / slots;
+  /** A slot boundary, as a distance along the wall and along this row's own line. */
+  const marks = new Map<number, { onWall: number; here: number }>([
+    [0, { onWall: 0, here: 0 }],
+    [slots, { onWall: lineLength(wall), here: lineLength(path) }],
+  ]);
+  for (let i = 1; i < wall.length - 1; i += 1) {
+    const onWall = lineLength(wall.slice(0, i + 1));
+    const at = Math.round(onWall / step);
+    if (at > 0 && at < slots && !marks.has(at)) {
+      marks.set(at, { onWall, here: lineLength(path.slice(0, i + 1)) });
+    }
   }
 
   const at = [...marks.keys()].sort((a, b) => a - b);
   const out: number[] = [];
   for (let i = 0; i + 1 < at.length; i += 1) {
     const [from, to] = [at[i]!, at[i + 1]!];
-    const run = marks.get(to)! - marks.get(from)!;
-    /**
-     * Widening a bend's rooms narrows the rest, so it is capped at half a room:
-     * past that the neighbours give up more than the bend rooms gain.
-     */
-    const cap = (run / (to - from)) * 0.5;
-    const extra = [];
-    for (let k = from; k < to; k += 1) extra.push(Math.min(allow.get(k) ?? 0, cap));
-    const base = (run - extra.reduce((sum, v) => sum + v, 0)) / (to - from);
-    let where = marks.get(from)!;
+    const [a, b] = [marks.get(from)!, marks.get(to)!];
+    let wide = 0;
+    for (let k = from; k < to; k += 1) if (!turns.has(k)) wide += 1;
+    const turned = to - from - wide;
+    const room = (b.onWall - a.onWall) / (to - from);
+    const line = b.here - a.here;
+    /** What is left of this stretch once the rooms have taken the wall's own width. */
+    const spare = line - wide * room;
+    /** Where the turn eats more than that, the rooms give up the difference instead. */
+    const each = turned > 0 && spare >= 0 ? room : line / Math.max(wide, 1);
+    const shy = wide === 0 ? line / turned : turned > 0 && spare >= 0 ? spare / turned : 0;
+    let where = a.here;
     for (let k = from; k < to; k += 1) {
       out.push(where);
-      where += base + extra[k - from]!;
+      where += turns.has(k) ? shy : each;
     }
   }
-  out.push(total);
+  out.push(lineLength(path));
   return out;
-}
-
-/**
- * Which slot boundary each bend in a wall is pinned to, as slot index by vertex.
- *
- * Read off the wall itself so that the row set back from it can be given the same
- * answer rather than its own.
- */
-function pinsOf(wall: readonly Point[], slots: number): Map<number, number> {
-  const step = lineLength(wall) / slots;
-  const pins = new Map<number, number>();
-  const taken = new Set<number>();
-  for (let i = 1; i < wall.length - 1; i += 1) {
-    const k = Math.round(lineLength(wall.slice(0, i + 1)) / step);
-    if (k > 0 && k < slots && !taken.has(k)) {
-      taken.add(k);
-      pins.set(k, i);
-    }
-  }
-  return pins;
 }
 
 /**
@@ -737,6 +767,8 @@ export function layout(
   /** How far behind the wall this row's own front stands: nothing, for the facade. */
   behind: number,
   depth: number,
+  /** Slots the corridor's turn takes out of this row, which get no length on it. */
+  turns: ReadonlySet<number> = new Set<number>(),
   /** Which way the frontage runs on past each end, where another wing stands there. */
   joint: { before?: Point; after?: Point } = {},
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
@@ -773,10 +805,10 @@ export function layout(
    * sides — which the plans do — is not enough to clear it. Both wings stop at the
    * bisector instead.
    *
-   * The fence is only a fence. The slots are divided along the wall itself, before any
-   * of this, because they have to divide the same way for both rows of the corridor:
-   * moving a row's line in to the bisector would stretch it, and its rooms would walk
-   * out of step with the rooms opposite by most of a room.
+   * The fence is only a fence. The slots are divided along the row's own line, before
+   * any of this, because both rows of the corridor have to divide the same way: moving
+   * a row's line in to the bisector would stretch it, and its rooms would walk out of
+   * step with the rooms opposite by most of a room.
    */
   const sign = side === 'left' ? -1 : 1;
   const fences: { at: Point; keep: Point }[] = [];
@@ -797,8 +829,8 @@ export function layout(
 
   /** The row's own front: the wall itself, or the wall moved in, its ends square to it. */
   const path = behind === 0 ? wall : offsetLine(wall, side, behind);
-  const pins = pinsOf(wall, slots);
-  const bounds = slotBounds(path, slots, pins, side, depth);
+  const bounds = slotBounds(wall, path, slots, turns);
+  const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
   /**
    * How deep the rooms reach at each bend.
    *
@@ -810,14 +842,19 @@ export function layout(
    * leaves them a back: they shallow towards the corner instead of folding through it.
    */
   const reach = new Map<number, number>();
-  for (const [slot, vertex] of pins) {
-    const lost = lostAtBend(path, vertex, side, depth);
+  for (let i = 1; i < path.length - 1; i += 1) {
+    const lost = lostAtBend(path, i, side, depth);
     if (lost === 0) continue;
-    const room = Math.min(bounds[slot]! - bounds[slot - 1]!, bounds[slot + 1]! - bounds[slot]!);
-    reach.set(vertex, Math.min(depth, (depth * room * 0.55) / lost));
+    /** The narrower of the rooms the bend stands at the edge of. */
+    let room = Infinity;
+    for (let k = 1; k < bounds.length; k += 1) {
+      const [from, to] = [bounds[k - 1]!, bounds[k]!];
+      if (to > from && arc[i]! > from - 0.05 && arc[i]! < to + 0.05) room = Math.min(room, to - from);
+    }
+    if (!Number.isFinite(room)) continue;
+    reach.set(i, Math.min(depth, (depth * room * 0.55) / lost));
   }
   const back = path.map((_, i) => offsetPoint(path, i, side, reach.get(i) ?? depth));
-  const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
   const round = (n: number) => Math.round(n * 100) / 100;
   /** The wall's own point `depth` into the building, perpendicular to it there. */
   const inner = (p: Point, u: Point): Point => [

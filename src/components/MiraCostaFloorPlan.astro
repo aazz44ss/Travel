@@ -10,6 +10,7 @@ import {
   layout,
   slotsOf,
   spansOf,
+  turnsOf,
   type Facing,
 } from '~/data/dhm-plan';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
@@ -148,6 +149,7 @@ const cells = PLAN_RUNS.flatMap((run) => {
   return (['left', 'right'] as const).flatMap((side) => {
     /** The facade row stands on the wall; the other stands a room and a corridor in. */
     const behind = side === wall.face ? 0 : ROOM_DEPTH + CORRIDOR;
+    const turns = turnsOf(run, side);
     return PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
       return layout(
@@ -157,6 +159,7 @@ const cells = PLAN_RUNS.flatMap((run) => {
         wall.inward,
         behind,
         ROOM_DEPTH,
+        turns,
         wall.joint,
       ).map((cell, i) => {
         const number = spans[i]!.number;
