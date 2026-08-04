@@ -56,6 +56,17 @@ export interface ExplorerCopy {
     positionLabel: (code: string) => string;
   };
   beds: { name: string; size: string; capacity: string; note: string };
+  /** Copy for the measured site plan: the footprint and the water it wraps. */
+  site: {
+    title: string;
+    desc: string;
+    harbour: string;
+    lagoon: string;
+    frontage: string;
+    hotel: string;
+    scaleBar: (metres: number) => string;
+    caption: string;
+  };
   /** Copy for the plan that shows which way each window faces. */
   harbourPlan: {
     heading: string;
@@ -148,6 +159,18 @@ const zhHant: ExplorerCopy = {
     positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: '床型', size: '尺寸（cm）', capacity: '每張床鋪的人數上限', note: '說明' },
+  site: {
+    title: '東京迪士尼海洋觀海景大飯店與地中海港灣的實測位置',
+    desc:
+      '依實際比例的基地圖。飯店輪廓呈馬蹄形環抱地中海港灣，港灣在西南側，東南另有一片水域。',
+    harbour: '地中海港灣',
+    lagoon: '宮殿運河',
+    frontage: '客房面向港灣的一段',
+    hotel: '觀海景大飯店',
+    scaleBar: (m) => `${m} 公尺`,
+    caption:
+      '這是全頁唯一按實際比例、可以量距離的圖。飯店輪廓 294 × 235 公尺、約 20,100 平方公尺；港灣約 178,000 平方公尺。深色是客房面向港灣的兩段立面：南段 108 公尺，離水面只有 5 到 25 公尺；西北段 112 公尺，離水面 24 到 68 公尺——中間那段差距就是米老鼠廣場的深度。輪廓與水域取自 ',
+  },
   harbourPlan: {
     heading: '逐間客房位置圖：窗戶朝哪一邊',
     intro: (rooms, harbour) =>
@@ -256,6 +279,18 @@ const ja: ExplorerCopy = {
     positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: 'ベッド', size: 'サイズ（cm）', capacity: '1 台あたりの定員', note: '備考' },
+  site: {
+    title: '東京ディズニーシー・ホテルミラコスタとメディテレーニアンハーバーの実測配置',
+    desc:
+      '実際の縮尺による敷地図。ホテルの輪郭は馬蹄形にメディテレーニアンハーバーを抱き、ハーバーは南西側、南東にもう一つの水面があります。',
+    harbour: 'メディテレーニアンハーバー',
+    lagoon: 'パラッツォ・カナル',
+    frontage: 'ハーバーに面する客室の立面',
+    hotel: 'ホテルミラコスタ',
+    scaleBar: (m) => `${m} m`,
+    caption:
+      'このページで唯一、実際の縮尺で距離を測れる図です。輪郭は 294 × 235 m・約 20,100 m²、ハーバーは約 178,000 m²。濃い線はハーバーに面する客室立面の 2 区間で、南側は 108 m で水際から 5〜25 m、北西側は 112 m で 24〜68 m。その差がミッキー広場の奥行きです。輪郭と水面の出典は ',
+  },
   harbourPlan: {
     heading: '客室配置図：窓がどちらを向くか',
     intro: (rooms, harbour) =>
@@ -367,6 +402,18 @@ const en: ExplorerCopy = {
     positionLabel: (code) => `Position ${code}`,
   },
   beds: { name: 'Bed', size: 'Size (cm)', capacity: 'Maximum per bed', note: 'Notes' },
+  site: {
+    title: 'Tokyo DisneySea Hotel MiraCosta and Mediterranean Harbor, measured',
+    desc:
+      'A site plan at true scale. The hotel’s footprint curls around Mediterranean Harbor, which lies to the south-west, with a second body of water to the south-east.',
+    harbour: 'Mediterranean Harbor',
+    lagoon: 'Palazzo Canals',
+    frontage: 'Harbour-facing guest-room frontage',
+    hotel: 'Hotel MiraCosta',
+    scaleBar: (m) => `${m} m`,
+    caption:
+      'The one figure on this page drawn at true scale, where a distance can be measured. The footprint is 294 by 235 m over about 20,100 m²; the harbour about 178,000 m². The dark lines are the two stretches of guest-room frontage that face it: the southern one runs 108 m at 5 to 25 m from the water, the north-western one 112 m at 24 to 68 m — and the difference between them is the depth of Piazza Topolino. Outlines from ',
+  },
   harbourPlan: {
     heading: 'Room-by-room plan: which way each window faces',
     intro: (rooms, harbour) =>
