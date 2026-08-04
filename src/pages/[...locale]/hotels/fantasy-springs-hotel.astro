@@ -16,6 +16,7 @@ import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { hotelCopy } from '~/i18n/hotel';
 import { categoryLabel, names, viewLabel } from '~/i18n/rooms';
+import { localizeHotelContent } from '~/i18n/content';
 import {
   BED_SPECS,
   BENEFITS,
@@ -38,6 +39,7 @@ const { locale } = Astro.props;
 const ui = t(locale);
 const copy = hotelCopy(locale, 'fsh');
 const text = names('fsh');
+const L = localizeHotelContent('fsh', locale);
 
 const viewStyle = {
   grand: 'bg-brand text-white',
@@ -282,7 +284,7 @@ const schema = [
     <section class="mt-20">
       <RoomExplorer
         hotel="fsh"
-        rooms={ROOMS}
+        rooms={L.rooms(ROOMS)}
         categories={CATEGORIES}
         views={VIEWS}
         flags={FLAGS}
@@ -307,7 +309,7 @@ const schema = [
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
-      <BedTable beds={BED_SPECS} caption={copy.bedTableCaption} locale={locale} />
+      <BedTable beds={L.beds(BED_SPECS)} caption={copy.bedTableCaption} locale={locale} />
     </section>
 
     {
@@ -315,7 +317,7 @@ const schema = [
         <>
           <section id="facilities" class="mt-20 scroll-mt-32">
             <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
-            <FacilityGrid facilities={FACILITIES} />
+            <FacilityGrid facilities={FACILITIES} guestOnlyLabel={L.label('住客限定')} />
           </section>
 
           <section id="dining" class="mt-20 scroll-mt-32">

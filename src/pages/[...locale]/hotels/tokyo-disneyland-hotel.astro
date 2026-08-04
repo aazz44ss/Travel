@@ -15,6 +15,7 @@ import { formatYen, lowestRate } from '~/data/hotel';
 import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { hotelCopy } from '~/i18n/hotel';
+import { localizeHotelContent } from '~/i18n/content';
 import { categoryLabel, names, viewLabel } from '~/i18n/rooms';
 import {
   BED_SPECS,
@@ -39,6 +40,7 @@ export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 const { locale } = Astro.props;
 const ui = t(locale);
 const copy = hotelCopy(locale, 'tdh');
+const L = localizeHotelContent('tdh', locale);
 const text = names('tdh');
 
 /** Darkest tone for the view that actually sells the hotel. */
@@ -68,10 +70,7 @@ const description = copy.pageDescription(ROOMS.length, PLAN_ROOMS.length);
  * sections rather than show them untranslated. Their guides cover the same
  * ground in prose.
  */
-const editorialOnly = ['price-seasons', 'facilities', 'dining', 'benefits', 'faq'];
-const sections = copy.sections.filter(
-  (section) => locale === 'zh-hant' || !editorialOnly.includes(section.id),
-);
+const sections = copy.sections;
 
 const schema = [
   {
@@ -92,19 +91,15 @@ const schema = [
     },
   },
   /* Only claim FAQ structured data where the answers are actually on the page. */
-  ...(locale === 'zh-hant'
-    ? [
-        {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: FAQS.map((faq) => ({
-            '@type': 'Question',
-            name: faq.question,
-            acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-          })),
-        },
-      ]
-    : []),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: L.faqs(FAQS).map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  },
 ];
 ---
 
@@ -260,7 +255,7 @@ const schema = [
     <section class="mt-20">
       <RoomExplorer
         hotel="tdh"
-        rooms={ROOMS}
+        rooms={L.rooms(ROOMS)}
         categories={CATEGORIES}
         views={VIEWS}
         flags={FLAGS}
@@ -274,58 +269,50 @@ const schema = [
       />
     </section>
 
-    {
-      locale === 'zh-hant' && (
-        <section class="mt-20">
-          <PriceSeasons
-            rooms={ROOMS}
-            categories={CATEGORIES}
-            rates={MONTHLY_RATES}
-            currentYearMonths={RATE_YEAR_2026_MONTHS}
-            years={{ current: '2026', carried: '2025' }}
-            defaultRoomId="std-superior-pgv-double"
-            source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/4155' }}
-            bargainNote={copy.bargainNote}
-          />
-        </section>
-      )
-    }
+      <section class="mt-20">
+        <PriceSeasons
+          rooms={L.rooms(ROOMS)}
+          categories={CATEGORIES}
+          rates={MONTHLY_RATES}
+          currentYearMonths={RATE_YEAR_2026_MONTHS}
+          years={{ current: '2026', carried: '2025' }}
+          defaultRoomId="std-superior-pgv-double"
+          source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/4155' }}
+          bargainNote={copy.bargainNote}
+          locale={locale}
+          hotel="tdh"
+        />
+      </section>
 
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
       <BedTable
-        beds={BED_SPECS}
+        beds={L.beds(BED_SPECS)}
         caption={`${copy.hotelName}${copy.bedTableCaption}`}
         locale={locale}
       />
     </section>
 
-    {
-      locale === 'zh-hant' && (
-        <>
-          <section id="facilities" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
-            <FacilityGrid facilities={FACILITIES} />
-          </section>
+        <section id="facilities" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
+          <FacilityGrid facilities={L.facilities(FACILITIES)} guestOnlyLabel={L.label('住客限定')} />
+        </section>
 
-          <section id="dining" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
-            <DiningList dining={DINING} />
-          </section>
+        <section id="dining" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
+          <DiningList dining={L.dining(DINING)} />
+        </section>
 
-          <section id="benefits" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
-            <BenefitList benefits={BENEFITS} />
-          </section>
+        <section id="benefits" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
+          <BenefitList benefits={L.benefits(BENEFITS)} />
+        </section>
 
-          <section id="faq" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
-            <FaqList faqs={FAQS} />
-          </section>
-        </>
-      )
-    }
+        <section id="faq" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
+          <FaqList faqs={L.faqs(FAQS)} />
+        </section>
 
     {
       article && (

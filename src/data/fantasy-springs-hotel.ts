@@ -484,7 +484,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: rateFor('entrance-superior'),
     flags: [],
-    verdict: '最低價位的三個並列選項之一。窗外是飯店正門那一側。',
+    verdict: '和灣岸區、玫瑰庭區 3～4 樓並列最低價的三個區之一。窗外是飯店正門那一側。',
   },
   {
     id: 'entrance-alcove',

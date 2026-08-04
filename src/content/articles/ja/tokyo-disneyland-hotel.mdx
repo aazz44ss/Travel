@@ -78,6 +78,9 @@ sources:
 import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
+import SocialWall from '~/components/SocialWall.astro';
+import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
+import { localizeHotelContent } from '~/i18n/content';
 import { localePath } from '~/i18n/config';
 import { ROOMS, VIEWS } from '~/data/tokyo-disneyland-hotel';
 
@@ -289,15 +292,9 @@ export const viewLadder = [
 
 ## SNS で見えるもの、実際に出会うもの
 
-TikTok、Instagram、日本のブログの宿泊レポートから、持ち帰る価値のある 4 点。
+TikTok、Instagram、日本の旅行ブログの宿泊レポートから、「動画が伝えない部分」に重点を置いて整理しました。
 
-**「カーテンを開ける」あの一瞬は、ほぼ 7〜8 階です。** このホテルの短い動画はパークグランドビューがほぼ独占していて、構成も毎回同じ。ドアハンドル、玄関、窓へパン、カーテン。低層階では届かない期待値が作られます。
-
-**シャーウッドガーデンは館内でもっとも撮られていない場所です。** ゲートがカードキー式で、チェックインからチェックアウトの間の宿泊者しか入れません。噴水と東屋があり夜はライトアップされ、宿泊者以外が入らないのでゆっくり構図を決められます。館内で 1 セットだけ撮るなら、常に人がいるロビーよりここです。
-
-**期間限定のイベント客室が、実際に争われている対象です。** 季節ごとのコラボは何より早く埋まり、告知も直前。日程に融通がある人向けです。
-
-**天井のレインシャワーの向きは、出す前に確認を。** 同じ驚きの報告が繰り返し上がっています。濡れる前に気づくほうが楽です。
+<SocialWall insights={localizeHotelContent('tdh', 'ja').social(SOCIAL_INSIGHTS)} />
 
 ## 予約の実務
 
