@@ -9,7 +9,7 @@ import {
   PLAN_RUNS,
   PLAN_WIDTH,
   layout,
-  marker,
+  sideWash,
   slotsOf,
   spansOf,
   type Facing,
@@ -132,10 +132,14 @@ const showAnswer = (grade: string): string =>
  * The dashed lines sit just beyond the rooms on the side the water or the square
  * is on. Their distance from the building is fixed by the drawing, not measured.
  */
-const markers = SIDE_MARKERS.map((entry) => {
-  const run = PLAN_RUNS.find((candidate) => candidate.key === entry.run)!;
-  return { ...marker(run.path, entry.side, 62), label: entry.label };
-});
+/** Water first, paving second: nearer the building, the square is what you cross. */
+const markers = [...SIDE_MARKERS]
+  .sort((a, b) => Number(a.label === 'piazza') - Number(b.label === 'piazza'))
+  .map((entry, index) => {
+    const run = PLAN_RUNS.find((candidate) => candidate.key === entry.run)!;
+    /** `kind` rather than `label`: the wash already returns a label anchor. */
+    return { ...sideWash(run.path, entry.side, 42, 230), kind: entry.label, id: `dhm-wash-${index}` };
+  });
 
 const connectingPairs = connecting
   .map((pair) => ({
@@ -251,27 +255,46 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
           <title id="dhm-plan-title">{copy.svgTitle}</title>
           <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
 
+          <defs>
+            {
+              markers.map((entry) => (
+                <linearGradient
+                  id={entry.id}
+                  gradientUnits="userSpaceOnUse"
+                  x1={entry.from[0]}
+                  y1={entry.from[1]}
+                  x2={entry.to[0]}
+                  y2={entry.to[1]}
+                >
+                  <stop
+                    offset="0"
+                    stop-color={entry.kind === 'harbour' ? '#9ccdd6' : '#e0cb9b'}
+                    stop-opacity="0.85"
+                  />
+                  <stop
+                    offset="1"
+                    stop-color={entry.kind === 'harbour' ? '#9ccdd6' : '#e0cb9b'}
+                    stop-opacity="0"
+                  />
+                </linearGradient>
+              ))
+            }
+          </defs>
+
           {
             markers.map((entry) => (
               <g>
-                <polyline
-                  points={entry.points}
-                  fill="none"
-                  stroke={entry.label === 'harbour' ? '#7fb3bf' : '#c9a253'}
-                  stroke-width="2.5"
-                  stroke-dasharray="10 7"
-                  stroke-linecap="round"
-                />
+                <polygon points={entry.points} fill={`url(#${entry.id})`} />
                 <text
-                  x={entry.mid[0]}
-                  y={entry.mid[1]}
+                  x={entry.label[0]}
+                  y={entry.label[1]}
                   text-anchor="middle"
                   font-size="12"
                   font-weight="700"
-                  fill={entry.label === 'harbour' ? '#4d8b98' : '#9a7a3c'}
-                  transform={`rotate(${entry.angle} ${entry.mid[0]} ${entry.mid[1]})`}
+                  fill={entry.kind === 'harbour' ? '#4d8b98' : '#9a7a3c'}
+                  transform={`rotate(${entry.angle} ${entry.label[0]} ${entry.label[1]})`}
                 >
-                  {entry.label === 'harbour' ? copy.zones.harbour : copy.zones.piazza}
+                  {entry.kind === 'harbour' ? copy.zones.harbour : copy.zones.piazza}
                 </text>
               </g>
             ))

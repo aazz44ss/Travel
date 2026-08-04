@@ -263,9 +263,10 @@ export const CHAPEL = { cx: 656, cy: 300, r: 40 };
  * shapes, which put a number on something no source here supports: the official
  * park map is an illustration with no consistent scale, and the hand-drawn floor
  * plans stop at the building line. A room's distance to the water was therefore
- * whatever I had sketched. These markers run parallel to the frontage instead, so
- * the drawing says "the water is on this side of this corridor" and says nothing
- * about the metres in between.
+ * whatever I had sketched. What replaces them is a wash alongside the frontage
+ * that fades out as it leaves the building, so the drawing still shows the
+ * building wrapping the water — which is the point of the shape — while claiming
+ * nothing about the metres in between.
  */
 export const SIDE_MARKERS: { run: string; side: 'left' | 'right'; label: 'harbour' | 'piazza' }[] = [
   { run: 'nw', side: 'right', label: 'piazza' },
@@ -274,14 +275,10 @@ export const SIDE_MARKERS: { run: string; side: 'left' | 'right'; label: 'harbou
   { run: 'sw', side: 'right', label: 'harbour' },
 ];
 
-/** A dashed line just beyond a run's rooms, on the side the water or square is on. */
-export function marker(
-  path: [number, number][],
-  side: 'left' | 'right',
-  offset: number,
-): { points: string; mid: [number, number]; angle: number } {
+/** A run's corridor shifted sideways by `offset`, on one side of the walking line. */
+function shift(path: [number, number][], side: 'left' | 'right', offset: number): [number, number][] {
   const sign = side === 'left' ? -1 : 1;
-  const shifted = path.map(([x, y], i) => {
+  return path.map(([x, y], i) => {
     const next = path[Math.min(i + 1, path.length - 1)]!;
     const prev = path[Math.max(i - 1, 0)]!;
     const dx = next[0] - prev[0];
@@ -289,15 +286,46 @@ export function marker(
     const len = Math.hypot(dx, dy) || 1;
     return [x - (dy / len) * sign * offset, y + (dx / len) * sign * offset] as [number, number];
   });
-  const a = shifted[0]!;
-  const b = shifted[shifted.length - 1]!;
+}
+
+/**
+ * A wash of water or paving alongside a run, fading out as it leaves the building.
+ *
+ * The near edge is something the floor plans do fix — the frontage those windows
+ * open from. The far edge is not: nothing here gives the width of the harbour or
+ * the square. Fading it out says "it is over here, and I am not telling you how
+ * far" in a way a filled outline cannot.
+ */
+export function sideWash(
+  path: [number, number][],
+  side: 'left' | 'right',
+  near: number,
+  far: number,
+): {
+  points: string;
+  from: [number, number];
+  to: [number, number];
+  label: [number, number];
+  angle: number;
+} {
+  const inner = shift(path, side, near);
+  const outer = shift(path, side, far);
+  const mid = (pts: [number, number][]): [number, number] => {
+    const a = pts[0]!;
+    const b = pts[pts.length - 1]!;
+    return [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
+  };
+  const a = inner[0]!;
+  const b = inner[inner.length - 1]!;
+  const raw = Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI);
   return {
-    points: shifted.map(([x, y]) => `${Math.round(x)},${Math.round(y)}`).join(' '),
-    mid: [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)],
-    angle: (() => {
-      const raw = Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI);
-      return raw > 90 ? raw - 180 : raw <= -90 ? raw + 180 : raw;
-    })(),
+    points: [...inner, ...[...outer].reverse()]
+      .map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)
+      .join(' '),
+    from: mid(inner),
+    to: mid(outer),
+    label: mid(shift(path, side, near + (far - near) * 0.22)),
+    angle: raw > 90 ? raw - 180 : raw <= -90 ? raw + 180 : raw,
   };
 }
 
