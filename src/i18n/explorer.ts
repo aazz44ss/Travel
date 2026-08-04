@@ -87,6 +87,9 @@ export interface ExplorerCopy {
     shows: { full: string; partial: string; piazza: string; none: string };
     fields: { sees: string; shows: string; area: string; capacity: string };
     detail: { ambiguous: string; balcony: string; fromPlan: string; plain: string };
+    /** For the runs whose position along the building is not measured. */
+    approximate: string;
+    approximateWhy: string;
     balconyLegend: string;
     sourceLabel: string;
     connectingHeading: string;
@@ -202,6 +205,8 @@ const zhHant: ExplorerCopy = {
         '這個位置在來源的平面圖上標為景隅景觀，但文章的房號清單沒有列出它——位置來自圖，不是逐間清單。',
       plain: '官方不接受指定房號，這張圖適合拿到房卡後判讀窗戶朝向。',
     },
+    approximate: '虛線＝位置未實測',
+    approximateWhy: '面向運河與入口的四段走廊，只有走向與順序來自來源手繪圖',
     balconyLegend: '同一個後三碼在各樓層是同一面窗戶',
     sourceLabel: '平面圖與房號來源：dhoteloo',
     connectingHeading: '可以連通的房型組合',
@@ -318,6 +323,8 @@ const ja: ExplorerCopy = {
         'この位置は出典の配置図でパーシャルビューと記されていますが、記事の部屋番号一覧には載っていません。位置は図によるもので、1 室ずつの一覧ではありません。',
       plain: '公式は部屋番号の指定を受け付けません。この図はカードキーを受け取ったあと、窓の向きを読むためのものです。',
     },
+    approximate: '破線＝位置は未実測',
+    approximateWhy: '運河側と入口側の 4 区間は、向きと順序だけが出典の手描き図によるもの',
     balconyLegend: '同じ下 3 桁は各階で同じ窓の位置',
     sourceLabel: '配置図と部屋番号の出典：dhoteloo',
     connectingHeading: 'コネクティングできる組み合わせ',
@@ -437,6 +444,8 @@ const en: ExplorerCopy = {
         'The source’s plan marks this position as Partial View, but its room-number lists never include it — the position comes from the drawing rather than the enumerated lists.',
       plain: 'The hotel accepts no request for a specific room, so this plan is for reading which way your window faces after check-in.',
     },
+    approximate: 'Dashed: position not measured',
+    approximateWhy: 'the four corridors facing the canals and the entrance, where only the direction and order come from the source’s drawings',
     balconyLegend: 'The same last three digits are the same window on every floor',
     sourceLabel: 'Plan and room numbers: dhoteloo',
     connectingHeading: 'Pairs that can be connected',
