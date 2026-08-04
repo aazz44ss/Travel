@@ -6,24 +6,34 @@
  * number lists and against its photographs of the facade from across
  * Mediterranean Harbor, where each window is annotated with its room type.
  *
- * What is faithful here: which corridor a room is on, its order along that
+ * What is faithful here: which corridor a room is on, its position along that
  * corridor, which side of the corridor it opens from, and therefore which way it
- * looks. Positions also stack, because each corridor is divided into as many
- * slots as the fullest floor has rooms and every floor uses the same slots, so
- * room 3313 sits directly under 5313 and a fifth-floor Terrace Room covering two
- * positions is drawn twice as wide as the standard room below it.
+ * looks.
  *
- * Where those corridors run is measured rather than drawn. The plans' own angles
- * are not used: they are schematic, and comparing them against the surveyed
- * outline in `./dhm-site` shows the drawing standing the north-west wing some 30
- * degrees steeper than the building does. What is used instead is the plans' room
- * counts, shared out along the measured frontage — which is the check on both,
- * because the count and the metres agree to within a tenth.
+ * A corridor is divided into the structural bays the plans draw along it, and both
+ * of its rows of rooms are written out against those same bays. That is what makes
+ * the figure agree with the drawing rather than merely resemble it: a floor's row is
+ * a bay-by-bay line, so 4306 lands opposite 4305 with the two lift lobbies above it
+ * written out as gaps, 3313 sits directly under 5313, and a fifth-floor Terrace Room
+ * over two bays comes out twice as wide as the standard room below it. Rows that
+ * are shorter than the one opposite — because a stair core or a lift lobby takes
+ * part of them — stay the width of a room instead of being stretched to fill the
+ * wing.
+ *
+ * Where those corridors run is measured rather than drawn. The plans' own angles are
+ * not used: they are schematic, and comparing them against the surveyed outline in
+ * `./dhm-site` shows the drawing standing the north-west wing some 30 degrees
+ * steeper than the building does. What is used instead is the plans' bay counts,
+ * shared out along the measured frontage — which is the check on both, because the
+ * count and the metres agree to within a tenth.
  *
  * What is still not faithful: two rooms of the same frontage and different floor
  * area, a 37 m² Superior and a 60 m² Harbor Room, are drawn the same size, and the
  * inland row's own back wall is nowhere measured. So read a cell as "this
- * position, this orientation", and read its depth as a standard room's.
+ * position, this orientation", and read its depth as a standard room's. The plans
+ * also put the north-west wing's turn three bays further along the frontage than the
+ * outline does, and nothing available here settles which is right; the two rooms
+ * either side of that turn are the worst-drawn on the figure.
  *
  * Two things the plans show that the article's text does not:
  *
