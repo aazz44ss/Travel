@@ -8,6 +8,8 @@ import {
   PLAN_RUNS,
   PLAN_WIDTH,
   layout,
+  MEASURED_FACES,
+  corridorFromFace,
   slotsOf,
   spansOf,
   type Facing,
@@ -71,12 +73,81 @@ const TONE: Record<string, { fill: string; text: string }> = {
   unknown: { fill: '#e6dfd3', text: '#6b6152' },
 };
 
+/**
+ * Mediterranean Harbor, measured, laid over the plan.
+ *
+ * The transform is the similarity that carries two points of the measured
+ * frontage onto the same two points of this plan: the head of the harbour-facing
+ * spine and the south-western tip. Everything else follows, so the water sits at
+ * its surveyed distance from the rooms, and the scale bar measures the drawing.
+ */
+/** Runs whose rooms are placed on the measured facade rather than a sketched line. */
+const ROOM_PITCH_M = 4.37;
+const STRETCH_LIMIT_M = 5.5;
+
+const spine = PLAN_RUNS.find((run) => run.key === 'spine-s')!.path;
+const wing = PLAN_RUNS.find((run) => run.key === 'sw')!.path;
+const [mA, mB] = ANCHORS;
+const pA = spine[0]!;
+const pB = wing[wing.length - 1]!;
+const mLen = Math.hypot(mB[0] - mA[0], mB[1] - mA[1]);
+/** Plan units per metre: about 3.9, which puts the 17-unit room pitch at 4.37 m. */
+const unitsPerMetre = Math.hypot(pB[0] - pA[0], pB[1] - pA[1]) / mLen;
+const turn =
+  Math.atan2(pB[1] - pA[1], pB[0] - pA[0]) - Math.atan2(mB[1] - mA[1], mB[0] - mA[0]);
+const cos = Math.cos(turn) * unitsPerMetre;
+const sin = Math.sin(turn) * unitsPerMetre;
+const place = ([x, y]: readonly [number, number]): [number, number] => [
+  pA[0] + (x - mA[0]) * cos - (y - mA[1]) * sin,
+  pA[1] + (x - mA[0]) * sin + (y - mA[1]) * cos,
+];
+const asPoints = (ring: readonly (readonly [number, number])[]) =>
+  ring
+    .map(place)
+    .map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)
+    .join(' ');
+const harbourPoints = asPoints(HARBOUR);
+/** The real footprint, over the water and under the cells, so the two agree. */
+const footprintPoints = asPoints(HOTEL_FOOTPRINT);
+const scaleBar = {
+  x: 60,
+  y: PLAN_HEIGHT - 40,
+  length: Math.round(SITE_SCALE_BAR * unitsPerMetre),
+};
+
+/**
+ * Corridor lines in plan units. Where a measured facade exists, the line comes
+ * from it, so a cell's position and its distance to the water are the survey's;
+ * elsewhere it stays the sketched line and the drawing says so.
+ */
+const runPath = (run: (typeof PLAN_RUNS)[number]): [number, number][] => {
+  const face = MEASURED_FACES[run.key];
+  if (!face) return run.path;
+  const side = run.left.facing === 'inland' ? 'right' : 'left';
+  const rooms = Math.max(
+    ...(['left', 'right'] as const).map((s) => slotsOf(run, s).length),
+  );
+  const metres = face
+    .slice(1)
+    .reduce((sum, point, i) => sum + Math.hypot(point[0] - face[i]![0], point[1] - face[i]![1]), 0);
+  /** Stretch when the facade is all rooms; otherwise march at the true pitch. */
+  const fits = metres / rooms <= STRETCH_LIMIT_M;
+  const inUnits = face.map((point) => place(point as [number, number]));
+  const depth = 34;
+  return corridorFromFace(
+    inUnits,
+    side,
+    depth,
+    fits ? null : rooms * ROOM_PITCH_M * unitsPerMetre,
+  );
+};
+
 /** Every cell on the plan, per floor, ready to draw. */
 const cells = PLAN_RUNS.flatMap((run) =>
   (['left', 'right'] as const).flatMap((side) =>
     PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
-      return layout(run.path, slotsOf(run, side).length, spans, side, 26).map((cell, i) => {
+      return layout(runPath(run), slotsOf(run, side).length, spans, side, 26).map((cell, i) => {
         const number = spans[i]!.number;
         const sold = typeOf.get(number);
         const grade = seenFrom(number, run[side].facing);
@@ -127,44 +198,6 @@ const showAnswer = (grade: string): string =>
       : grade === 'piazza'
         ? copy.shows.piazza
         : copy.shows.none;
-
-/**
- * Mediterranean Harbor, measured, laid over the plan.
- *
- * The transform is the similarity that carries two points of the measured
- * frontage onto the same two points of this plan: the head of the harbour-facing
- * spine and the south-western tip. Everything else follows, so the water sits at
- * its surveyed distance from the rooms, and the scale bar measures the drawing.
- */
-const spine = PLAN_RUNS.find((run) => run.key === 'spine-s')!.path;
-const wing = PLAN_RUNS.find((run) => run.key === 'sw')!.path;
-const [mA, mB] = ANCHORS;
-const pA = spine[0]!;
-const pB = wing[wing.length - 1]!;
-const mLen = Math.hypot(mB[0] - mA[0], mB[1] - mA[1]);
-/** Plan units per metre: about 3.9, which puts the 17-unit room pitch at 4.37 m. */
-const unitsPerMetre = Math.hypot(pB[0] - pA[0], pB[1] - pA[1]) / mLen;
-const turn =
-  Math.atan2(pB[1] - pA[1], pB[0] - pA[0]) - Math.atan2(mB[1] - mA[1], mB[0] - mA[0]);
-const cos = Math.cos(turn) * unitsPerMetre;
-const sin = Math.sin(turn) * unitsPerMetre;
-const place = ([x, y]: readonly [number, number]): [number, number] => [
-  pA[0] + (x - mA[0]) * cos - (y - mA[1]) * sin,
-  pA[1] + (x - mA[0]) * sin + (y - mA[1]) * cos,
-];
-const asPoints = (ring: readonly (readonly [number, number])[]) =>
-  ring
-    .map(place)
-    .map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)
-    .join(' ');
-const harbourPoints = asPoints(HARBOUR);
-/** The real footprint, over the water and under the cells, so the two agree. */
-const footprintPoints = asPoints(HOTEL_FOOTPRINT);
-const scaleBar = {
-  x: 60,
-  y: PLAN_HEIGHT - 40,
-  length: Math.round(SITE_SCALE_BAR * unitsPerMetre),
-};
 
 const connectingPairs = connecting
   .map((pair) => ({

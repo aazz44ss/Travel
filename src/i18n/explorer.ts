@@ -191,7 +191,7 @@ const zhHant: ExplorerCopy = {
     svgDesc:
       '飯店像一個環抱地中海港灣的馬蹄形。左上翼與上方走廊面向米老鼠廣場，中央直廊與左下翼面向港灣，右側與右下翼背對水面。每個多邊形是一間客房。',
     note: (rooms, enumerated) =>
-      `底圖是實測的：飯店輪廓與地中海港灣取自 OpenStreetMap，套在同一個比例上（比例尺 100 公尺），所以水面到客房立面的距離是量出來的——南段只有 5 到 25 公尺，西北段隔著米老鼠廣場是 24 到 68 公尺。輪廓內的房間格子是示意的：走廊走向與每間房的順序、朝向依來源手繪平面圖描繪、房號逐格核對，其中 ${enumerated} 間能對到官方房型；每格寬度一律 4.37 公尺（同一節距，所以同一位置在各樓層上下對齊，佔兩格的房型會畫成兩倍寬），不反映實際面寬與面積，也不代表真實輪廓內的每一寸都是客房。全圖 ${rooms} 格，手機請左右滑動。`,
+      `底圖是實測的：飯店輪廓與地中海港灣取自 OpenStreetMap，套在同一個比例上（比例尺 100 公尺），所以水面到客房立面的距離是量出來的——南段只有 5 到 25 公尺，西北段隔著米老鼠廣場是 24 到 68 公尺。面向港灣的兩段——中央直廊與西南翼——的房間直接排在實測立面上（把立面長度除以房間數得到 3.9 與 4.4 公尺，正是 37 平方公尺客房的面寬，所以對得起來）；其餘各段的格子仍是示意的：走廊走向與每間房的順序、朝向依來源手繪平面圖描繪、房號逐格核對，其中 ${enumerated} 間能對到官方房型；每格寬度一律 4.37 公尺（同一節距，所以同一位置在各樓層上下對齊，佔兩格的房型會畫成兩倍寬），不反映實際面寬與面積，也不代表真實輪廓內的每一寸都是客房。全圖 ${rooms} 格，手機請左右滑動。`,
     zones: { harbour: '這一側是地中海港灣', piazza: '這一側是米老鼠廣場', chapel: '教堂' },
     facing: { inland: '朝內側（看不到水面）', canal: '宮殿運河側', entrance: '園區入口側' },
     shows: {
@@ -311,7 +311,7 @@ const ja: ExplorerCopy = {
     svgDesc:
       'ホテルはメディテレーニアンハーバーを抱くような馬蹄形です。左上の翼と上の廊下はミッキー広場に面し、中央の縦廊下と左下の翼はハーバーに面し、右側と右下の翼は水面に背を向けます。多角形 1 つが 1 室です。',
     note: (rooms, enumerated) =>
-      `下地は実測です。ホテルの輪郭とメディテレーニアンハーバーは OpenStreetMap から取り、同じ縮尺に重ねています（スケールバー 100 m）。したがって水面から客室立面までの距離は測った値で、南側は 5〜25 m、北西側はミッキー広場を挟んで 24〜68 m です。輪郭の中のマスは模式的で、廊下の向きと各室の順序・向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合、うち ${enumerated} 室が公式の客室タイプに対応します。マス幅は一律 4.37 m（同じピッチなので各階で上下に重なり、2 マス分を占めるタイプは倍幅）で、実際の間口や面積は表しません。全 ${rooms} マス。スマートフォンでは横にスクロールしてください。`,
+      `下地は実測です。ホテルの輪郭とメディテレーニアンハーバーは OpenStreetMap から取り、同じ縮尺に重ねています（スケールバー 100 m）。したがって水面から客室立面までの距離は測った値で、南側は 5〜25 m、北西側はミッキー広場を挟んで 24〜68 m です。ハーバーに面する 2 区間（中央の縦廊下と南西翼）の客室は実測立面の上に並べています（立面長を室数で割ると 3.9 m と 4.4 m で、37 m² の客室の間口に一致するため採用）。ほかの区間のマスは模式的で、廊下の向きと各室の順序・向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合、うち ${enumerated} 室が公式の客室タイプに対応します。マス幅は一律 4.37 m（同じピッチなので各階で上下に重なり、2 マス分を占めるタイプは倍幅）で、実際の間口や面積は表しません。全 ${rooms} マス。スマートフォンでは横にスクロールしてください。`,
     zones: { harbour: 'この側がメディテレーニアンハーバー', piazza: 'この側がミッキー広場', chapel: 'チャペル' },
     facing: { inland: '内側向き（水面は見えない）', canal: 'パラッツォ・カナル側', entrance: 'パーク入口側' },
     shows: {
@@ -434,7 +434,7 @@ const en: ExplorerCopy = {
     svgDesc:
       'The hotel is a horseshoe wrapped around Mediterranean Harbor. The north-west wing and the upper corridor face Piazza Topolino, the central spine and the south-west wing face the harbour, and the eastern and south-eastern wings turn their backs to the water. Each polygon is one guest room.',
     note: (rooms, enumerated) =>
-      `The base is measured: the footprint and Mediterranean Harbor come from OpenStreetMap, laid on one scale with a 100 m bar, so the distance from the water to the guest-room frontage is a measurement — 5 to 25 m along the southern arm, 24 to 68 m on the north-west where Piazza Topolino sits in between. The cells inside the outline are schematic: corridor directions and each room's order and orientation are traced from the source's hand-drawn plans with every number checked cell by cell, ${enumerated} of them mapping to an official room type, and every cell is 4.37 m wide — one pitch, so positions stack across floors and a room covering two positions is drawn twice as wide — which represents neither true frontage nor floor area, and does not mean every part of the real outline is guest rooms. ${rooms} cells in total; scroll sideways on a phone.`,
+      `The base is measured: the footprint and Mediterranean Harbor come from OpenStreetMap, laid on one scale with a 100 m bar, so the distance from the water to the guest-room frontage is a measurement — 5 to 25 m along the southern arm, 24 to 68 m on the north-west where Piazza Topolino sits in between. The two stretches that face the harbour — the central spine and the south-west wing — have their rooms laid on the measured facade, adopted because dividing those facades by their room counts gives 3.9 and 4.4 m, which is a 37 m² room's frontage. The cells elsewhere are schematic: corridor directions and each room's order and orientation are traced from the source's hand-drawn plans with every number checked cell by cell, ${enumerated} of them mapping to an official room type, and every cell is 4.37 m wide — one pitch, so positions stack across floors and a room covering two positions is drawn twice as wide — which represents neither true frontage nor floor area, and does not mean every part of the real outline is guest rooms. ${rooms} cells in total; scroll sideways on a phone.`,
     zones: { harbour: 'Mediterranean Harbor is on this side', piazza: 'Piazza Topolino is on this side', chapel: 'Chapel' },
     facing: { inland: 'Faces inland (no water)', canal: 'Palazzo Canals side', entrance: 'Park entrance side' },
     shows: {

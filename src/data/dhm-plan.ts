@@ -246,6 +246,24 @@ export const PLAN_RUNS: PlanRun[] = [
   },
 ];
 
+/**
+ * The measured outline stretch each harbour-side run's rooms open from, in metres,
+ * walking in the order the room numbers run. Taken from the OpenStreetMap
+ * footprint in `./dhm-site`, at the corners where the hand-drawn plans put the
+ * junctions between corridors.
+ *
+ * Dividing a stretch by its room count is the check that decides whether a run
+ * belongs here. The south spine comes out at 3.9 m per room and the south-west
+ * wing at 4.4 m, which is what a 37 m² room's frontage is, so both are laid on
+ * the survey. The north-west wing gives 7.1 m and the north spine 7.8 m: those
+ * facades carry more than guest rooms — the plans show a service block past the
+ * wing's last room, and the chapel and the lounge past the spine's — and without
+ * knowing where the rooms stop, placing them on the measured line would only move
+ * the guesswork somewhere less visible. Those two stay on the sketched line.
+ */
+export const MEASURED_FACES: Record<string, [number, number][]> = {"spine-s": [[-24.8, -24.1], [-6.3, 31.0]],
+  "sw": [[-6.3, 31.0], [-34.5, 38.0], [-60.6, 62.7], [-70.8, 88.2]]};
+
 /** Rooms the plan marks as Partial View although the type lists never number them. */
 export const PARTIAL_VIEW_FROM_PLAN: string[] = [
   '3147', '3149', '3151', '3153',
@@ -274,6 +292,38 @@ export const SIDE_MARKERS: { run: string; side: 'left' | 'right'; label: 'harbou
   { run: 'spine-s', side: 'right', label: 'harbour' },
   { run: 'sw', side: 'right', label: 'harbour' },
 ];
+
+/**
+ * A corridor line for a run whose rooms open from a measured facade: the facade
+ * shifted inward by one room's depth, and cut to the rooms' own length where the
+ * facade carries more than rooms.
+ */
+export function corridorFromFace(
+  face: [number, number][],
+  side: 'left' | 'right',
+  depth: number,
+  maxLength: number | null,
+): [number, number][] {
+  const inward = side === 'left' ? 'right' : 'left';
+  const line = shift(face, inward, depth);
+  if (maxLength === null) return line;
+  const out: [number, number][] = [line[0]!];
+  let used = 0;
+  for (let i = 1; i < line.length; i += 1) {
+    const step = Math.hypot(line[i]![0] - line[i - 1]![0], line[i]![1] - line[i - 1]![1]);
+    if (used + step >= maxLength) {
+      const t = (maxLength - used) / step;
+      out.push([
+        line[i - 1]![0] + (line[i]![0] - line[i - 1]![0]) * t,
+        line[i - 1]![1] + (line[i]![1] - line[i - 1]![1]) * t,
+      ]);
+      return out;
+    }
+    out.push(line[i]!);
+    used += step;
+  }
+  return out;
+}
 
 /** A run's corridor shifted sideways by `offset`, on one side of the walking line. */
 function shift(path: [number, number][], side: 'left' | 'right', offset: number): [number, number][] {
