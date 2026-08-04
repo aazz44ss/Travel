@@ -383,33 +383,39 @@ export const HARBOUR: Point[] = [[37.2, 56.4],
   [18.1, 60.9]];
 
 /**
- * The two stretches of footprint whose rooms look at the harbour basin, taken as
- * the outline vertices that are nearer the basin than the canals and within 70 m
- * of it. The southern arm runs 108 m at 5 to 25 m from the water; the
- * north-western one runs 112 m at 24 to 68 m, and the difference between them is
- * the depth of Piazza Topolino.
+ * The Porto Paradiso frontage — the one face of the building whose rooms the plans
+ * number — as six straight walls.
+ *
+ * It is the stretch of outline from the north-western tip of the Toscana-facing
+ * wing round to the south-western tip of the harbour arm: 31 vertices over 294 m,
+ * reduced to the walls those vertices lie on. Reducing it matters because most of
+ * them are balconies and bays two to nine metres deep. Kept, they turn a wall into
+ * a zigzag, and a room drawn across one of their right angles crosses its
+ * neighbours. So the corners were taken at 5 m of significance and a line fitted
+ * by least squares through the vertices between each pair. All 31 lie within 4.2 m
+ * of the result, 1.4 m on average, and the walls run 255.8 m against the outline's
+ * own 294 m.
+ *
+ * Walked in this order the building is always on the left, which is the side both
+ * rows of every corridor's rooms are on.
  */
-export const FRONTAGE: Point[][] = [[[-46.9, 90.3],
-  [-38.9, 99.7],
-  [-53.9, 113.6],
-  [-57.5, 114.0],
-  [-66.1, 106.3],
-  [-70.8, 88.2],
-  [-60.6, 62.7],
-  [-51.4, 54.4],
-  [-52.6, 53.2]],
-  [[-35.6, -26.3],
-  [-34.9, -24.3],
-  [-51.6, -20.3],
-  [-50.5, -17.2],
-  [-66.4, -11.6],
-  [-68.3, -14.9],
-  [-76.1, -12.0],
-  [-84.1, -15.5],
-  [-85.5, -12.3],
-  [-100.8, -19.3],
-  [-99.4, -22.4],
-  [-125.1, -34.6]]];
+export const FRONTAGE_WALL: Point[] = [[-125.0, -34.7],
+  [-84.1, -11.7],
+  [-26.9, -25.4],
+  [-7.3, 30.4],
+  [-29.8, 36.6],
+  [-52.9, 53.6],
+  [-71.4, 87.8]];
+
+/**
+ * The wall the plans' south-eastern tail stands on: outline vertices 77 and 76.
+ *
+ * It is the only wall off the frontage the outline gives cleanly: 40 m running
+ * parallel to the south spine, which is 4.0 m for each of the ten rooms the plans
+ * put there and inside the range the frontage itself gives. Nothing else of that
+ * length or bearing lies anywhere near where the plans put the tail.
+ */
+export const TAIL_WALL: Point[] = [[52.5, 58.5], [64.8, 96.9]];
 
 /** The lagoon east of the harbour, out of the cropped view but kept for reference. */
 export const LAGOON: Point[] = [[-427.5, 264.5],

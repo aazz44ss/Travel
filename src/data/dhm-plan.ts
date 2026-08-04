@@ -13,13 +13,17 @@
  * room 3313 sits directly under 5313 and a fifth-floor Terrace Room covering two
  * positions is drawn twice as wide as the standard room below it.
  *
- * What is not faithful: corridor directions are the angles the source draws them
- * at, read by eye, and every corridor's length is set from its room count at one
- * pitch for the whole building. That keeps rooms comparable between wings — the
- * real thing has near-constant frontage per room — but it is not measured. Two
- * rooms of the same frontage and different floor area, a 37 m² Superior and a
- * 60 m² Harbor Room, are drawn the same width. So read a cell as "this position,
- * this orientation", never as "this many metres".
+ * Where those corridors run is measured rather than drawn. The plans' own angles
+ * are not used: they are schematic, and comparing them against the surveyed
+ * outline in `./dhm-site` shows the drawing standing the north-west wing some 30
+ * degrees steeper than the building does. What is used instead is the plans' room
+ * counts, shared out along the measured frontage — which is the check on both,
+ * because the count and the metres agree to within a tenth.
+ *
+ * What is still not faithful: two rooms of the same frontage and different floor
+ * area, a 37 m² Superior and a 60 m² Harbor Room, are drawn the same size, and the
+ * inland row's own back wall is nowhere measured. So read a cell as "this
+ * position, this orientation", and read its depth as a standard room's.
  *
  * Two things the plans show that the article's text does not:
  *
@@ -32,6 +36,8 @@
  *   makes the harbour-facing side legible: half of each corridor never sees the
  *   water at all.
  */
+
+import { FRONTAGE_WALL, TAIL_WALL, interiorSide, type Point } from './dhm-site';
 
 /** Which way a room's window looks, once the building is walked. */
 export type Facing =
@@ -48,16 +54,11 @@ export type Facing =
 
 export interface PlanRun {
   key: string;
-  /** Corridor centre line as a polyline, in plan units, in walking order. */
-  path: [number, number][];
   /** Rooms on the left of the walking direction, in order. */
   left: { facing: Facing; floors: Record<number, string[]> };
   /** Rooms on the right of the walking direction, in order. */
   right: { facing: Facing; floors: Record<number, string[]> };
 }
-
-export const PLAN_WIDTH = 1000;
-export const PLAN_HEIGHT = 1000;
 
 /**
  * The building is a wishbone wrapped around the harbour: a wing coming down
@@ -69,11 +70,6 @@ export const PLAN_HEIGHT = 1000;
 export const PLAN_RUNS: PlanRun[] = [
   {
     key: 'nw',
-    path: [
-      [287, 80],
-      [359, 179],
-      [447, 300],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -90,14 +86,9 @@ export const PLAN_RUNS: PlanRun[] = [
         3: ['3153', '3151', '3149', '3147', '3145', '3143', '3141', '3139', '3137', '3135', '3133', '3131', '3129', '3127', '3125', '3123'],
       },
     },
-
   },
   {
     key: 'spine-n',
-    path: [
-      [447, 300],
-      [600, 300],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -114,14 +105,9 @@ export const PLAN_RUNS: PlanRun[] = [
         3: ['3121', '3119', '3117', '3115', '3113', '3111', '3109', '3107', '3105'],
       },
     },
-
   },
   {
     key: 'east',
-    path: [
-      [712, 300],
-      [814, 300],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -138,24 +124,15 @@ export const PLAN_RUNS: PlanRun[] = [
         3: ['3201', '3203', '3205', '3207', '3209', '3211'],
       },
     },
-
   },
   {
     /** The accessible rooms sit in the corner where the two spines meet. */
     key: 'corner',
-    path: [
-      [608, 314],
-      [620, 326],
-    ],
     left: { facing: 'inland', floors: {} },
     right: { facing: 'piazza', floors: { 4: ['4103'], 3: ['3103'] } },
   },
   {
     key: 'spine-s',
-    path: [
-      [640, 344],
-      [640, 599],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -176,12 +153,6 @@ export const PLAN_RUNS: PlanRun[] = [
   },
   {
     key: 'sw',
-    path: [
-      [616, 635],
-      [496, 652],
-      [389, 702],
-      [313, 792],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -203,10 +174,6 @@ export const PLAN_RUNS: PlanRun[] = [
   },
   {
     key: 'se',
-    path: [
-      [700, 625],
-      [799, 718],
-    ],
     left: {
       facing: 'inland',
       floors: {
@@ -225,14 +192,9 @@ export const PLAN_RUNS: PlanRun[] = [
         2: ['2405', '2407', '2409', '2411', '2413', '2415', '2417', '2419'],
       },
     },
-
   },
   {
     key: 'se-tail',
-    path: [
-      [811, 738],
-      [811, 908],
-    ],
     left: {
       facing: 'entrance',
       floors: {
@@ -246,41 +208,191 @@ export const PLAN_RUNS: PlanRun[] = [
   },
 ];
 
-/**
- * The wall each run's rooms open from, in metres, walking the way the room
- * numbers run. Read off the OpenStreetMap footprint in `./dhm-site`, then
- * simplified to 4 m: the bays and balconies in between turn a wall into a zigzag,
- * and a 90 degree jog in it makes the cells at that jog cross each other. At 4 m
- * the sharpest bend left is 55 degrees and no room moves more than a room's width.
- *
- * Four walls make up the Porto Paradiso side, and the room counts are what
- * identify them: dividing each wall by the rooms the plans put on it gives 3.3,
- * 4.0 and 4.4 m for the north spine, the south spine and the south-west wing,
- * against the 4.4 m frontage a 37 m² room has. The north-west wing gives 5.1 m,
- * so its rooms march at the true pitch instead of stretching to fill it: the
- * plans show a service block past its last room, and the wall carries that too.
- */
-export const MEASURED_FACES: Record<string, [number, number][]> = {
-  "nw": [[-125.1, -34.6], [-85.5, -12.3], [-50.5, -17.2]],
-  "spine-n": [[-50.5, -17.2], [-32.2, -27.6], [-24.8, -24.1]],
-  "spine-s": [[-24.8, -24.1], [-27.3, -18.8], [-6.3, 31.0]],
-  "sw": [[-6.3, 31.0], [-34.5, 38.0], [-52.6, 53.2], [-70.8, 88.2]],
-};
+/** How deep a room is drawn: 37 m² over the frontage the measurement gives it. */
+export const ROOM_DEPTH = 8.8;
+/** The corridor the two rows of rooms open onto. */
+export const CORRIDOR = 2.0;
 
 /**
- * The four runs no wall could be matched to, and the measured corner each hangs
- * off. Their rooms face the canals and the park entrance, where the footprint
- * gives no stretch whose length matches their room count, so their shape is
- * still the source's hand-drawn one — placed by the similarity that carries the
- * neighbouring run's sketch onto its measured wall, which keeps the error local
- * instead of letting one fit over the whole building drag them tens of metres.
+ * Which walls of the measured frontage each wing stands on.
+ *
+ * `FRONTAGE_WALL` is six straight walls and the plans put 63 room positions along
+ * them, in this order, so the two can be matched. A wing is given whole walls, not
+ * a share of the total, for two reasons: the frontage's own corners then fall
+ * between wings, where the plans put them, rather than in the middle of a room
+ * that would have to bend round one; and each wing's rooms come out the width its
+ * own wall gives them instead of an average over the building.
+ *
+ * That the match works at all is the check on the plans. Wall by wall it gives
+ * 3.92, 3.94 and 4.33 m of frontage a room, against the 4.37 m a 37 m² room has if
+ * it is 8.5 m deep — so either the rooms are within a tenth of that, or they are
+ * exactly it and a little deeper. Nothing here was fitted to make that come out.
  */
-export const SKETCH_PARENT: Record<string, string> = {
-  east: 'spine-n',
-  corner: 'spine-s',
-  se: 'sw',
-  'se-tail': 'sw',
-};
+const FRONTAGE_GROUPS: { keys: string[]; from: number; to: number }[] = [
+  { keys: ['nw', 'spine-n', 'corner'], from: 0, to: 2 },
+  { keys: ['spine-s'], from: 2, to: 3 },
+  { keys: ['sw'], from: 3, to: 6 },
+];
+
+/** How much frontage the chapel takes between the north spine and the east wing. */
+const CHAPEL_SLOTS = 5;
+
+export interface RunWall {
+  /** The outer wall the run's rooms open from, in metres, in walking order. */
+  line: [number, number][];
+  /** The side of it the building stands on, which both rows of rooms are on. */
+  inward: 'left' | 'right';
+  /** Which side of the corridor is the row against that wall. */
+  face: 'left' | 'right';
+  /** False where the outline gave no wall and one had to be carried on. */
+  measured: boolean;
+}
+
+const lineLength = (line: readonly Point[]): number =>
+  line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0] - line[i]![0], p[1] - line[i]![1]), 0);
+
+/** The point and heading at a distance along a polyline, extrapolating past its end. */
+function pointAt(
+  line: readonly Point[],
+  d: number,
+): { at: [number, number]; u: [number, number] } {
+  let travelled = 0;
+  for (let i = 1; i < line.length; i += 1) {
+    const a = line[i - 1]!;
+    const b = line[i]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d <= travelled + len || i === line.length - 1) {
+      const u: [number, number] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+      const k = d - travelled;
+      return { at: [a[0] + u[0] * k, a[1] + u[1] * k], u };
+    }
+    travelled += len;
+  }
+  throw new Error('dhm-plan: pointAt needs at least two points');
+}
+
+/** The piece of a polyline between two distances along it, its corners kept. */
+function sliceLine(
+  line: readonly Point[],
+  from: number,
+  to: number,
+): [number, number][] {
+  const out: [number, number][] = [pointAt(line, from).at];
+  let travelled = 0;
+  for (let i = 1; i < line.length; i += 1) {
+    if (travelled > from + 0.05 && travelled < to - 0.05) out.push([...line[i - 1]!]);
+    travelled += Math.hypot(line[i]![0] - line[i - 1]![0], line[i]![1] - line[i - 1]![1]);
+  }
+  out.push(pointAt(line, to).at);
+  return out;
+}
+
+/**
+ * A polyline moved sideways, its corners mitred so the shift holds through them.
+ *
+ * Moving each corner along its own segment's normal would pull the line in at
+ * every bend, which on a wall that turns 43 degrees leaves the row behind it
+ * standing a metre and a half out of place.
+ */
+export function offsetLine(
+  line: readonly Point[],
+  side: 'left' | 'right',
+  by: number,
+): [number, number][] {
+  const sign = side === 'left' ? -1 : 1;
+  const normal = (a: Point, b: Point): [number, number] => {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(-(b[1] - a[1]) / len) * sign, ((b[0] - a[0]) / len) * sign];
+  };
+  return line.map((p, i) => {
+    const before = i > 0 ? normal(line[i - 1]!, p) : null;
+    const after = i + 1 < line.length ? normal(p, line[i + 1]!) : null;
+    if (!before || !after) {
+      const n = (before ?? after)!;
+      return [p[0] + n[0] * by, p[1] + n[1] * by] as [number, number];
+    }
+    const len = Math.hypot(before[0] + after[0], before[1] + after[1]) || 1;
+    const bisector: [number, number] = [(before[0] + after[0]) / len, (before[1] + after[1]) / len];
+    /** The mitre reaches 1/cos(half the turn) further than the offset itself. */
+    const cos = Math.max(0.35, bisector[0] * before[0] + bisector[1] * before[1]);
+    return [p[0] + (bisector[0] * by) / cos, p[1] + (bisector[1] * by) / cos] as [number, number];
+  });
+}
+
+/**
+ * The wall every run's rooms stand on, built from the measurement and the counts.
+ *
+ * The three wings the frontage does not carry are the ones facing the canals and
+ * the park entrance, and they are placed by carrying on the measured wall the
+ * plans join them to:
+ *
+ * - The east wing is the north spine's wall continued past the chapel, which is
+ *   how the plans draw it — one corridor, the chapel's octagon set into the middle
+ *   of it, rooms on both sides of both halves.
+ * - The tail has a wall of its own in the outline, `TAIL_WALL`.
+ * - The south-east wing runs from the back of the south spine to where that tail
+ *   starts, which is the corner the plans draw it between. Nothing sets its length
+ *   but those two ends, and it comes out at 4.49 m a room — inside the range the
+ *   frontage gives, which is the only check available on it.
+ */
+function buildWalls(): Record<string, RunWall> {
+  const run = (key: string): PlanRun => PLAN_RUNS.find((r) => r.key === key)!;
+  const slots = (key: string): number =>
+    Math.max(...(['left', 'right'] as const).map((side) => slotsOf(run(key), side).length));
+  /**
+   * A measured wall can be asked which side the building is on. One that had to be
+   * carried over open ground cannot, so it is told: the side its plans put the
+   * inland row, which is the side the wall it continues has its own on.
+   */
+  const wall = (key: string, line: [number, number][], inward: 'left' | 'right' | null): RunWall => ({
+    line,
+    inward: inward ?? interiorSide(line),
+    face: run(key).left.facing === 'inland' ? 'right' : 'left',
+    measured: inward === null,
+  });
+
+  const arc = FRONTAGE_WALL.map((_, i) => lineLength(FRONTAGE_WALL.slice(0, i + 1)));
+  const walls: Record<string, RunWall> = {};
+  let pitch = 0;
+  for (const group of FRONTAGE_GROUPS) {
+    const room = arc[group.to]! - arc[group.from]!;
+    pitch = room / group.keys.reduce((sum, key) => sum + slots(key), 0);
+    let at = arc[group.from]!;
+    for (const key of group.keys) {
+      walls[key] = wall(key, sliceLine(FRONTAGE_WALL, at, at + slots(key) * pitch), null);
+      at += slots(key) * pitch;
+    }
+  }
+  /** `pitch` now holds the south-west wing's; the east wing wants the north's. */
+  const north = (arc[2]! - arc[0]!) / FRONTAGE_GROUPS[0]!.keys.reduce((s, k) => s + slots(k), 0);
+
+  const corner = walls['corner']!;
+  const { at: end, u } = pointAt(corner.line, lineLength(corner.line));
+  const chapel = CHAPEL_SLOTS * north;
+  const from: [number, number] = [end[0] + u[0] * chapel, end[1] + u[1] * chapel];
+  const reach = slots('east') * north;
+  walls['east'] = wall(
+    'east',
+    [from, [from[0] + u[0] * reach, from[1] + u[1] * reach]],
+    corner.inward,
+  );
+
+  walls['se-tail'] = wall('se-tail', [[...TAIL_WALL[0]!], [...TAIL_WALL[1]!]], null);
+
+  const spine = walls['spine-s']!;
+  const tip = pointAt(spine.line, lineLength(spine.line));
+  const back = ROOM_DEPTH * 2 + CORRIDOR;
+  const sign = spine.inward === 'left' ? -1 : 1;
+  const behind: [number, number] = [
+    tip.at[0] - tip.u[1] * back * sign,
+    tip.at[1] + tip.u[0] * back * sign,
+  ];
+  walls['se'] = wall('se', [behind, [...TAIL_WALL[0]!]], spine.inward);
+
+  return walls;
+}
+
+export const RUN_WALLS: Record<string, RunWall> = buildWalls();
 
 /** Rooms the plan marks as Partial View although the type lists never number them. */
 export const PARTIAL_VIEW_FROM_PLAN: string[] = [
@@ -288,114 +400,6 @@ export const PARTIAL_VIEW_FROM_PLAN: string[] = [
   '4147', '4149', '4151', '4153',
   '2327', '3327', '4327', '5327',
 ];
-
-/** The chapel's octagonal void, drawn only to orient the reader. */
-export const CHAPEL = { cx: 656, cy: 300, r: 40 };
-
-/**
- * Which side the water and the square are on — and deliberately not how far away.
- *
- * An earlier version drew Mediterranean Harbor and Piazza Topolino as filled
- * shapes, which put a number on something no source here supports: the official
- * park map is an illustration with no consistent scale, and the hand-drawn floor
- * plans stop at the building line. A room's distance to the water was therefore
- * whatever I had sketched. What replaces them is a wash alongside the frontage
- * that fades out as it leaves the building, so the drawing still shows the
- * building wrapping the water — which is the point of the shape — while claiming
- * nothing about the metres in between.
- */
-export const SIDE_MARKERS: { run: string; side: 'left' | 'right'; label: 'harbour' | 'piazza' }[] = [
-  { run: 'nw', side: 'right', label: 'piazza' },
-  { run: 'spine-n', side: 'right', label: 'piazza' },
-  { run: 'spine-s', side: 'right', label: 'harbour' },
-  { run: 'sw', side: 'right', label: 'harbour' },
-];
-
-/**
- * A corridor line for a run whose rooms open from a measured facade: the facade
- * shifted inward by one room's depth, and cut to the rooms' own length where the
- * facade carries more than rooms.
- */
-export function corridorFromFace(
-  face: [number, number][],
-  side: 'left' | 'right',
-  depth: number,
-  maxLength: number | null,
-): [number, number][] {
-  const inward = side === 'left' ? 'right' : 'left';
-  const line = shift(face, inward, depth);
-  if (maxLength === null) return line;
-  const out: [number, number][] = [line[0]!];
-  let used = 0;
-  for (let i = 1; i < line.length; i += 1) {
-    const step = Math.hypot(line[i]![0] - line[i - 1]![0], line[i]![1] - line[i - 1]![1]);
-    if (used + step >= maxLength) {
-      const t = (maxLength - used) / step;
-      out.push([
-        line[i - 1]![0] + (line[i]![0] - line[i - 1]![0]) * t,
-        line[i - 1]![1] + (line[i]![1] - line[i - 1]![1]) * t,
-      ]);
-      return out;
-    }
-    out.push(line[i]!);
-    used += step;
-  }
-  return out;
-}
-
-/** A run's corridor shifted sideways by `offset`, on one side of the walking line. */
-function shift(path: [number, number][], side: 'left' | 'right', offset: number): [number, number][] {
-  const sign = side === 'left' ? -1 : 1;
-  return path.map(([x, y], i) => {
-    const next = path[Math.min(i + 1, path.length - 1)]!;
-    const prev = path[Math.max(i - 1, 0)]!;
-    const dx = next[0] - prev[0];
-    const dy = next[1] - prev[1];
-    const len = Math.hypot(dx, dy) || 1;
-    return [x - (dy / len) * sign * offset, y + (dx / len) * sign * offset] as [number, number];
-  });
-}
-
-/**
- * A wash of water or paving alongside a run, fading out as it leaves the building.
- *
- * The near edge is something the floor plans do fix — the frontage those windows
- * open from. The far edge is not: nothing here gives the width of the harbour or
- * the square. Fading it out says "it is over here, and I am not telling you how
- * far" in a way a filled outline cannot.
- */
-export function sideWash(
-  path: [number, number][],
-  side: 'left' | 'right',
-  near: number,
-  far: number,
-): {
-  points: string;
-  from: [number, number];
-  to: [number, number];
-  label: [number, number];
-  angle: number;
-} {
-  const inner = shift(path, side, near);
-  const outer = shift(path, side, far);
-  const mid = (pts: [number, number][]): [number, number] => {
-    const a = pts[0]!;
-    const b = pts[pts.length - 1]!;
-    return [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
-  };
-  const a = inner[0]!;
-  const b = inner[inner.length - 1]!;
-  const raw = Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI);
-  return {
-    points: [...inner, ...[...outer].reverse()]
-      .map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)
-      .join(' '),
-    from: mid(inner),
-    to: mid(outer),
-    label: mid(shift(path, side, near + (far - near) * 0.22)),
-    angle: raw > 90 ? raw - 180 : raw <= -90 ? raw + 180 : raw,
-  };
-}
 
 export const PLAN_FLOORS = [5, 4, 3, 2] as const;
 
@@ -456,70 +460,139 @@ export function spansOf(
 }
 
 /**
- * Lays a run's rooms out along its corridor: the polyline is divided into as
- * many equal slots as the fullest floor has rooms, and each room becomes a quad
- * spanning its own slots, offset perpendicular to the corridor. Bends in the
- * corridor bend the rooms with them.
+ * Where each slot along a wall begins, in metres.
+ *
+ * Dividing the wall evenly would leave a corner of it in the middle of a room, and
+ * a room that turns a corner loses depth × tan(half the turn) off its back on each
+ * side — 3.5 m of a 3.9 m room at the north-west wing's 43 degrees, which turns it
+ * inside out. So every corner is moved onto the nearest slot boundary, never
+ * further than half a room, and the rooms on either side share the difference: at
+ * that 43 degree bend the move is 0.1 m over twelve rooms.
+ */
+function slotBounds(path: readonly Point[], slots: number): number[] {
+  const total = lineLength(path);
+  const step = total / slots;
+  const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
+  const pinned = new Map<number, number>([
+    [0, 0],
+    [slots, total],
+  ]);
+  for (let i = 1; i < path.length - 1; i += 1) {
+    const k = Math.round(arc[i]! / step);
+    if (k > 0 && k < slots && !pinned.has(k)) pinned.set(k, arc[i]!);
+  }
+  const marks = [...pinned.keys()].sort((a, b) => a - b);
+  const out: number[] = [];
+  for (let i = 0; i + 1 < marks.length; i += 1) {
+    const [from, to] = [marks[i]!, marks[i + 1]!];
+    const [a, b] = [pinned.get(from)!, pinned.get(to)!];
+    for (let k = from; k < to; k += 1) out.push(a + ((b - a) * (k - from)) / (to - from));
+  }
+  out.push(total);
+  return out;
+}
+
+/**
+ * A polygon's centre of area, which is where its number goes.
+ *
+ * Averaging the corners instead puts the number outside the room wherever the room
+ * turns a corner of the frontage: the two ends of a wedge pull the average out past
+ * its narrow side and onto the neighbour.
+ */
+function centroid(shape: readonly Point[]): Point {
+  let twiceArea = 0;
+  let x = 0;
+  let y = 0;
+  for (let i = 0; i < shape.length; i += 1) {
+    const a = shape[i]!;
+    const b = shape[(i + 1) % shape.length]!;
+    const cross = a[0] * b[1] - b[0] * a[1];
+    twiceArea += cross;
+    x += (a[0] + b[0]) * cross;
+    y += (a[1] + b[1]) * cross;
+  }
+  if (Math.abs(twiceArea) < 1e-9) return [shape[0]![0], shape[0]![1]];
+  return [x / (3 * twiceArea), y / (3 * twiceArea)];
+}
+
+/**
+ * Lays a run's rooms out along a wall: the polyline is divided into as many equal
+ * slots as the fullest floor has rooms, and each room becomes a cell spanning its
+ * own slots and reaching `depth` into the building.
+ *
+ * A room that spans one of the wall's corners turns with it, as the plans draw the
+ * rooms at the frontage's corners turning. Its back follows the mitred offset of
+ * the wall rather than a straight line between the two ends, which is what keeps it
+ * a room: on the 43-degree bend in the north-west wing the straight line crosses
+ * itself and the room comes out as a bow tie over its neighbour.
  */
 export function layout(
-  path: [number, number][],
+  path: readonly Point[],
   slots: number,
   spans: { start: number; span: number }[],
   side: 'left' | 'right',
   depth: number,
-  /** Gap between the corridor line and the room, so cells sit against the wall. */
-  inner: number,
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
   if (slots === 0) return [];
 
-  const segments = path.slice(0, -1).map((from, i) => {
-    const to = path[i + 1]!;
-    const dx = to[0] - from[0];
-    const dy = to[1] - from[1];
-    return { from, to, length: Math.hypot(dx, dy) };
-  });
-  const total = segments.reduce((sum, segment) => sum + segment.length, 0);
-  const step = total / slots;
-
-  /** Walks the polyline to the point and direction at distance `d` from the start. */
-  const at = (d: number): { x: number; y: number; ux: number; uy: number } => {
-    let travelled = 0;
-    for (const segment of segments) {
-      if (d <= travelled + segment.length || segment === segments[segments.length - 1]) {
-        const t = (d - travelled) / segment.length;
-        return {
-          x: segment.from[0] + (segment.to[0] - segment.from[0]) * t,
-          y: segment.from[1] + (segment.to[1] - segment.from[1]) * t,
-          ux: (segment.to[0] - segment.from[0]) / segment.length,
-          uy: (segment.to[1] - segment.from[1]) / segment.length,
-        };
-      }
-      travelled += segment.length;
-    }
-    throw new Error('unreachable');
-  };
-
+  const bounds = slotBounds(path, slots);
+  const back = offsetLine(path, side, depth);
+  const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
   const sign = side === 'left' ? -1 : 1;
   const round = (n: number) => Math.round(n * 10) / 10;
+  /** The wall's own point `depth` into the building, perpendicular to it there. */
+  const inner = (p: Point, u: Point): Point => [
+    p[0] - u[1] * sign * depth,
+    p[1] + u[0] * sign * depth,
+  ];
 
   return spans.map(({ start, span }) => {
-    const a = at(start * step);
-    const b = at((start + span) * step);
-    /** Perpendicular to the corridor, pointing to this side of it. */
-    const na = { x: -a.uy * sign, y: a.ux * sign };
-    const nb = { x: -b.uy * sign, y: b.ux * sign };
-    const p1 = [a.x + na.x * inner, a.y + na.y * inner];
-    const p2 = [b.x + nb.x * inner, b.y + nb.y * inner];
-    const p3 = [b.x + nb.x * (inner + depth), b.y + nb.y * (inner + depth)];
-    const p4 = [a.x + na.x * (inner + depth), a.y + na.y * (inner + depth)];
+    const from = bounds[start]!;
+    const to = bounds[Math.min(start + span, slots)]!;
+    const front: Point[] = [pointAt(path, from).at];
+    const rear: Point[] = [];
+    for (let i = 1; i < path.length - 1; i += 1) {
+      if (arc[i]! > from + 0.01 && arc[i]! < to - 0.01) {
+        front.push(path[i]!);
+        rear.push(back[i]!);
+      }
+    }
+    front.push(pointAt(path, to).at);
+    /**
+     * The room's own edges, read off its ends rather than from the wall's arc
+     * length, so that a room beginning exactly at a corner squares up to the wall it
+     * is on and not to the one before it.
+     */
+    const heading = (p: Point, q: Point): Point => {
+      const len = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+      return [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+    };
+    /**
+     * Two rooms meeting at a corner of the wall share it along its bisector, not
+     * along a line square to either wall: square to both, on the inside of the turn,
+     * they would take the same 30 m² of the corner twice.
+     */
+    const corner = (d: number): Point | null => {
+      const i = arc.findIndex((v) => Math.abs(v - d) < 0.05);
+      return i > 0 && i < path.length - 1 ? back[i]! : null;
+    };
+    const a = front[0]!;
+    const b = front[front.length - 1]!;
+    const shape: Point[] = [
+      ...front,
+      corner(to) ?? inner(b, heading(front[front.length - 2]!, b)),
+      ...rear.reverse(),
+      corner(from) ?? inner(a, heading(a, front[1]!)),
+    ];
+    const middle = centroid(shape);
     return {
-      width: round(step * span),
-      points: [p1, p2, p3, p4].map(([x, y]) => `${round(x!)},${round(y!)}`).join(' '),
-      cx: round((p1[0]! + p2[0]! + p3[0]! + p4[0]!) / 4),
-      cy: round((p1[1]! + p2[1]! + p3[1]! + p4[1]!) / 4),
+      width: round(to - from),
+      points: shape.map(([x, y]) => `${round(x)},${round(y)}`).join(' '),
+      cx: round(middle[0]),
+      cy: round(middle[1]),
       /** Kept upright: a run walked leftwards would otherwise read upside down. */
       angle: (() => {
-        const raw = Math.round((Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI);
+        const raw = Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI);
         return raw > 90 ? raw - 180 : raw < -90 ? raw + 180 : raw;
       })(),
     };

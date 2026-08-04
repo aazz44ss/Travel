@@ -187,7 +187,7 @@ const zhHant: ExplorerCopy = {
     svgDesc:
       '飯店像一個環抱地中海港灣的馬蹄形。左上翼與上方走廊面向米老鼠廣場，中央直廊與左下翼面向港灣，右側與右下翼背對水面。每個多邊形是一間客房。',
     note: (rooms, enumerated) =>
-      `底圖是實景航照圖（縮放層級 19，1 像素 0.24 公尺，比例尺 100 公尺，是浦安一帶目前最清晰的公開影像），不是手繪的形狀，所以海港、廣場、街屋都是照片本身。八段走廊裡有四段的房間直接排在實測牆面上：牆線取自 OpenStreetMap 的建物輪廓，並簡化到 4 公尺（否則陽台與凸窗會讓牆變成鋸齒，轉角處的房間會互相交錯）；把每段牆長除以該段房數得到 3.3 到 5.1 公尺，對照 37 平方公尺客房的 4.4 公尺面寬，這是判斷哪段牆屬於哪段走廊的依據。另外四段（面向運河與樂園入口）在輪廓上找不到長度對得上的牆面，仍沿用來源的手繪走向，並掛在旁邊那段實測轉角上。走廊另一側的內側房畫在第一排後方一個房深的位置——量到的翼寬是 25 到 38 公尺，但輪廓把中庭也算成建物，射線會穿過花園，而把有轉折的牆外推那麼遠會讓房間扇開交錯，所以寧可少算幾公尺。全圖 ${rooms} 格都落在實測輪廓內，排在實測牆上的房間距牆中位數 3.5 公尺。每間房的順序與朝向依來源手繪平面圖描繪、房號逐格核對，其中 ${enumerated} 間能對到官方房型。手機請左右滑動。`,
+      `底圖是實景航照圖（縮放層級 19，1 像素 0.24 公尺，比例尺 100 公尺，是浦安一帶目前最清晰的公開影像），不是手繪的形狀，所以海港、廣場、街屋都是照片本身。房間的位置來自實測而非來源圖的角度：來源的手繪圖是示意的，對照建物輪廓，它把西北翼畫得比實際陡了約 30 度。實際用的是牆。從西北端到西南端這一整面「地中海港灣側」外牆，OpenStreetMap 輪廓給了 31 個點、294 公尺，改寫成 6 段直牆共 255.8 公尺——之所以要改寫，是因為那些點多半是 2 到 9 公尺深的陽台與凸窗，留著會讓牆成鋸齒，房間畫過直角就會互相交錯；轉折點取 5 公尺顯著度，其間的點用最小平方法配一條直線，31 個點全部落在 4.2 公尺內、平均 1.4 公尺。來源圖在這面牆上放了 63 個房位，逐段算下來每間面寬 3.92、3.94、4.33 公尺，對照 37 平方公尺客房在 8.5 公尺深時的 4.4 公尺面寬——兩者差不到一成，而這個吻合本身就是相互驗證，沒有為了對上而調整任何數字。房深畫 8.8 公尺（37 平方公尺除以實測面寬），加 2 公尺走廊，整個翼寬 19.6 公尺。牆的每個轉角都移到最近的房間交界（不超過半間），這樣沒有房間需要橫跨轉角；共用轉角的兩間房沿角平分線分界，就像來源圖畫的楔形房。八段走廊有六段站在實測牆上，另外兩段沒有：教堂東側那段是把北向走廊的牆延伸過教堂（來源圖就是這樣畫的），東南翼那段則由南向走廊背面連到實測尾牆的起點，這兩段畫成虛線。全圖 ${rooms} 格都落在實測輪廓內，彼此不重疊。每間房的順序與朝向依來源手繪平面圖描繪、房號逐格核對，其中 ${enumerated} 間能對到官方房型。手機請左右滑動。`,
     zones: { harbour: '這一側是地中海港灣', piazza: '這一側是米老鼠廣場', chapel: '教堂' },
     facing: { inland: '朝內側（看不到水面）', canal: '宮殿運河側', entrance: '園區入口側' },
     shows: {
@@ -206,7 +206,7 @@ const zhHant: ExplorerCopy = {
       plain: '官方不接受指定房號，這張圖適合拿到房卡後判讀窗戶朝向。',
     },
     approximate: '虛線＝位置未實測',
-    approximateWhy: '面向運河與入口的四段走廊，只有走向與順序來自來源手繪圖',
+    approximateWhy: '教堂東側與東南翼這兩段走廊，是從相鄰的實測牆延伸出來的',
     balconyLegend: '同一個後三碼在各樓層是同一面窗戶',
     sourceLabel: '平面圖與房號來源：dhoteloo',
     connectingHeading: '可以連通的房型組合',
@@ -305,7 +305,7 @@ const ja: ExplorerCopy = {
     svgDesc:
       'ホテルはメディテレーニアンハーバーを抱くような馬蹄形です。左上の翼と上の廊下はミッキー広場に面し、中央の縦廊下と左下の翼はハーバーに面し、右側と右下の翼は水面に背を向けます。多角形 1 つが 1 室です。',
     note: (rooms, enumerated) =>
-      `下地は実際の航空写真です（ズーム 19、1 px が 0.24 m、スケールバー 100 m。浦安周辺で公開されている最も精細な写真です）。ハーバー・広場・街並みは描いたものではなく写真そのものです。8 区間のうち 4 区間の客室は実測の壁面に直接並べています。壁線は OpenStreetMap の建物輪郭から取り、4 m に簡略化しました（バルコニーや出窓を残すと壁が鋸歯状になり、曲がり角で客室が交差します）。各壁面の長さをその区間の室数で割ると 3.3〜5.1 m で、37 m² の客室の間口 4.4 m と照らして、どの壁がどの区間かを決めています。残る 4 区間（運河側とパーク入口側）は長さの合う壁面が輪郭に見つからないため、出典の手描きの向きのまま、隣の実測角に載せています。廊下の反対側の客室は、1 列目の背後に客室 1 室分の奥行きで描いています。翼の幅は実測で 25〜38 m ですが、輪郭は中庭も建物として持つため計測線が庭を横切り、また曲がった壁をそれだけ外に振ると客室が扇状に開いて交差するので、数 m 手前で止めています。全 ${rooms} マスが実測輪郭の内側にあり、実測壁面の客室は壁から中央値 3.5 m です。各室の順序と向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合、うち ${enumerated} 室が公式の客室タイプに対応します。スマートフォンでは横にスクロールしてください。`,
+      `下地は実際の航空写真です（ズーム 19、1 px が 0.24 m、スケールバー 100 m。浦安周辺で公開されている最も精細な写真です）。ハーバー・広場・街並みは描いたものではなく写真そのものです。客室の位置は出典図の角度ではなく実測によります。出典の手描き図は模式的で、建物輪郭と照らすと北西の翼を実際より約 30 度急に描いています。使ったのは壁です。北西端から南西端まで、ポルト・パラディーゾ側の外壁は OpenStreetMap の輪郭で 31 点・294 m ありますが、これを 6 本の直線壁・計 255.8 m に置き換えました。置き換えるのは、その 31 点の多くが奥行き 2〜9 m のバルコニーや出窓で、残すと壁が鋸歯状になり、直角をまたいで描いた客室が互いに交差するからです。曲がり角は 5 m の有意性で取り、その間の点には最小二乗で直線を当てています。31 点すべてが結果から 4.2 m 以内、平均 1.4 m です。出典図はこの壁面に 63 の客室位置を並べており、壁ごとに割ると 1 室の間口は 3.92 m、3.94 m、4.33 m。奥行き 8.5 m とした 37 m² の客室の間口 4.4 m と 1 割も違わず、この一致がそのまま相互検証になります（合わせるための調整は一切していません）。奥行きは 8.8 m（37 m² を実測の間口で割った値）、廊下 2 m を加えて翼の幅は 19.6 m です。壁の曲がり角はいずれも最寄りの客室境界（半室以内）へ寄せてあり、客室が角をまたぐことはありません。角を共有する 2 室は角の二等分線で分けています。出典図が角に描く楔形の客室と同じです。8 区間のうち 6 区間は実測の壁に載っています。残る 2 区間は、チャペル東側（北側廊下の壁をチャペルの向こうへ延ばしたもの。出典図の描き方どおり）と南東の翼（南側廊下の背面から実測の末端壁の起点まで）で、破線で描いています。全 ${rooms} マスが実測輪郭の内側にあり、互いに重なりません。各室の順序と向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合、うち ${enumerated} 室が公式の客室タイプに対応します。スマートフォンでは横にスクロールしてください。`,
     zones: { harbour: 'この側がメディテレーニアンハーバー', piazza: 'この側がミッキー広場', chapel: 'チャペル' },
     facing: { inland: '内側向き（水面は見えない）', canal: 'パラッツォ・カナル側', entrance: 'パーク入口側' },
     shows: {
@@ -324,7 +324,7 @@ const ja: ExplorerCopy = {
       plain: '公式は部屋番号の指定を受け付けません。この図はカードキーを受け取ったあと、窓の向きを読むためのものです。',
     },
     approximate: '破線＝位置は未実測',
-    approximateWhy: '運河側と入口側の 4 区間は、向きと順序だけが出典の手描き図によるもの',
+    approximateWhy: 'チャペル東側と南東の翼の 2 区間は、隣の実測壁を延ばして置いたもの',
     balconyLegend: '同じ下 3 桁は各階で同じ窓の位置',
     sourceLabel: '配置図と部屋番号の出典：dhoteloo',
     connectingHeading: 'コネクティングできる組み合わせ',
@@ -426,7 +426,7 @@ const en: ExplorerCopy = {
     svgDesc:
       'The hotel is a horseshoe wrapped around Mediterranean Harbor. The north-west wing and the upper corridor face Piazza Topolino, the central spine and the south-west wing face the harbour, and the eastern and south-eastern wings turn their backs to the water. Each polygon is one guest room.',
     note: (rooms, enumerated) =>
-      `The base is aerial photography (zoom 19, one pixel to 0.24 m, with a 100 m bar — the sharpest imagery published over Urayasu) rather than shapes drawn by hand, so the harbour, the square and the streets are the photograph itself. Four of the eight corridors have their rooms laid on measured walls, read off the OpenStreetMap footprint and simplified to 4 m — leaving the balconies and bays in turns a wall into a zigzag, and the rooms at a sharp jog cross each other. Dividing each wall by the rooms the plans put on it gives 3.3 to 5.1 m against the 4.4 m frontage of a 37 m² room, and that is what identifies which wall belongs to which corridor. The other four, facing the canals and the park entrance, have no wall on the footprint whose length matches their room count, so they keep the source's hand-drawn shape, placed off the measured corner next to them. The rooms on the far side of a corridor are drawn one room deep behind the first row: casting across the block gives a wing 25 to 38 m wide, but the footprint carries the courtyards as building rather than as holes, so a cast crosses a garden as readily as a corridor, and swinging a bent wall out that far makes the rooms fan apart and cross. All ${rooms} cells fall inside the measured footprint, and the rooms on a measured wall sit a median 3.5 m from it. Each room's order and orientation is traced from the source's hand-drawn plans with every number checked cell by cell, ${enumerated} of them mapping to an official room type. On a phone, scroll sideways.`,
+      `The base is aerial photography (zoom 19, one pixel to 0.24 m, with a 100 m bar — the sharpest imagery published over Urayasu) rather than shapes drawn by hand, so the harbour, the square and the streets are the photograph itself. Where the rooms sit is measured rather than taken from the source's angles: its drawings are schematic, and against the building outline they stand the north-west wing some 30 degrees steeper than it is. What is used instead is the wall. From the north-west tip round to the south-western one, the OpenStreetMap outline gives the whole Porto Paradiso frontage as 31 vertices over 294 m, rewritten here as six straight walls of 255.8 m — rewritten because most of those vertices are balconies and bays two to nine metres deep, which left in turn a wall into a zigzag and make a room drawn across a right angle cross its neighbours. The corners were taken at 5 m of significance and a line fitted by least squares through the vertices between each pair; all 31 lie within 4.2 m of the result, 1.4 m on average. The plans put 63 room positions along that frontage, and wall by wall that comes out at 3.92, 3.94 and 4.33 m of frontage a room, against the 4.4 m a 37 m² room fronts if it is 8.5 m deep. The two agree to within a tenth, which is the check on both — nothing was adjusted to make it come out. Rooms are drawn 8.8 m deep, 37 m² over the measured frontage, plus a 2 m corridor for a wing 19.6 m across. Every corner of the wall is moved onto the nearest room boundary, never by more than half a room, so no room has to turn one; two rooms that share a corner divide it along its bisector, which is the wedge the plans themselves draw at a corner. Six of the eight corridors stand on measured wall. The two that do not are the one east of the chapel, which is the north corridor's wall carried on past it as the plans draw it, and the south-east wing, which runs from the back of the south corridor to where the measured tail wall starts; both are drawn dashed. All ${rooms} cells fall inside the measured outline and none overlaps another. Each room's order and orientation is traced from the source's hand-drawn plans with every number checked cell by cell, ${enumerated} of them mapping to an official room type. On a phone, scroll sideways.`,
     zones: { harbour: 'Mediterranean Harbor is on this side', piazza: 'Piazza Topolino is on this side', chapel: 'Chapel' },
     facing: { inland: 'Faces inland (no water)', canal: 'Palazzo Canals side', entrance: 'Park entrance side' },
     shows: {
@@ -445,7 +445,7 @@ const en: ExplorerCopy = {
       plain: 'The hotel accepts no request for a specific room, so this plan is for reading which way your window faces after check-in.',
     },
     approximate: 'Dashed: position not measured',
-    approximateWhy: 'the four corridors facing the canals and the entrance, where only the direction and order come from the source’s drawings',
+    approximateWhy: 'the corridor east of the chapel and the south-east wing, each carried on from the measured wall beside it',
     balconyLegend: 'The same last three digits are the same window on every floor',
     sourceLabel: 'Plan and room numbers: dhoteloo',
     connectingHeading: 'Pairs that can be connected',

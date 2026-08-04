@@ -1,13 +1,14 @@
 ---
 import type { ConnectingPair, Room, RoomNumbers, RoomView } from '~/data/hotel';
 import {
+  CORRIDOR,
   PARTIAL_VIEW_FROM_PLAN,
   PLAN_FLOORS,
   PLAN_RUNS,
+  ROOM_DEPTH,
+  RUN_WALLS,
   layout,
-  MEASURED_FACES,
-  SKETCH_PARENT,
-  corridorFromFace,
+  offsetLine,
   slotsOf,
   spansOf,
   type Facing,
@@ -15,7 +16,7 @@ import {
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
 import { roomName, viewLabel } from '~/i18n/rooms';
-import { SITE_SCALE_BAR, interiorSide } from '~/data/dhm-site';
+import { SITE_SCALE_BAR } from '~/data/dhm-site';
 import { PHOTO } from '~/data/dhm-photo';
 
 interface Props {
@@ -73,15 +74,6 @@ const TONE: Record<string, { fill: string; text: string }> = {
 };
 
 /**
- * Everything is drawn in metres about the hotel, so the drawing carries no frame
- * of its own: a room's position is either a measured wall or a sketch hung off
- * one, and the scale bar measures both.
- */
-const ROOM_PITCH_M = 4.37;
-const STRETCH_LIMIT_M = 5.5;
-/** How deep a room is drawn. */
-const ROOM_DEPTH_M = 6.7;
-/**
  * How far the photograph is washed out before the rooms go on top of it.
  *
  * At full strength the roofs and the paving carry as much contrast as the cells
@@ -89,24 +81,6 @@ const ROOM_DEPTH_M = 6.7;
  * the photograph here is where the building is, not what colour its tiles are.
  */
 const PHOTO_WASH = 0.55;
-
-/** The similarity that carries a measured run's sketch onto its wall. */
-const frameOf = (key: string) => {
-  const face = MEASURED_FACES[key]!;
-  const path = PLAN_RUNS.find((run) => run.key === key)!.path;
-  const [sA, sB] = [path[0]!, path[path.length - 1]!];
-  const [mA, mB] = [face[0]!, face[face.length - 1]!];
-  const k =
-    Math.hypot(mB[0] - mA[0], mB[1] - mA[1]) / Math.hypot(sB[0] - sA[0], sB[1] - sA[1]);
-  const turn =
-    Math.atan2(mB[1] - mA[1], mB[0] - mA[0]) - Math.atan2(sB[1] - sA[1], sB[0] - sA[0]);
-  const cos = Math.cos(turn) * k;
-  const sin = Math.sin(turn) * k;
-  return ([x, y]: readonly [number, number]): [number, number] => [
-    mA[0] + (x - sA[0]) * cos - (y - sA[1]) * sin,
-    mA[1] + (x - sA[0]) * sin + (y - sA[1]) * cos,
-  ];
-};
 
 const mpp = PHOTO.metresPerPixel;
 /**
@@ -123,7 +97,7 @@ const view = {
 };
 /**
  * The photograph is a lazy layer of plain images under a transparent drawing, not
- * pixels inside it: at this zoom it is 54 tiles, and a reader who never scrolls
+ * pixels inside it: at this zoom it is 20 tiles, and a reader who never scrolls
  * this far should not pay for them. Positions are percentages so the two layers
  * stay locked together at any width.
  */
@@ -157,100 +131,56 @@ const scaleBar = {
   length: Math.round(SITE_SCALE_BAR / mpp),
 };
 
-const metres = (line: readonly [number, number][]): number =>
-  line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0] - line[i]![0], p[1] - line[i]![1]), 0);
-
 /**
- * Where a run's rooms sit: the line they are measured from, and how far in from
- * it each side of the corridor is.
+ * Every cell on the plan, per floor, ready to draw.
  *
- * A wing is a slab with a corridor down it and rooms against both faces. The side
- * the survey matched sits on the wall itself. The other sits directly behind it,
- * one room deep plus a corridor, rather than against the far wall. Casting across
- * the block for that wall gives 25 to 38 m, but the outline carries the
- * courtyards as building rather than as holes, so a cast crosses a garden as
- * readily as a corridor; and swinging a bent wall out that far makes the cells fan
- * apart and cross at every bend. A row behind the first is right for the shape of
- * the wing, and a few metres short of its back wall.
+ * A wing is a slab with a corridor down it and rooms against both faces. The face
+ * the plans number sits on the measured wall itself; the other sits directly behind
+ * it, one room deep plus the corridor, rather than against the far wall. That far
+ * wall is nowhere measured — the outline carries the courtyards as building rather
+ * than as holes, so casting across the block for it crosses a garden as readily as
+ * a corridor and gives 25 to 38 m. A row behind the first is right for the shape of
+ * the wing and lands a few metres short of its back.
  */
-const placementOf = (run: (typeof PLAN_RUNS)[number]) => {
-  const rooms = Math.max(...(['left', 'right'] as const).map((s) => slotsOf(run, s).length));
-  const matched = MEASURED_FACES[run.key];
-  const inland = ROOM_DEPTH_M + 2;
-  if (matched) {
-    /** Cut a wall that carries more than rooms back to what the rooms need. */
-    const fits = metres(matched) / rooms <= STRETCH_LIMIT_M;
-    const wall = fits
-      ? [...matched]
-      : corridorFromFace(matched, interiorSide(matched), 0, rooms * ROOM_PITCH_M);
-    const faceSide: 'left' | 'right' = run.left.facing === 'inland' ? 'right' : 'left';
-    return {
-      line: wall,
-      inward: interiorSide(wall),
-      inset: { [faceSide]: 0, [faceSide === 'right' ? 'left' : 'right']: inland } as Record<
-        'left' | 'right',
-        number
-      >,
-      measured: true,
-    };
-  }
-  /** No wall matched: the sketched corridor, hung off a neighbour's measured one. */
-  const line = run.path.map(frameOf(SKETCH_PARENT[run.key]!));
-  const faceSide: 'left' | 'right' = run.left.facing === 'inland' ? 'right' : 'left';
-  return {
-    line,
-    inward: interiorSide(line),
-    inset: { [faceSide]: 0, [faceSide === 'right' ? 'left' : 'right']: inland } as Record<
-      'left' | 'right',
-      number
-    >,
-    measured: false,
-  };
-};
-
-/** Every cell on the plan, per floor, ready to draw. */
 const cells = PLAN_RUNS.flatMap((run) => {
-  const at = placementOf(run);
-  /** Positions no wall could be matched to are drawn as such, not as fact. */
-  const approximate = !at.measured;
-  return (['left', 'right'] as const).flatMap((side) =>
-    PLAN_FLOORS.flatMap((floor) => {
+  const wall = RUN_WALLS[run.key]!;
+  /** Positions no wall could be measured for are drawn as such, not as fact. */
+  const approximate = !wall.measured;
+  return (['left', 'right'] as const).flatMap((side) => {
+    const from =
+      side === wall.face ? wall.line : offsetLine(wall.line, wall.inward, ROOM_DEPTH + CORRIDOR);
+    return PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
-      return layout(
-        at.line,
-        slotsOf(run, side).length,
-        spans,
-        at.inward,
-        ROOM_DEPTH_M,
-        at.inset[side],
-      ).map((cell, i) => {
-        const number = spans[i]!.number;
-        const sold = typeOf.get(number);
-        const grade = seenFrom(number, run[side].facing);
-        /** Four digits need about 19 px and a room front is 17: write it across. */
-        const across = cell.width < ROOM_PITCH_M * 1.6;
-        /** Whatever direction the run is walked, the number reads upright. */
-        const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
-        return {
-          approximate,
-          across,
-          labelAngle: upright(across ? cell.angle + 90 : cell.angle),
-          number,
-          floor,
-          run: run.key,
-          facing: run[side].facing,
-          grade,
-          ...cell,
-          /** Centre in photo pixels, for a callout drawn at readable size. */
-          vx: planToPhoto.a * cell.cx + planToPhoto.c * cell.cy + planToPhoto.e,
-          vy: planToPhoto.b * cell.cx + planToPhoto.d * cell.cy + planToPhoto.f,
-          roomId: sold?.room.id ?? null,
-          balcony: sold?.balcony ?? false,
-          ambiguous: sold?.ambiguous ?? false,
-        };
-      });
-    }),
-  );
+      return layout(from, slotsOf(run, side).length, spans, wall.inward, ROOM_DEPTH).map(
+        (cell, i) => {
+          const number = spans[i]!.number;
+          const sold = typeOf.get(number);
+          const grade = seenFrom(number, run[side].facing);
+          /** A room front is narrower than it is deep: write the number across it. */
+          const across = cell.width < ROOM_DEPTH * 0.8;
+          /** Whatever direction the run is walked, the number reads upright. */
+          const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
+          return {
+            approximate,
+            across,
+            labelAngle: upright(across ? cell.angle + 90 : cell.angle),
+            number,
+            floor,
+            run: run.key,
+            facing: run[side].facing,
+            grade,
+            ...cell,
+            /** Centre in photo pixels, for a callout drawn at readable size. */
+            vx: planToPhoto.a * cell.cx + planToPhoto.c * cell.cy + planToPhoto.e,
+            vy: planToPhoto.b * cell.cx + planToPhoto.d * cell.cy + planToPhoto.f,
+            roomId: sold?.room.id ?? null,
+            balcony: sold?.balcony ?? false,
+            ambiguous: sold?.ambiguous ?? false,
+          };
+        },
+      );
+    });
+  });
 });
 
 const byFloor = Object.fromEntries(

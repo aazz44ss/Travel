@@ -25,11 +25,13 @@ export const PHOTO = {
   /**
    * The window drawn, in metres about that origin. Cropped to the rooms and the
    * water in front of them: at 480 m across, a 4.4 m room front was 7 px on a
-   * phone and could not carry its number. At 290 m it is 17 px wide and 25 deep,
-   * which a four-digit number fits across.
+   * phone and could not carry its number. The rooms span 198 by 152 m, so 250 m
+   * across leaves 35 m of Mediterranean Harbor beyond the far end of the wing and
+   * makes a room front 17 px wide and 38 deep, which a four-digit number fits
+   * across comfortably.
    */
-  window: { x0: -200.0, y0: -80.0, x1: 90.0, y1: 140.0 },
-  tiles: { x0: 465867, y0: 206549, x1: 465872, y1: 206552 },
+  window: { x0: -160.0, y0: -70.0, x1: 90.0, y1: 120.0 },
+  tiles: { x0: 465868, y0: 206549, x1: 465872, y1: 206552 },
   size: 256,
   url: (x: number, y: number, z: number) =>
     `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
