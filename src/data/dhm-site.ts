@@ -384,28 +384,45 @@ export const HARBOUR: Point[] = [[37.2, 56.4],
 
 /**
  * The Porto Paradiso frontage — the one face of the building whose rooms the plans
- * number — as six straight walls.
+ * number — as one straight wall for each face of it.
  *
- * It is the stretch of outline from the north-western tip of the Toscana-facing
- * wing round to the south-western tip of the harbour arm: 31 vertices over 294 m,
- * reduced to the walls those vertices lie on. Reducing it matters because most of
- * them are balconies and bays two to nine metres deep. Kept, they turn a wall into
- * a zigzag, and a room drawn across one of their right angles crosses its
- * neighbours. So the corners were taken at 5 m of significance and a line fitted
- * by least squares through the vertices between each pair. All 31 lie within 4.2 m
- * of the result, 1.4 m on average, and the walls run 255.8 m against the outline's
- * own 294 m.
+ * It is the stretch of outline from the north-west wing round to the south-western
+ * tip of the harbour arm: 31 vertices over 294 m, reduced to the walls those
+ * vertices lie on. Reducing it matters because most of them are balconies and bays
+ * two to nine metres deep. Kept, they turn a wall into a zigzag, and a room drawn
+ * across one of their right angles crosses its neighbours.
+ *
+ * Which vertices belong to which wall is decided by their segments' bearings, not
+ * by fitting a fixed number of lines to the whole run — the difference matters. Six
+ * lines fitted over the whole frontage put two of the north-west wing's vertices on
+ * the north spine's line, which dragged the corner between them six metres west and
+ * left the wing three rooms longer than the plans draw it. Grouping by bearing first
+ * puts every corner where the plans turn one. Each group then gets a least squares
+ * line, consecutive lines are intersected for the corner, and no vertex ends up more
+ * than 2.5 m from its wall.
  *
  * Walked in this order the building is always on the left, which is the side both
  * rows of every corridor's rooms are on.
  */
-export const FRONTAGE_WALL: Point[] = [[-125.0, -34.7],
-  [-84.1, -11.7],
-  [-26.9, -25.4],
-  [-7.3, 30.4],
-  [-29.8, 36.6],
-  [-52.9, 53.6],
-  [-71.4, 87.8]];
+export const FRONTAGE_WALL: Point[] = [[-125.5, -33.8],
+  [-77.1, -10.7],
+  [-30.0, -25.4],
+  [-6.7, 29.7],
+  [-31.5, 37.1],
+  [-60.0, 61.3],
+  [-70.8, 88.2]];
+
+/**
+ * The wall the north-west wing's four tip rooms stand on.
+ *
+ * The plans draw that wing with a dog-leg near its far end: four rooms a side, then
+ * a turn of about twenty degrees, then eleven more. The outline turns there too —
+ * this is the 70 m face running down from the building's western corner at
+ * (-174.1, -83.9) to the frontage's first corner — and the rest of it is the
+ * Toscana side, whose rooms these plans do not number. So only its last four rooms
+ * are used, and the frontage proper starts where the wing's own wall does.
+ */
+export const NW_TIP_WALL: Point[] = [[-174.1, -83.9], [-125.5, -33.8]];
 
 /**
  * The wall the plans' south-eastern tail stands on: outline vertices 77 and 76.

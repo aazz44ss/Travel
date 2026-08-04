@@ -150,34 +150,40 @@ const cells = PLAN_RUNS.flatMap((run) => {
     const behind = side === wall.face ? 0 : ROOM_DEPTH + CORRIDOR;
     return PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
-      return layout(wall.line, slotsOf(run), spans, wall.inward, behind, ROOM_DEPTH).map(
-        (cell, i) => {
-          const number = spans[i]!.number;
-          const sold = typeOf.get(number);
-          const grade = seenFrom(number, run.facing[side]);
-          /** A room front is narrower than it is deep: write the number across it. */
-          const across = cell.width < ROOM_DEPTH * 0.8;
-          /** Whatever direction the run is walked, the number reads upright. */
-          const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
-          return {
-            approximate,
-            across,
-            labelAngle: upright(across ? cell.angle + 90 : cell.angle),
-            number,
-            floor,
-            run: run.key,
-            facing: run.facing[side],
-            grade,
-            ...cell,
-            /** Centre in photo pixels, for a callout drawn at readable size. */
-            vx: planToPhoto.a * cell.cx + planToPhoto.c * cell.cy + planToPhoto.e,
-            vy: planToPhoto.b * cell.cx + planToPhoto.d * cell.cy + planToPhoto.f,
-            roomId: sold?.room.id ?? null,
-            balcony: sold?.balcony ?? false,
-            ambiguous: sold?.ambiguous ?? false,
-          };
-        },
-      );
+      return layout(
+        wall.line,
+        slotsOf(run),
+        spans,
+        wall.inward,
+        behind,
+        ROOM_DEPTH,
+        wall.joint,
+      ).map((cell, i) => {
+        const number = spans[i]!.number;
+        const sold = typeOf.get(number);
+        const grade = seenFrom(number, run.facing[side]);
+        /** A room front is narrower than it is deep: write the number across it. */
+        const across = cell.width < ROOM_DEPTH * 0.8;
+        /** Whatever direction the run is walked, the number reads upright. */
+        const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
+        return {
+          approximate,
+          across,
+          labelAngle: upright(across ? cell.angle + 90 : cell.angle),
+          number,
+          floor,
+          run: run.key,
+          facing: run.facing[side],
+          grade,
+          ...cell,
+          /** Centre in photo pixels, for a callout drawn at readable size. */
+          vx: planToPhoto.a * cell.cx + planToPhoto.c * cell.cy + planToPhoto.e,
+          vy: planToPhoto.b * cell.cx + planToPhoto.d * cell.cy + planToPhoto.f,
+          roomId: sold?.room.id ?? null,
+          balcony: sold?.balcony ?? false,
+          ambiguous: sold?.ambiguous ?? false,
+        };
+      });
     });
   });
 });

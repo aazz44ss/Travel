@@ -47,7 +47,13 @@
  *   water at all.
  */
 
-import { FRONTAGE_WALL, TAIL_WALL, interiorSide, type Point } from './dhm-site';
+import {
+  FRONTAGE_WALL,
+  NW_TIP_WALL,
+  TAIL_WALL,
+  interiorSide,
+  type Point,
+} from './dhm-site';
 
 /** Which way a room's window looks, once the building is walked. */
 export type Facing =
@@ -79,12 +85,14 @@ export interface PlanRun {
    */
   floors: Record<number, { left?: string; right?: string }>;
   /**
-   * Slots at the head of the run that lie before its share of the frontage,
-   * carried on from the wall's own bearing.
+   * Slots at the head of the run that lie before its share of the frontage.
    *
-   * Only the south-west wing has any. Its inland row turns the corner out of the
-   * south spine three rooms before its harbour row does, which is what a row on the
-   * outside of a 94-degree turn does, and the plans number those three.
+   * Two runs have them, for different reasons. The north-west wing's first four are
+   * round the dog-leg the plans draw near its far end, on the measured wall named in
+   * `LEAD_WALLS`. The south-west wing's first three are its inland row turning the
+   * corner out of the south spine before its harbour row does, which is what a row
+   * on the outside of a 94-degree turn does; they are carried on the wing's own
+   * bearing, because that is the only wall they have.
    */
   lead?: number;
 }
@@ -98,8 +106,13 @@ export interface PlanRun {
  */
 export const PLAN_RUNS: PlanRun[] = [
   {
-    /** Blank slots 9 to 11 are the wing's stair and lift core, 14 the corner. */
+    /**
+     * Slots 0 to 3 are round the dog-leg at the wing's far end, on a wall of their
+     * own. Blank slots 9 to 11 are the wing's stair and lift core, 14 the corner
+     * where the wing meets the north spine.
+     */
     key: 'nw',
+    lead: 4,
     facing: { left: 'inland', right: 'piazza' },
     floors: {
       5: {
@@ -290,23 +303,36 @@ export const CORRIDOR = 2.0;
 /**
  * Which walls of the measured frontage each wing stands on.
  *
- * `FRONTAGE_WALL` is six straight walls and the plans put 63 room positions along
- * them, in this order, so the two can be matched. A wing is given whole walls, not
- * a share of the total, for two reasons: the frontage's own corners then fall
- * between wings, where the plans put them, rather than in the middle of a room
- * that would have to bend round one; and each wing's rooms come out the width its
- * own wall gives them instead of an average over the building.
+ * The frontage is one straight wall for each face of it, and the plans draw one
+ * corridor against each of those faces, so the two are matched face by face rather
+ * than by sharing the total length out. That is what keeps the figure the shape of
+ * the drawing: every corner of the building falls between two of the plans' wings,
+ * where the plans put it, instead of in the middle of a room that then has to bend
+ * round it. It is also what fixes the north-west wing, which the old share-out ran
+ * three rooms past its own corner and out along the north spine.
  *
  * That the match works at all is the check on the plans. Wall by wall it gives
- * 3.92, 3.94 and 4.33 m of frontage a room, against the 4.37 m a 37 m² room has if
- * it is 8.5 m deep — so either the rooms are within a tenth of that, or they are
- * exactly it and a little deeper. Nothing here was fitted to make that come out.
+ * 3.99, 4.12, 4.39 and 4.87 m of frontage a room, against the 4.37 m a 37 m² room
+ * has if it is 8.5 m deep. Three of the four are within a tenth of that; the
+ * north-west wing's are an eighth wider, and nothing available here says whether
+ * its rooms really are wider or the plans miscount it by a room. Nothing was fitted
+ * to make any of this come out.
  */
 const FRONTAGE_GROUPS: { keys: string[]; from: number; to: number }[] = [
-  { keys: ['nw', 'spine-n', 'corner'], from: 0, to: 2 },
+  { keys: ['nw'], from: 0, to: 1 },
+  { keys: ['spine-n', 'corner'], from: 1, to: 2 },
   { keys: ['spine-s'], from: 2, to: 3 },
   { keys: ['sw'], from: 3, to: 6 },
 ];
+
+/**
+ * The wall a run's lead-in slots stand on, where it is not the run's own.
+ *
+ * Only the north-west wing has one: the plans put four rooms a side round the
+ * dog-leg at its far end, on the face the outline continues past the frontage's
+ * first corner.
+ */
+const LEAD_WALLS: Record<string, readonly Point[]> = { nw: NW_TIP_WALL };
 
 /** How much frontage the chapel takes between the north spine and the east wing. */
 const CHAPEL_SLOTS = 5;
@@ -320,6 +346,16 @@ export interface RunWall {
   face: 'left' | 'right';
   /** False where the outline gave no wall and one had to be carried on. */
   measured: boolean;
+  /**
+   * How the frontage carries on past each end of this wall, where the next wing
+   * stands on the same corner of the building.
+   *
+   * Without it the two wings both take the whole corner: each mitres its end room
+   * square to its own wall, and on the inside of the turn the two rooms cover the
+   * same 25 m². Told which way the wall goes on, both divide the corner along the
+   * one bisector and meet on it.
+   */
+  joint: { before?: Point; after?: Point };
 }
 
 const lineLength = (line: readonly Point[]): number =>
@@ -447,29 +483,60 @@ function buildWalls(): Record<string, RunWall> {
     inward: inward ?? interiorSide(line),
     face: run(key).facing.left === 'inland' ? 'right' : 'left',
     measured: inward === null,
+    joint: {},
   });
-  /** A wall carried back past its start, on the bearing it starts out with. */
-  const leadIn = (line: [number, number][], by: number): [number, number][] => {
-    if (by <= 0) return line;
-    const [a, b] = [line[0]!, line[1]!];
+  const unit = (a: Point, b: Point): Point => {
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    return [[a[0] - ((b[0] - a[0]) / len) * by, a[1] - ((b[1] - a[1]) / len) * by], ...line];
+    return [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+  };
+  /**
+   * A wall carried back past its start, by the length of its lead-in slots.
+   *
+   * On its own bearing, unless the lead-in has a measured wall of its own — the
+   * north-west wing's does, and carrying its four tip rooms straight on instead
+   * would draw the wing's dog-leg out flat.
+   */
+  const leadIn = (key: string, line: [number, number][], by: number): [number, number][] => {
+    if (by <= 0) return line;
+    const on = LEAD_WALLS[key];
+    const [a, b] = on ? [on[0]!, on[on.length - 1]!] : [line[0]!, line[1]!];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const head = line[0]!;
+    return [[head[0] - ((b[0] - a[0]) / len) * by, head[1] - ((b[1] - a[1]) / len) * by], ...line];
   };
 
   const arc = FRONTAGE_WALL.map((_, i) => lineLength(FRONTAGE_WALL.slice(0, i + 1)));
   const walls: Record<string, RunWall> = {};
+  /** What a room's frontage came out at on each wing, which the east wing borrows. */
+  const pitches: Record<string, number> = {};
   for (const group of FRONTAGE_GROUPS) {
     const room = arc[group.to]! - arc[group.from]!;
     const pitch = room / group.keys.reduce((sum, key) => sum + share(key), 0);
     let at = arc[group.from]!;
     for (const key of group.keys) {
       const line = sliceLine(FRONTAGE_WALL, at, at + share(key) * pitch);
-      walls[key] = wall(key, leadIn(line, (run(key).lead ?? 0) * pitch), null);
+      walls[key] = wall(key, leadIn(key, line, (run(key).lead ?? 0) * pitch), null);
+      pitches[key] = pitch;
       at += share(key) * pitch;
     }
   }
-  /** The east wing is carried on at the pitch the north half of the frontage sets. */
-  const north = (arc[2]! - arc[0]!) / FRONTAGE_GROUPS[0]!.keys.reduce((s, k) => s + share(k), 0);
+  /**
+   * Each wing told how the wall goes on past it, in the order the frontage is walked.
+   *
+   * A wing whose head is carried back past the corner — the south-west's, whose
+   * inland row turns it early — does not stand on that corner, so it is left out and
+   * so is the wing before it.
+   */
+  const order = FRONTAGE_GROUPS.flatMap((group) => group.keys);
+  for (let i = 1; i < order.length; i += 1) {
+    if (run(order[i]!).lead) continue;
+    const [a, b] = [walls[order[i - 1]!]!, walls[order[i]!]!];
+    a.joint.after = unit(b.line[0]!, b.line[1]!);
+    b.joint.before = unit(a.line[a.line.length - 2]!, a.line[a.line.length - 1]!);
+  }
+
+  /** The east wing is carried on at the pitch the north spine's own wall sets. */
+  const north = pitches['spine-n']!;
 
   const corner = walls['corner']!;
   const { at: end, u } = pointAt(corner.line, lineLength(corner.line));
@@ -641,10 +708,33 @@ export function layout(
   /** How far behind the wall this row's own front stands: nothing, for the facade. */
   behind: number,
   depth: number,
+  /** Which way the frontage runs on past each end, where another wing stands there. */
+  joint: { before?: Point; after?: Point } = {},
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
   if (slots === 0) return [];
 
-  const path = behind === 0 ? wall : offsetLine(wall, side, behind);
+  /**
+   * The wall with a stub of the neighbouring wing's wall on each end it shares.
+   *
+   * Everything a room needs at a corner — where the row set back from the wall turns,
+   * and where two rooms divide the corner between them — is read off the wall as a
+   * whole. Adding the stub and then dropping it again is what lets a run's end be
+   * treated as a bend rather than as the end of the world, so the two wings that meet
+   * on a corner of the building mitre it identically and meet on the bisector.
+   */
+  const STUB = 8;
+  const guide: Point[] = [...wall];
+  const head = joint.before ? 1 : 0;
+  if (joint.before) {
+    const p = wall[0]!;
+    guide.unshift([p[0] - joint.before[0] * STUB, p[1] - joint.before[1] * STUB]);
+  }
+  if (joint.after) {
+    const p = wall[wall.length - 1]!;
+    guide.push([p[0] + joint.after[0] * STUB, p[1] + joint.after[1] * STUB]);
+  }
+  const drawn = offsetLine(guide, side, behind);
+  const path = behind === 0 ? wall : drawn.slice(head, head + wall.length);
   const pins = pinsOf(wall, slots);
   const bounds = slotBounds(path, slots, pins, side, depth);
   /**
@@ -658,13 +748,17 @@ export function layout(
    * they shallow towards the corner instead of folding through it.
    */
   const reach = new Map<number, number>();
+  const shallow = (vertex: number, room: number): void => {
+    const lost = lostAtBend(drawn, vertex, side, depth);
+    if (lost > 0) reach.set(vertex, Math.min(depth, (depth * room * 0.55) / lost));
+  };
   for (const [slot, vertex] of pins) {
-    const lost = lostAtBend(path, vertex, side, depth);
-    if (lost === 0) continue;
-    const room = Math.min(bounds[slot]! - bounds[slot - 1]!, bounds[slot + 1]! - bounds[slot]!);
-    reach.set(vertex, Math.min(depth, (depth * room * 0.55) / lost));
+    shallow(vertex + head, Math.min(bounds[slot]! - bounds[slot - 1]!, bounds[slot + 1]! - bounds[slot]!));
   }
-  const back = path.map((_, i) => offsetPoint(path, i, side, reach.get(i) ?? depth));
+  /** A corner shared with the next wing shallows the same way the run's own bends do. */
+  if (joint.before) shallow(head, bounds[1]! - bounds[0]!);
+  if (joint.after) shallow(head + path.length - 1, bounds[slots]! - bounds[slots - 1]!);
+  const back = path.map((_, i) => offsetPoint(drawn, i + head, side, reach.get(i + head) ?? depth));
   const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
   const sign = side === 'left' ? -1 : 1;
   const round = (n: number) => Math.round(n * 100) / 100;
@@ -702,7 +796,10 @@ export function layout(
      */
     const corner = (d: number): Point | null => {
       const i = arc.findIndex((v) => Math.abs(v - d) < 0.05);
-      return i > 0 && i < path.length - 1 ? back[i]! : null;
+      if (i < 0) return null;
+      if (i === 0) return joint.before ? back[0]! : null;
+      if (i === path.length - 1) return joint.after ? back[i]! : null;
+      return back[i]!;
     };
     const a = front[0]!;
     const b = front[front.length - 1]!;
