@@ -2,24 +2,25 @@
 
 把功課做完，剩下的交給旅行。
 
-一個以深度內容為主的繁體中文旅遊誌。每一篇都從官方資料出發，用當地部落格與 TikTok、Instagram 上的第一手分享交叉查證，最後整理成出發前真的用得上的判斷依據——能做成表格與工具的資料就不寫成散文。
+一個以深度內容為主的旅遊誌，提供繁體中文、日文與英文三種版本。每一篇都從官方資料出發，用當地部落格與 TikTok、Instagram 上的第一手分享交叉查證，最後整理成出發前真的用得上的判斷依據——能做成表格與工具的資料就不寫成散文。
 
 ## 目前收錄
+
+繁體中文不加語言前綴，日文與英文分別在 `/ja/` 與 `/en/` 之下，下表列的是繁中路徑。
 
 | 內容 | 路徑 |
 | --- | --- |
 | 東京迪士尼海洋夢幻泉鄉大飯店完全指南 | `/articles/fantasy-springs-hotel` |
-| 夢幻泉鄉大飯店房型資料庫（31 種房型＋玫瑰庭區 147 間客房位置圖） | `/hotels/fantasy-springs-hotel` |
+| 夢幻泉鄉大飯店房型資料庫（31 種房型、玫瑰庭區 147 間客房位置圖） | `/hotels/fantasy-springs-hotel` |
+| 東京迪士尼海洋觀海景大飯店完全指南 | `/articles/tokyo-disneysea-hotel-miracosta` |
+| 東京迪士尼海洋觀海景大飯店房型資料庫（37 種組合、海港區房號索引） | `/hotels/tokyo-disneysea-hotel-miracosta` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
-| 東京迪士尼樂園大飯店房型資料庫（38 種房型，可篩選） | `/hotels/tokyo-disneyland-hotel` |
-| 飯店資料庫索引 | `/hotels` |
-
-三種語言：繁體中文在根路徑，日文在 `/ja/`，英文在 `/en/`。
+| 東京迪士尼樂園大飯店房型資料庫（38 種房型、逐間比例平面圖） | `/hotels/tokyo-disneyland-hotel` |
+| 房型資料庫總覽 | `/hotels` |
 
 ## 技術
 
 - [Astro 7](https://astro.build)，靜態輸出，內容用 content collections 管理（含 zod schema）
-- 繁中／日文／英文三語，每個頁面用一條 `[...locale]` 路由產生三份，文案放在 `src/i18n/`
 - [Tailwind CSS 4](https://tailwindcss.com)，設計 token 定義在 `src/styles/global.css` 的 `@theme`
 - 沒有前端框架。互動功能（房型篩選、目錄高亮）以原生 TypeScript 實作
 - SEO：sitemap、RSS、JSON-LD（Article / BreadcrumbList / Hotel / FAQPage）、OG 與 Twitter meta
@@ -31,50 +32,38 @@ npm install
 npm run dev      # http://localhost:4321
 npm run build    # 輸出到 dist/
 npm run preview  # 預覽 build 結果
-npm run check    # 型別檢查
-npm run audit    # 檢查 build 出來的 HTML（需要先 build）
 ```
-
-`npm run audit` 讀 `dist/` 底下的成品，檢查的是型別檢查看不到的東西：每一條內部連結都指得到頁面、Markdown 沒有留下沒被解析的 `**`、頁面上標示的間數和實際渲染出來的格子數一致（兩個數字都從頁面自己讀出來比對，不在腳本裡寫死答案）、同一間飯店的文章與資料庫頁沒有重複的句子，以及兩邊的實際字數。
 
 ## 專案結構
 
 ```
 src/
-├── components/       UI 元件（房型探索器、視線剖面圖、價格階梯、資料表格等）
+├── components/       UI 元件（房型探索器、房號索引、價格階梯、資料表格等）
 ├── content/
-│   └── articles/
-│       ├── zh-hant/  繁體中文（根路徑）
-│       ├── ja/       日文
-│       └── en/       英文
-├── i18n/             各語言的文案；元件只收資料，不直接 import 某一間飯店
-│   ├── config.ts     語言清單與 localePath()
-│   ├── ui.ts         共用介面字串
-│   ├── explorer.ts   房型探索器與床型表的介面字串
-│   ├── hotel.ts      東京迪士尼樂園大飯店的頁面文案與 view model
-│   └── fsh.ts        夢幻泉鄉大飯店的頁面文案與 view model
-├── content.config.ts 文章的 schema 定義
+│   └── articles/     文章（MDX），依語言分目錄：zh-hant / ja / en
+├── content.config.ts 文章 schema，以及從 id 拆出語言與 slug 的工具
 ├── data/             結構化資料集，與文章分離維護
-│   ├── hotel-schema.ts        所有飯店共用的型別與換算
+│   ├── hotel.ts      各飯店共用型別與價格工具
 │   ├── fantasy-springs-hotel.ts
-│   └── tokyo-disneyland-hotel.ts
+│   ├── tokyo-disneyland-hotel.ts
+│   └── tokyo-disneysea-hotel-miracosta.ts
+├── i18n/             語言設定與各語言的介面、頁面、飯店頁文案
 ├── layouts/          BaseLayout / ArticleLayout
-├── pages/            路由
+├── pages/
+│   └── [...locale]/  一個檔案產出三種語言的路由
 ├── styles/           設計 token 與長文排版
-└── consts.ts         站台設定、路徑與日期工具
+└── consts.ts         站台設定與路徑工具
 ```
+
+同一個房型元件服務所有飯店：資料從 `src/data/<hotel>.ts` 以 props 傳進去，頁面文案從 `src/i18n/hotel.ts` 依語言取出。新增一間飯店＝新增資料與文案，不必複製 UI。翻譯一篇文章＝在另一個語言目錄放同名 `.mdx`，語言切換器就會自動配對。
 
 ### 為什麼資料要和文章分開
 
 旅遊內容最大的敵人是過期。房型改名、價格調整、制度變動的時候，如果資料寫死在文章裡就得整篇重寫；抽出來放在 `src/data/` 之後，改一個檔案，文章內文、房型探索器、資料庫頁面與結構化資料會一起更新。
 
-型別放在 `src/data/hotel-schema.ts`，每一間飯店一個資料檔；`src/components/` 底下的元件都以 props 接收資料，不直接 import 某一間飯店。新增飯店時要寫的是資料，不是元件。
-
-語言則是另一個維度：元件收到的字串已經是讀者的語言，由 `src/i18n/<飯店>.ts` 負責解析。飯店自己公布過的名字（房型、景觀分級、床型、餐廳）一律照抄該語言的官方頁面，不自己翻譯——讀者拿這個名字回官網搜尋要找得到同一間房。我們自己下的判斷（每個房型的一句評語）只有繁體中文，機器翻譯過的判斷不如不放。
-
 ## 新增一篇文章
 
-在 `src/content/articles/<語言>/` 建立 `.mdx` 檔——檔名就是網址的 slug，三種語言用同一個檔名，語言切換器才配得起來。frontmatter 需符合 `src/content.config.ts` 的 schema：
+在 `src/content/articles/` 建立 `.mdx` 檔，frontmatter 需符合 `src/content.config.ts` 的 schema：
 
 ```yaml
 ---

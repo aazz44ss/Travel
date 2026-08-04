@@ -98,8 +98,30 @@ import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import SocialWall from '~/components/SocialWall.astro';
-import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
 import { localePath } from '~/i18n/config';
+import { ROOMS, SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
+
+export const priceOf = (name) => ROOMS.find((room) => room.name === name).priceFrom;
+export const viewLadder = [
+  {
+    view: '無景觀指定',
+    price: priceOf('精緻客房・2 張標準床'),
+    note: '窗外是中庭、正門或飯店側面',
+    tone: 'muted',
+  },
+  {
+    view: '樂園景觀',
+    price: priceOf('精緻客房（樂園景觀）'),
+    note: '斜看樂園，煙火看得到但構圖偏',
+    tone: 'mid',
+  },
+  {
+    view: '樂園全景觀',
+    price: priceOf('精緻客房（樂園全景觀）・2 張標準床'),
+    note: '正對樂園，全部在 5 樓以上',
+    tone: 'full',
+  },
+];
 
 東京迪士尼樂園大飯店有 706 間客房，官方把它們分成四大類——其中光是標準房就佔了 457 間。官方客房頁列出 27 個房型名稱，但同一個名稱底下常常藏著床型或人數不同的版本（例如「精緻客房」同時包含 1 張雙人床的 48 平方公尺與 2 張標準床的 40 平方公尺），本站把這些拆開來算，得到 38 種組合。這個數字本身就是這間飯店最大的門檻——不是價格，是選擇。
 
@@ -169,7 +191,12 @@ import { localePath } from '~/i18n/config';
 
 ### 價差長什麼樣子
 
-<PriceLadder locale="zh-hant" />
+<PriceLadder
+  title="同一間精緻客房，三種景觀的價差"
+  caption="以 2026 年的參考起價比較。房間規格完全相同，差別只有窗外。"
+  rungs={viewLadder}
+  footnote="換句話說，從沒有景觀升到樂園景觀只要約 6,000 日圓；再往上升到正面景又要多付約 8,500 日圓。中間那一階幾乎是所有人都該按下去的按鈕，最後那一階才是真正需要考慮的支出。"
+/>
 
 不過景觀只是價格的一個維度。同一間房在最便宜與最貴的日期之間往往差上四到六成，比升級景觀的價差還大。
 

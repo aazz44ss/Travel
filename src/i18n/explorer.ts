@@ -4,11 +4,12 @@ import type { Locale } from './config';
 export interface ExplorerCopy {
   heading: string;
   intro: (types: number) => string;
-  naming: (numbered: number) => string;
   typeCount: (n: number) => string;
   filters: { category: string; view: string; capacity: string; features: string; all: string };
-  capacityOptions: { value: string; label: string }[];
-  features: { alcove: string; balcony: string; breakfast: string; lounge: string; accessible: string };
+  /** Capacity choices are built from the data, since hotels differ in ceiling. */
+  capacityAny: string;
+  capacityAtLeast: (n: number) => string;
+  capacityExact: (n: number) => string;
   order: string;
   reset: string;
   fields: { area: string; capacity: string; priceRange: string; beds: string; floors: string };
@@ -55,24 +56,51 @@ export interface ExplorerCopy {
     positionLabel: (code: string) => string;
   };
   beds: { name: string; size: string; capacity: string; note: string };
+  /** Copy for a room-number index, used where a survey lists numbers but no geometry. */
+  index: {
+    heading: string;
+    intro: (rooms: number, floors: number, types: number) => string;
+    caveatHeading: string;
+    caveat: string;
+    lookupLabel: string;
+    lookupPlaceholder: string;
+    lookupSubmit: string;
+    lookupHint: string;
+    lookupIncomplete: string;
+    lookupMissing: string;
+    lookupFound: (number: string, name: string) => string;
+    floors: string;
+    views: string;
+    all: string;
+    readHeading: string;
+    readTitle: string;
+    readBody: string;
+    floorLabel: (floor: number) => string;
+    roomCount: (n: number) => string;
+    fields: { view: string; block: string; area: string; capacity: string; grade: string };
+    grades: { standard: string; speciale: string };
+    detail: { floorRoom: (floor: number, number: string) => string; ambiguous: string; balcony: string; plain: string };
+    capacityWithShare: (adults: number, children: number) => string;
+    capacityEither: (options: string) => string;
+    balconyLegend: string;
+    specialeLegend: string;
+    sourceLabel: string;
+    connectingHeading: string;
+    connectingIntro: (pairs: number) => string;
+    connectingEmphasis: string;
+    connectingTail: string;
+  };
 }
 
 const zhHant: ExplorerCopy = {
   heading: '房型探索器',
   intro: (types) =>
     `${types} 種房型，用你在意的條件篩掉不適合的。價格區間是公開費率表裡該房型的全年最低到最高，也就是最便宜與最貴的那一天。`,
-  naming: (numbered) =>
-    `名稱依官方繁中頁，「・」之後是本站為區分床型或人數所加。房號收錄 ${numbered} 間，最基本的幾種標準房型來源沒有逐間列號。`,
   typeCount: (n) => `${n} 種房型`,
   filters: { category: '分類', view: '景觀', capacity: '入住人數', features: '必要條件', all: '全部' },
-  capacityOptions: [
-    { value: '0', label: '不限' },
-    { value: '2', label: '2 人以上' },
-    { value: '3', label: '3 人以上' },
-    { value: '4', label: '4 人以上' },
-    { value: '5', label: '5 人' },
-  ],
-  features: { alcove: '凹室床', balcony: '陽台', breakfast: '含早餐', lounge: '貴賓室', accessible: '無障礙' },
+  capacityAny: '不限',
+  capacityAtLeast: (n) => `${n} 人以上`,
+  capacityExact: (n) => `${n} 人`,
   order: '依分類排列，每一類裡由便宜到貴',
   reset: '清除條件',
   fields: { area: '面積', capacity: '人數上限', priceRange: '價格區間', beds: '床型', floors: '分佈樓層' },
@@ -124,30 +152,61 @@ const zhHant: ExplorerCopy = {
     positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: '床型', size: '尺寸（cm）', capacity: '每張床鋪的人數上限', note: '說明' },
+  index: {
+    heading: '海港區房號索引',
+    intro: (rooms, floors, types) =>
+      `收錄海港區 ${rooms} 間已知客房，分布在 ${floors} 個樓層、${types} 種房型。輸入拿到的房號，或按樓層與景觀往下查。`,
+    caveatHeading: '這是編號順序索引，不是建築平面圖',
+    caveat:
+      '格子只按房號由小到大排列；同樣寬度不代表房間大小，格子間距也不代表實際距離。來源的位置圖足以核對房號、樓層與兩段走廊順序，卻沒有可用座標讓本站誠實重建比例，因此不畫一張看似精確的示意圖。',
+    lookupLabel: '查 4 位房號',
+    lookupPlaceholder: '例如 5353',
+    lookupSubmit: '找房間',
+    lookupHint: '第一碼是樓層；本站只收錄來源逐間列出的海港區房號。',
+    lookupIncomplete: '請輸入完整 4 位房號。',
+    lookupMissing:
+      '這份索引找不到這個號碼。它可能在托斯卡納／威尼斯區，或屬於來源沒有逐間列號的景隅景觀。',
+    lookupFound: (number, name) => `找到 ${number}：${name}`,
+    floors: '樓層',
+    views: '景觀',
+    all: '全部',
+    readHeading: '房號怎麼讀',
+    readTitle: '第一碼樓層，後三碼位置',
+    readBody:
+      '例如 5353 是 5 樓、位置 353。這份調查列出的房號全部是奇數，它沒有說明偶數房號屬於哪裡，所以偶數不在這份索引內。',
+    floorLabel: (floor) => `${floor} 樓`,
+    roomCount: (n) => `${n} 間`,
+    fields: { view: '景觀', block: '區段', area: '面積', capacity: '定員', grade: '等級' },
+    grades: { standard: '一般客房', speciale: '尊榮客房＆套房' },
+    detail: {
+      floorRoom: (floor, number) => `${floor} 樓・房號 ${number}`,
+      ambiguous:
+        '來源按景觀分級列出這批房號，官方現在按定員分成兩種版本，因此能確定房型格局與景觀，但無法確定這一間現在賣哪個定員版本。',
+      balcony: '這間可以走到戶外陽台。陽台能否舒服使用仍受風、雨與氣溫影響。',
+      plain: '這個號碼來自海港區的逐間調查；官方不接受指定房號，索引適合拿到房卡後判讀。',
+    },
+    capacityWithShare: (adults, children) => `${adults} 位大人＋最多 ${children} 位不佔床孩童`,
+    capacityEither: (options) => `${options} 位大人`,
+    balconyLegend: '可走到戶外陽台',
+    specialeLegend: '金色外框＝尊榮客房或套房',
+    sourceLabel: '房號主要來源：dhoteloo',
+    connectingHeading: '可以連通的房型組合',
+    connectingIntro: (pairs) =>
+      `同一份調查列出海港區 ${pairs} 組能打通成連通房的分類。這是分類層級的清單，不是特定房號；連通房也不是訂房選項——必須`,
+    connectingEmphasis: '同時訂下兩種房型',
+    connectingTail: '，再打電話向飯店提出希望，而且仍然不保證安排得到。',
+  },
 };
 
 const ja: ExplorerCopy = {
   heading: '客室を絞り込む',
   intro: (types) =>
     `${types} タイプの客室を、気になる条件で絞り込めます。料金の幅は公開されている料金表での年間の最安値から最高値、つまりもっとも安い日ともっとも高い日です。`,
-  naming: (numbered) =>
-    `客室名は公式表記に従い、「・」以降は床型や定員を区別するために本サイトが加えたものです。部屋番号は ${numbered} 室分を収録。もっとも基本的なスタンダードのいくつかは出典に 1 室ずつの記載がありません。`,
   typeCount: (n) => `${n} タイプ`,
   filters: { category: 'カテゴリー', view: '眺望', capacity: '人数', features: '必須条件', all: 'すべて' },
-  capacityOptions: [
-    { value: '0', label: '指定なし' },
-    { value: '2', label: '2 名以上' },
-    { value: '3', label: '3 名以上' },
-    { value: '4', label: '4 名以上' },
-    { value: '5', label: '5 名' },
-  ],
-  features: {
-    alcove: 'アルコーヴベッド',
-    balcony: 'バルコニー',
-    breakfast: '朝食つき',
-    lounge: 'ラウンジ',
-    accessible: 'アクセシブル',
-  },
+  capacityAny: '指定なし',
+  capacityAtLeast: (n) => `${n} 名以上`,
+  capacityExact: (n) => `${n} 名`,
   order: 'カテゴリー順、各カテゴリー内は安い順',
   reset: '条件をクリア',
   fields: { area: '広さ', capacity: '定員', priceRange: '料金の幅', beds: 'ベッド', floors: '階層' },
@@ -199,30 +258,62 @@ const ja: ExplorerCopy = {
     positionLabel: (code) => `位置 ${code}`,
   },
   beds: { name: 'ベッド', size: 'サイズ（cm）', capacity: '1 台あたりの定員', note: '備考' },
+  index: {
+    heading: 'ポルト・パラディーゾ・サイドの部屋番号',
+    intro: (rooms, floors, types) =>
+      `ポルト・パラディーゾ・サイドの ${rooms} 室を収録。${floors} つの階、${types} タイプにまたがります。受け取った部屋番号を入れるか、階と眺望で辿ってください。`,
+    caveatHeading: 'これは番号順のインデックスで、建物の配置図ではありません',
+    caveat:
+      'マスは部屋番号の小さい順に並べただけです。幅は広さを表さず、間隔も実際の距離を表しません。出典の位置図は部屋番号・階・2 系統の並びを照合できますが、比率を誠実に再現できる座標がないため、精密に見える図はあえて描いていません。',
+    lookupLabel: '4 桁の部屋番号を調べる',
+    lookupPlaceholder: '例：5353',
+    lookupSubmit: '調べる',
+    lookupHint: '1 桁目が階です。出典が 1 室ずつ挙げているポルト側の番号のみ収録しています。',
+    lookupIncomplete: '4 桁の部屋番号を入力してください。',
+    lookupMissing:
+      'このインデックスに該当がありません。トスカーナ／ヴェネツィア・サイドか、出典に番号の記載がないパーシャルビューの可能性があります。',
+    lookupFound: (number, name) => `${number}：${name}`,
+    floors: '階',
+    views: '眺望',
+    all: 'すべて',
+    readHeading: '部屋番号の読み方',
+    readTitle: '1 桁目が階、下 3 桁が位置',
+    readBody:
+      '5353 なら 5 階の位置 353 です。この調査が挙げる番号はすべて奇数で、偶数の番号がどこかは書かれていないため、このインデックスには含まれません。',
+    floorLabel: (floor) => `${floor} 階`,
+    roomCount: (n) => `${n} 室`,
+    fields: { view: '眺望', block: '系統', area: '広さ', capacity: '定員', grade: 'グレード' },
+    grades: { standard: '通常客室', speciale: 'スペチアーレ・ルーム＆スイート' },
+    detail: {
+      floorRoom: (floor, number) => `${floor} 階・${number} 号室`,
+      ambiguous:
+        '出典は眺望の段階でこの番号群を挙げていますが、公式は現在それを定員で 2 種類に分けています。間取りと眺望は確定できますが、この 1 室が今どちらの定員版として売られているかは特定できません。',
+      balcony: 'この客室は屋外に出られます。テラスやバルコニーが快適に使えるかは風・雨・気温に左右されます。',
+      plain:
+        'この番号はポルト側の 1 室ずつの調査によるものです。公式は部屋番号の指定を受け付けないため、カードキーを受け取ったあとに読むのが用途です。',
+    },
+    capacityWithShare: (adults, children) => `大人 ${adults} 名＋添い寝 ${children} 名まで`,
+    capacityEither: (options) => `大人 ${options} 名`,
+    balconyLegend: '屋外に出られる客室',
+    specialeLegend: '金色の枠＝スペチアーレ・ルーム＆スイート',
+    sourceLabel: '部屋番号の主な出典：dhoteloo',
+    connectingHeading: 'コネクティングできる組み合わせ',
+    connectingIntro: (pairs) =>
+      `同じ調査が、ポルト側でコネクティングできる ${pairs} 組のカテゴリーを挙げています。これはカテゴリー単位の一覧で、特定の部屋番号ではありません。コネクティングは予約画面の選択肢でもなく、`,
+    connectingEmphasis: '2 つのタイプを同時に予約',
+    connectingTail: 'したうえでホテルに電話で希望を伝える必要があり、それでも確約はされません。',
+  },
 };
 
 const en: ExplorerCopy = {
   heading: 'Room finder',
   intro: (types) =>
     `All ${types} room types, filtered by what you care about. The price range runs from that room's cheapest date of the year to its dearest, according to the published rate table.`,
-  naming: (numbered) =>
-    `Names follow the hotel's official wording; anything after the separator is our own note distinguishing bed or occupancy variants. Room numbers are recorded for ${numbered} rooms — the highest-volume standard types were never listed room by room.`,
   typeCount: (n) => `${n} room type${n === 1 ? '' : 's'}`,
   filters: { category: 'Category', view: 'View', capacity: 'Guests', features: 'Must have', all: 'All' },
-  capacityOptions: [
-    { value: '0', label: 'Any' },
-    { value: '2', label: '2 or more' },
-    { value: '3', label: '3 or more' },
-    { value: '4', label: '4 or more' },
-    { value: '5', label: '5' },
-  ],
-  features: {
-    alcove: 'Alcove bed',
-    balcony: 'Balcony',
-    breakfast: 'Breakfast',
-    lounge: 'Lounge',
-    accessible: 'Accessible',
-  },
+  capacityAny: 'Any',
+  capacityAtLeast: (n) => `${n} or more`,
+  capacityExact: (n) => `${n}`,
   order: 'Grouped by category, cheapest first within each',
   reset: 'Clear filters',
   fields: { area: 'Area', capacity: 'Sleeps', priceRange: 'Price range', beds: 'Beds', floors: 'Floors' },
@@ -277,6 +368,51 @@ const en: ExplorerCopy = {
     positionLabel: (code) => `Position ${code}`,
   },
   beds: { name: 'Bed', size: 'Size (cm)', capacity: 'Maximum per bed', note: 'Notes' },
+  index: {
+    heading: 'Porto Paradiso room numbers',
+    intro: (rooms, floors, types) =>
+      `${rooms} rooms on the Porto Paradiso side, across ${floors} floors and ${types} room types. Look up the number you were given, or work down by floor and view.`,
+    caveatHeading: 'This is an index in number order, not a floor plan',
+    caveat:
+      'The cells are simply sorted by room number: their width says nothing about room size and the gaps say nothing about distance. The source’s position map is enough to confirm numbers, floors and the order of the two corridor runs, but it carries no coordinates to rebuild proportions honestly, so no scale-looking drawing is offered.',
+    lookupLabel: 'Look up a four-digit room number',
+    lookupPlaceholder: 'e.g. 5353',
+    lookupSubmit: 'Find it',
+    lookupHint: 'The first digit is the floor. Only Porto Paradiso numbers the source lists individually are included.',
+    lookupIncomplete: 'Enter all four digits.',
+    lookupMissing:
+      'Not in this index. It may be on the Tuscany or Venice side, or a Partial View room the source never numbered.',
+    lookupFound: (number, name) => `${number}: ${name}`,
+    floors: 'Floor',
+    views: 'View',
+    all: 'All',
+    readHeading: 'How to read a room number',
+    readTitle: 'First digit the floor, last three the position',
+    readBody:
+      '5353 is position 353 on the fifth floor. Every number in this survey is odd; it does not say where the even numbers are, so they are not in this index.',
+    floorLabel: (floor) => `Floor ${floor}`,
+    roomCount: (n) => `${n} room${n === 1 ? '' : 's'}`,
+    fields: { view: 'View', block: 'Run', area: 'Area', capacity: 'Sleeps', grade: 'Grade' },
+    grades: { standard: 'Standard room', speciale: 'Speciale Rooms and Suites' },
+    detail: {
+      floorRoom: (floor, number) => `Floor ${floor}, room ${number}`,
+      ambiguous:
+        'The source lists these numbers by view level while the hotel now splits them by occupancy, so the layout and the view are certain but which occupancy version this particular room is sold as is not.',
+      balcony: 'This room opens onto outdoor space. Whether it is comfortable still depends on wind, rain and temperature.',
+      plain:
+        'This number comes from the room-by-room survey of the Porto Paradiso side. The hotel accepts no request for a specific room, so the index is for reading after check-in.',
+    },
+    capacityWithShare: (adults, children) => `${adults} adults plus up to ${children} sharing`,
+    capacityEither: (options) => `${options} adults`,
+    balconyLegend: 'Opens onto outdoor space',
+    specialeLegend: 'Gold outline: Speciale room or suite',
+    sourceLabel: 'Room numbers: dhoteloo',
+    connectingHeading: 'Pairs that can be connected',
+    connectingIntro: (pairs) =>
+      `The same survey lists ${pairs} pairs of categories that can be connected on the Porto side. It is a list of categories rather than specific rooms, and connecting is not an option in the booking form: you have to `,
+    connectingEmphasis: 'reserve both room types together',
+    connectingTail: ', then telephone the hotel with the request — and even then it is not guaranteed.',
+  },
 };
 
 const COPY: Record<Locale, ExplorerCopy> = { 'zh-hant': zhHant, ja, en };

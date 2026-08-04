@@ -3,9 +3,9 @@ import type { GetStaticPaths } from 'astro';
 import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
-import ElevationMap from '~/components/ElevationMap.astro';
-import RateTable from '~/components/RateTable.astro';
+import PriceSeasons from '~/components/PriceSeasons.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
+import MiraCostaRoomIndex from '~/components/MiraCostaRoomIndex.astro';
 import BedTable from '~/components/BedTable.astro';
 import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
@@ -28,49 +28,53 @@ import {
   ROOMS,
   VIEWS,
   roomsByCategory,
-} from '~/data/fantasy-springs-hotel';
-import { ROOM_NUMBERS, ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
-import { LAYOUTS } from '~/data/fsh-room-layouts';
+} from '~/data/tokyo-disneysea-hotel-miracosta';
+import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/dhm-rates';
+import { CONNECTING_PAIRS, KNOWN_ROOM_NUMBERS, NUMBER_BLOCKS, ROOM_NUMBERS } from '~/data/dhm-room-numbers';
+import { LAYOUTS } from '~/data/dhm-room-layouts';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
 const { locale } = Astro.props;
 const ui = t(locale);
-const copy = hotelCopy(locale, 'fsh');
-const text = names('fsh');
+const copy = hotelCopy(locale, 'dhm');
+const text = names('dhm');
 
 const viewStyle = {
-  grand: 'bg-brand text-white',
-  park: 'bg-brand-soft text-brand-deep',
-  partial: 'bg-gold-soft text-[#6f4e18]',
+  'harbour-grand': 'bg-brand-deep text-white',
+  harbour: 'bg-brand text-white',
+  'piazza-grand': 'bg-brand-soft text-brand-deep',
+  piazza: 'bg-gold-soft text-[#6f4e18]',
+  canal: 'bg-berry-soft text-berry',
+  aqua: 'bg-[#e4f2f7] text-[#285f72]',
+  partial: 'bg-paper-deep text-ink-soft',
   none: 'bg-paper-deep text-ink-faint',
-  allpark: 'bg-berry-soft text-berry',
 };
 
 const categoryStyle = {
-  springs: 'border-brand/30 text-brand',
-  rose: 'border-gold/40 text-gold',
-  bay: 'border-line text-ink-soft',
-  entrance: 'border-line text-ink-soft',
-  grand: 'border-berry/30 text-berry',
+  tuscany: 'border-line text-ink-soft',
+  venice: 'border-berry/30 text-berry',
+  porto: 'border-brand/30 text-brand',
+  speciale: 'border-gold/40 text-gold',
 };
 
-const article = await getEntry('articles', `${locale}/fantasy-springs-hotel`);
-const articlePath = localePath(locale, '/articles/fantasy-springs-hotel');
+const article = await getEntry('articles', `${locale}/tokyo-disneysea-hotel-miracosta`);
+const articlePath = localePath(locale, '/articles/tokyo-disneysea-hotel-miracosta');
 
 /**
- * The price list, the facility, dining, benefit and FAQ lists and the per-room
- * verdicts are editorial rather than official data and exist in Traditional
- * Chinese only, so the Japanese and English versions drop those sections rather
- * than show them untranslated; their guides cover the same ground in prose.
+ * The rate analysis, the facility, dining, benefit and FAQ lists and the
+ * per-room verdicts are editorial rather than official data and exist in
+ * Traditional Chinese only, so the Japanese and English versions drop those
+ * sections rather than show them untranslated; their guides cover the same
+ * ground in prose.
  */
-const editorialOnly = ['rates', 'facilities', 'dining', 'benefits', 'faq'];
+const editorialOnly = ['price-seasons', 'facilities', 'dining', 'benefits', 'faq'];
 const sections = copy.sections.filter(
   (section) => locale === 'zh-hant' || !editorialOnly.includes(section.id),
 );
 
 const title = `${copy.hotelName}${copy.titleSuffix}`;
-const description = copy.pageDescription(ROOMS.length, ROSE_ROOM_COUNT);
+const description = copy.pageDescription(ROOMS.length, KNOWN_ROOM_NUMBERS.length);
 
 const schema = [
   {
@@ -112,9 +116,11 @@ const schema = [
   description={description}
   schema={schema}
   locale={locale}
-  path="/hotels/fantasy-springs-hotel"
+  path="/hotels/tokyo-disneysea-hotel-miracosta"
 >
-  <header class="border-b border-line bg-gradient-to-br from-berry via-[#5a3a63] to-brand-deep text-white">
+  <header
+    class="border-b border-line bg-gradient-to-br from-[#3b1822] via-berry to-[#9a6840] text-white"
+  >
     <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
       <nav class="flex items-center gap-2 text-xs opacity-80" aria-label={ui.common.breadcrumb}>
         <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100"
@@ -140,7 +146,7 @@ const schema = [
         article && (
           <a
             href={articlePath}
-            class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-brand-deep transition-transform duration-300 hover:-translate-y-0.5"
+            class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-[#5f1f31] transition-transform duration-300 hover:-translate-y-0.5"
           >
             {copy.readArticle} <span aria-hidden="true">→</span>
           </a>
@@ -184,40 +190,18 @@ const schema = [
       <p class="text-sm leading-relaxed text-ink-faint">{copy.provenance}</p>
     </section>
 
-    <section id="sides" class="mt-20 scroll-mt-32">
-      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.sides}</h2>
+    <section id="categories" class="mt-20 scroll-mt-32">
+      <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.categories}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
         {copy.categoriesIntro}
       </p>
-      <figure class="mt-6 overflow-hidden rounded-xl border border-line bg-white">
-        <img
-          src={HOTEL.sideMap[locale]}
-          width={HOTEL.sideMapSize.width}
-          height={HOTEL.sideMapSize.height}
-          loading="lazy"
-          decoding="async"
-          referrerpolicy="no-referrer"
-          alt={title}
-          class="block h-auto w-full"
-        />
-        <figcaption class="border-t border-line px-4 py-2.5 text-2xs text-ink-faint">
-          <a
-            href={HOTEL.rooms[locale]}
-            rel="noopener nofollow"
-            target="_blank"
-            class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >
-            {HOTEL.nameEn}
-          </a>
-        </figcaption>
-      </figure>
       <div class="mt-6 grid gap-4 sm:grid-cols-2">
         {
           CATEGORIES.map((category) => (
             <article class="rounded-xl border border-line bg-card p-5">
               <div class="flex items-baseline justify-between gap-3">
                 <h3 class="font-serif text-base font-bold text-ink">
-                  {categoryLabel('fsh', locale, category.key)}
+                  {categoryLabel('dhm', locale, category.key)}
                 </h3>
                 <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
                   {copy.typeCount(roomsByCategory(category.key).length)}
@@ -225,10 +209,10 @@ const schema = [
               </div>
               {locale !== 'en' && <p class="mt-1 text-xs text-ink-faint">{category.labelEn}</p>}
               <p class="mt-3 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {text.categorySummary[locale][category.key] ?? category.summary}
+                {text.categorySummary[locale][category.key]}
               </p>
               <ul class="mt-3 flex flex-wrap gap-1.5">
-                {(text.categoryPerks[locale][category.key] ?? category.perks).map((perk) => (
+                {text.categoryPerks[locale][category.key]!.map((perk) => (
                   <li class="rounded-full border border-line px-2.5 py-1 text-2xs text-ink-soft">
                     {perk}
                   </li>
@@ -243,31 +227,31 @@ const schema = [
     <section id="views" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.views}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.viewsIntro}</p>
-      <div class="mt-6 grid gap-4 lg:grid-cols-3">
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {
           VIEWS.map((view) => (
             <article
               class:list={[
                 'rounded-xl border p-5',
-                view.key === 'grand' ? 'border-brand/30 bg-brand-soft/50' : 'border-line bg-card',
+                view.key === 'harbour-grand'
+                  ? 'border-brand/30 bg-brand-soft/50'
+                  : 'border-line bg-card',
               ]}
             >
               <div class="flex items-baseline justify-between gap-2">
                 <h3 class="font-serif text-base font-bold text-ink">
-                  {viewLabel('fsh', locale, view.key)}
+                  {viewLabel('dhm', locale, view.key)}
                 </h3>
-                <span class="text-2xs whitespace-nowrap text-ink-faint">
+                <span class="shrink-0 text-2xs text-ink-faint">
                   {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
                 </span>
               </div>
-              <p class="mt-1 text-xs text-ink-faint">
-                {view.labelJa}／{view.labelEn}
-              </p>
+              {locale !== 'ja' && <p class="mt-1 text-xs text-ink-faint">{view.labelJa}</p>}
               <p class="mt-3 text-sm font-medium text-brand-deep">
-                {text.viewSummary[locale][view.key] ?? view.summary}
+                {text.viewSummary[locale][view.key]}
               </p>
-              <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {text.viewDetail[locale][view.key] ?? view.detail}
+              <p class="mt-2.5 text-[0.8125rem] leading-[1.8] text-ink-soft">
+                {locale === 'zh-hant' ? view.detail : text.viewDetail[locale][view.key]}
               </p>
             </article>
           ))
@@ -276,17 +260,25 @@ const schema = [
     </section>
 
     <section class="mt-20">
-      <ElevationMap locale={locale} />
+      <MiraCostaRoomIndex
+        rooms={ROOMS}
+        views={VIEWS}
+        roomNumbers={ROOM_NUMBERS}
+        blocks={NUMBER_BLOCKS}
+        connecting={CONNECTING_PAIRS}
+        locale={locale}
+        sourceUrl="https://dhoteloo.com/%e3%83%9d%e3%83%ab%e3%83%88%e3%83%bb%e3%83%91%e3%83%a9%e3%83%87%e3%82%a3%e3%83%bc%e3%82%be%e3%83%bb%e3%82%b5%e3%82%a4%e3%83%89%e5%ae%a2%e5%ae%a4%e4%bd%8d%e7%bd%ae%e5%9b%b3%e3%80%90%e3%83%9f%e3%83%a9/"
+      />
     </section>
 
     <section class="mt-20">
       <RoomExplorer
-        hotel="fsh"
+        hotel="dhm"
         rooms={ROOMS}
         categories={CATEGORIES}
         views={VIEWS}
         flags={FLAGS}
-        rates={{}}
+        rates={MONTHLY_RATES}
         roomNumbers={ROOM_NUMBERS}
         layouts={LAYOUTS}
         viewStyle={viewStyle}
@@ -299,7 +291,16 @@ const schema = [
     {
       locale === 'zh-hant' && (
         <section class="mt-20">
-          <RateTable />
+          <PriceSeasons
+        rooms={ROOMS}
+        categories={CATEGORIES}
+        rates={MONTHLY_RATES}
+        currentYearMonths={RATE_YEAR_2026_MONTHS}
+        years={{ current: '2026', carried: '2025' }}
+        defaultRoomId="porto-superior-harbour-twin"
+        source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/5614' }}
+            bargainNote={copy.bargainNote}
+          />
         </section>
       )
     }
@@ -307,7 +308,11 @@ const schema = [
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
       <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
-      <BedTable beds={BED_SPECS} caption={copy.bedTableCaption} locale={locale} />
+      <BedTable
+        beds={BED_SPECS}
+        caption={`${copy.hotelName}${copy.bedTableCaption}`}
+        locale={locale}
+      />
     </section>
 
     {

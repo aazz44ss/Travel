@@ -11,67 +11,73 @@ import FacilityGrid from '~/components/FacilityGrid.astro';
 import DiningList from '~/components/DiningList.astro';
 import BenefitList from '~/components/BenefitList.astro';
 import FaqList from '~/components/FaqList.astro';
+import { formatYen, lowestRate } from '~/data/hotel';
 import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
-import { bedRows, explorerRooms, hotelCopy, hotelFacts, numberedRoomCount } from '~/i18n/hotel';
+import { hotelCopy } from '~/i18n/hotel';
+import { categoryLabel, names, viewLabel } from '~/i18n/rooms';
 import {
-  CATEGORY_LABELS,
-  CATEGORY_PERKS,
-  CATEGORY_SUMMARY,
-  VIEW_DETAIL,
-  VIEW_LABELS,
-  VIEW_SUMMARY,
-} from '~/i18n/rooms';
-import {
+  BED_SPECS,
   BENEFITS,
   CATEGORIES,
   DINING,
   FACILITIES,
   FAQS,
+  FLAGS,
   HOTEL,
   ROOMS,
   VIEWS,
+  roomsByCategory,
 } from '~/data/tokyo-disneyland-hotel';
-import { roomsByCategory } from '~/data/hotel-schema';
-import { explorer } from '~/i18n/explorer';
+import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS } from '~/data/tdh-rates';
+import { ROOM_NUMBERS } from '~/data/tdh-room-numbers';
+import { LAYOUTS } from '~/data/tdh-room-layouts';
 import { PLAN_ROOMS } from '~/data/tdh-plan';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
 
 const { locale } = Astro.props;
 const ui = t(locale);
-const copy = hotelCopy(locale);
+const copy = hotelCopy(locale, 'tdh');
+const text = names('tdh');
 
-const article = await getEntry('articles', `${locale}/tokyo-disneyland-hotel`);
-
-const ex = explorer(locale);
-const viewStyle: Record<string, string> = {
+/** Darkest tone for the view that actually sells the hotel. */
+const viewStyle = {
   grand: 'bg-brand text-white',
   park: 'bg-brand-soft text-brand-deep',
   none: 'bg-paper-deep text-ink-faint',
 };
-const categoryStyle: Record<string, string> = {
+
+const categoryStyle = {
   standard: 'border-line text-ink-soft',
   character: 'border-berry/30 text-berry',
   concierge: 'border-gold/40 text-gold',
   suite: 'border-brand/30 text-brand',
 };
 
-const hotelName = copy.hotelName;
-const title = `${hotelName}${copy.titleSuffix}`;
+const article = await getEntry('articles', `${locale}/tokyo-disneyland-hotel`);
+const articlePath = localePath(locale, '/articles/tokyo-disneyland-hotel');
+
+const title = `${copy.hotelName}${copy.titleSuffix}`;
 const description = copy.pageDescription(ROOMS.length, PLAN_ROOMS.length);
 
+/**
+ * The rate analysis, the facility, dining, benefit and FAQ lists and the
+ * per-room verdicts are editorial rather than official data and exist in
+ * Traditional Chinese only, so the Japanese and English versions drop those
+ * sections rather than show them untranslated. Their guides cover the same
+ * ground in prose.
+ */
+const editorialOnly = ['price-seasons', 'facilities', 'dining', 'benefits', 'faq'];
 const sections = copy.sections.filter(
-  (section) =>
-    locale === 'zh-hant' ||
-    !['price-seasons', 'facilities', 'dining', 'benefits', 'faq'].includes(section.id),
+  (section) => locale === 'zh-hant' || !editorialOnly.includes(section.id),
 );
 
 const schema = [
   {
     '@context': 'https://schema.org',
     '@type': 'Hotel',
-    name: hotelName,
+    name: copy.hotelName,
     alternateName: [HOTEL.nameEn, HOTEL.nameJa],
     description,
     url: HOTEL.officialUrl,
@@ -112,15 +118,19 @@ const schema = [
   <header class="border-b border-line bg-gradient-to-br from-brand-deep to-brand text-white">
     <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
       <nav class="flex items-center gap-2 text-xs opacity-80" aria-label={ui.common.breadcrumb}>
-        <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100">{ui.common.home}</a>
+        <a href={localePath(locale, '/')} class="transition-opacity hover:opacity-100"
+          >{ui.common.home}</a
+        >
         <span aria-hidden="true">/</span>
-        <span>{copy.databaseLabel}</span>
+        <a href={localePath(locale, '/hotels')} class="transition-opacity hover:opacity-100"
+          >{copy.databaseLabel}</a
+        >
       </nav>
       <p class="mt-8 text-2xs font-bold tracking-[0.22em] uppercase opacity-85">
         {copy.regionLabel}
       </p>
       <h1 class="mt-3 font-serif text-3xl leading-tight font-bold sm:text-[2.6rem]">
-        {hotelName}<span class="block text-xl font-medium opacity-80 sm:text-2xl"
+        {copy.hotelName}<span class="block text-xl font-medium opacity-80 sm:text-2xl"
           >{copy.databaseLabel}</span
         >
       </h1>
@@ -130,7 +140,7 @@ const schema = [
       {
         article && (
           <a
-            href={localePath(locale, '/articles/tokyo-disneyland-hotel')}
+            href={articlePath}
             class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-brand-deep transition-transform duration-300 hover:-translate-y-0.5"
           >
             {copy.readArticle} <span aria-hidden="true">→</span>
@@ -165,17 +175,19 @@ const schema = [
   <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
     <section id="overview" class="scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.overview}</h2>
-      <HotelFacts facts={hotelFacts(locale)} />
-      <p class="text-sm leading-relaxed text-ink-faint">
-        {copy.provenance}
-      </p>
+      <HotelFacts
+        facts={copy.facts({
+          rooms: HOTEL.totalRooms,
+          types: ROOMS.length,
+          from: formatYen(lowestRate(ROOMS)),
+        })}
+      />
+      <p class="text-sm leading-relaxed text-ink-faint">{copy.provenance}</p>
     </section>
 
     <section id="views" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.views}</h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        {copy.viewsIntro}
-      </p>
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.viewsIntro}</p>
       <div class="mt-6 grid gap-4 lg:grid-cols-3">
         {
           VIEWS.map((view, index) => (
@@ -186,7 +198,9 @@ const schema = [
               ]}
             >
               <div class="flex items-baseline justify-between gap-2">
-                <h3 class="font-serif text-base font-bold text-ink">{VIEW_LABELS[locale][view.key]}</h3>
+                <h3 class="font-serif text-base font-bold text-ink">
+                  {viewLabel('tdh', locale, view.key)}
+                </h3>
                 <span class="text-2xs text-ink-faint">
                   {copy.typeCount(ROOMS.filter((room) => room.view === view.key).length)}
                 </span>
@@ -194,9 +208,11 @@ const schema = [
               <p class="mt-1 text-xs text-ink-faint">
                 {locale === 'ja' ? view.labelEn : `${view.labelJa}／${view.labelEn}`}
               </p>
-              <p class="mt-3 text-sm font-medium text-brand-deep">{VIEW_SUMMARY[locale][view.key]}</p>
+              <p class="mt-3 text-sm font-medium text-brand-deep">
+                {text.viewSummary[locale][view.key]}
+              </p>
               <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {locale === 'zh-hant' ? view.detail : VIEW_DETAIL[locale][view.key]}
+                {locale === 'zh-hant' ? view.detail : text.viewDetail[locale][view.key]}
               </p>
             </article>
           ))
@@ -214,16 +230,18 @@ const schema = [
           CATEGORIES.map((category) => (
             <article class="rounded-xl border border-line bg-card p-5">
               <div class="flex items-baseline justify-between gap-3">
-                <h3 class="font-serif text-base font-bold text-ink">{CATEGORY_LABELS[locale][category.key]}</h3>
+                <h3 class="font-serif text-base font-bold text-ink">
+                  {categoryLabel('tdh', locale, category.key)}
+                </h3>
                 <span class="rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
-                  {copy.typeCount(roomsByCategory(ROOMS, category.key).length)}
+                  {copy.typeCount(roomsByCategory(category.key).length)}
                 </span>
               </div>
               <p class="mt-2.5 text-[0.875rem] leading-[1.85] text-ink-soft">
-                {CATEGORY_SUMMARY[locale][category.key]}
+                {text.categorySummary[locale][category.key]}
               </p>
               <ul class="mt-3 flex flex-wrap gap-1.5">
-                {CATEGORY_PERKS[locale][category.key]!.map((perk) => (
+                {text.categoryPerks[locale][category.key]!.map((perk) => (
                   <li class="rounded-full border border-line px-2.5 py-1 text-2xs text-ink-soft">
                     {perk}
                   </li>
@@ -241,40 +259,49 @@ const schema = [
 
     <section class="mt-20">
       <RoomExplorer
-        locale={locale}
-        rooms={explorerRooms(locale)}
-        categories={CATEGORIES.map((c) => ({ key: c.key, label: CATEGORY_LABELS[locale][c.key]! }))}
-        views={VIEWS.map((v) => ({ key: v.key, label: VIEW_LABELS[locale][v.key]! }))}
+        hotel="tdh"
+        rooms={ROOMS}
+        categories={CATEGORIES}
+        views={VIEWS}
+        flags={FLAGS}
+        rates={MONTHLY_RATES}
+        roomNumbers={ROOM_NUMBERS}
+        layouts={LAYOUTS}
         viewStyle={viewStyle}
         categoryStyle={categoryStyle}
-        intro={ex.intro(ROOMS.length)}
-        footnote={ex.naming(numberedRoomCount)}
+        provenance={copy.explorerProvenance}
+        locale={locale}
       />
     </section>
 
     {
-      /* The monthly rate analysis is written prose rather than official data, so
-         it stays in Traditional Chinese; the Japanese and English guides state
-         the same seasonal conclusions in their own text. */
       locale === 'zh-hant' && (
         <section class="mt-20">
-          <PriceSeasons locale={locale} />
+          <PriceSeasons
+            rooms={ROOMS}
+            categories={CATEGORIES}
+            rates={MONTHLY_RATES}
+            currentYearMonths={RATE_YEAR_2026_MONTHS}
+            years={{ current: '2026', carried: '2025' }}
+            defaultRoomId="std-superior-pgv-double"
+            source={{ label: copy.rateSourceLabel, url: 'https://castel.jp/p/4155' }}
+            bargainNote={copy.bargainNote}
+          />
         </section>
       )
     }
 
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        {copy.bedsIntro}
-      </p>
-      <BedTable rows={bedRows(locale)} caption={`${hotelName} — ${ex.beds.name}`} locale={locale} />
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{copy.bedsIntro}</p>
+      <BedTable
+        beds={BED_SPECS}
+        caption={`${copy.hotelName}${copy.bedTableCaption}`}
+        locale={locale}
+      />
     </section>
 
     {
-      /* The facility, dining, benefit and FAQ lists are editorial rather than
-         official data, so they exist in Traditional Chinese only. The Japanese
-         and English guides cover the same ground in prose. */
       locale === 'zh-hant' && (
         <>
           <section id="facilities" class="mt-20 scroll-mt-32">
@@ -308,7 +335,7 @@ const schema = [
             {copy.articleTease}
           </p>
           <a
-            href={localePath(locale, '/articles/tokyo-disneyland-hotel')}
+            href={articlePath}
             class="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
           >
             {copy.readArticle} <span aria-hidden="true">→</span>

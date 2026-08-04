@@ -11,7 +11,7 @@ export const SITE = {
 export const NAV_LINKS = [
   { label: '首頁', href: '/' },
   { label: '所有文章', href: '/articles' },
-  { label: '飯店資料庫', href: '/hotels' },
+  { label: '房型資料庫', href: '/hotels' },
   { label: '關於', href: '/about' },
 ] as const;
 

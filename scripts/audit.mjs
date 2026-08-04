@@ -34,15 +34,16 @@ const ok = (msg) => console.log(`  ok   ${msg}`);
 console.log('\nroutes');
 // Traditional Chinese is unprefixed; the other two live under their own segment.
 const PREFIXES = ['', 'ja/', 'en/'];
+const HOTELS = ['fantasy-springs-hotel', 'tokyo-disneyland-hotel', 'tokyo-disneysea-hotel-miracosta'];
 const PER_LOCALE = [
   'index.html',
   'about/index.html',
   'articles/index.html',
-  'articles/fantasy-springs-hotel/index.html',
-  'articles/tokyo-disneyland-hotel/index.html',
   'hotels/index.html',
-  'hotels/fantasy-springs-hotel/index.html',
-  'hotels/tokyo-disneyland-hotel/index.html',
+  ...HOTELS.flatMap((slug) => [
+    `articles/${slug}/index.html`,
+    `hotels/${slug}/index.html`,
+  ]),
 ];
 const routes = [
   ...PREFIXES.flatMap((prefix) => PER_LOCALE.map((route) => prefix + route)),

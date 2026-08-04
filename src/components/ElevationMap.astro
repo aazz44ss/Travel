@@ -10,7 +10,7 @@ import {
 } from '~/data/fsh-rose-court';
 import { ROOMS } from '~/data/fantasy-springs-hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { roomName } from '~/i18n/fsh';
+import { roomName } from '~/i18n/rooms';
 
 interface Props {
   locale?: Locale;
@@ -175,7 +175,7 @@ const c = COPY[locale];
  * the building rather than a gap in the data.
  */
 
-const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room.id, room.name, locale)]));
+const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room, 'fsh', locale)]));
 
 const tally = roseCourtTally();
 
@@ -225,6 +225,7 @@ const faces = ELEVATIONS.map((face) => {
     parkView: c.parkView,
     bookedAs: c.bookedAs('{name}'),
     unassigned: c.unassigned,
+    separator: locale === 'en' ? ', ' : '・',
   })}
 >
   <div class="flex flex-wrap items-end justify-between gap-4">
@@ -364,6 +365,7 @@ const faces = ELEVATIONS.map((face) => {
       parkView: string;
       bookedAs: string;
       unassigned: string;
+      separator: string;
     };
     const empty = root.querySelector<HTMLElement>('[data-detail-empty]');
     const body = root.querySelector<HTMLElement>('[data-detail-body]');
@@ -379,7 +381,7 @@ const faces = ELEVATIONS.map((face) => {
         meta.textContent = [
           cell.dataset.category,
           parkView ? strings.parkView : strings.noView,
-        ].join('・');
+        ].join(strings.separator);
         type.textContent = cell.dataset.type
           ? strings.bookedAs.replace('{name}', cell.dataset.type)
           : strings.unassigned;

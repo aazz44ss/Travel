@@ -1,7 +1,7 @@
 ---
-import { CATEGORIES, ROOMS } from '~/data/fantasy-springs-hotel';
+import { CATEGORIES, HOTEL, ROOMS } from '~/data/fantasy-springs-hotel';
 import { RATE_SOURCE, RATES } from '~/data/fsh-rates';
-import { formatYen, toTwd } from '~/data/hotel-schema';
+import { formatYen, toTwd } from '~/data/hotel';
 
 /**
  * Every Fantasy Chateau category priced on one date, which is the only way this
@@ -68,7 +68,7 @@ const missed = ROOMS.filter((room) => room.category !== 'grand' && !RATES[room.i
                 <td class="px-4 py-3 text-right whitespace-nowrap tabular-nums">
                   <span class="font-bold text-brand">{formatYen(rate.price)}</span>
                   <span class="mt-0.5 block text-2xs font-normal text-ink-faint">
-                    約新台幣 {toTwd(rate.price).toLocaleString('en-US')} 元
+                    約新台幣 {toTwd(rate.price, HOTEL.jpyPerTwd).toLocaleString('en-US')} 元
                   </span>
                 </td>
                 <td class="px-4 py-3 text-right whitespace-nowrap text-ink-soft tabular-nums">
