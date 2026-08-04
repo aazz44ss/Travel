@@ -112,16 +112,16 @@ const schema = {
       <dl class="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-line pt-8">
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statRooms}</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{totalTypes}</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{copy.countRooms(totalTypes)}</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statArticles}</dt>
-          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{articles.length}</dd>
+          <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">{copy.countArticles(articles.length)}</dd>
         </div>
         <div>
           <dt class="text-2xs tracking-[0.16em] text-ink-faint uppercase">{copy.statSources}</dt>
           <dd class="mt-1 font-serif text-2xl font-bold text-brand-deep">
-            {articles.reduce((sum, article) => sum + article.data.sources.length, 0)}
+            {copy.countSources(articles.reduce((sum, article) => sum + article.data.sources.length, 0))}
           </dd>
         </div>
       </dl>

@@ -1,5 +1,8 @@
 ---
 import type { ConnectingPair, Room, RoomNumbers, RoomView } from '~/data/hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
+import { roomName, viewLabel } from '~/i18n/rooms';
 
 interface Props {
   rooms: Room[];
@@ -9,12 +12,17 @@ interface Props {
   blocks: readonly { key: string; label: string; summary: string }[];
   connecting: ConnectingPair[];
   sourceUrl: string;
+  locale?: Locale;
 }
 
-const { rooms, views, roomNumbers, blocks, connecting, sourceUrl } = Astro.props;
+const { rooms, views, roomNumbers, blocks, connecting, sourceUrl, locale = DEFAULT_LOCALE } =
+  Astro.props;
 
+const copy = explorer(locale).index;
+/** The dataset labels the runs in Chinese; elsewhere the bare number reads better. */
+const blockLabel = (block: { key: string; label: string }) =>
+  locale === 'zh-hant' ? block.label : `${block.key}xx`;
 const roomById = Object.fromEntries(rooms.map((room) => [room.id, room]));
-const viewByKey = Object.fromEntries(views.map((view) => [view.key, view]));
 
 /**
  * Occupancy is part of the room name, so a number the source could only pin to a
@@ -25,13 +33,18 @@ const siblingsOf = (roomId: string): Room[] =>
     .map((id) => roomById[id])
     .filter((room): room is Room => Boolean(room));
 
-/** Names are `格局・定員`, so a group keeps one格局 and lists every定員. */
+/**
+ * Names are `layout・occupancy`, so a group keeps one layout and lists every
+ * occupancy it could be. The official part of the name comes from the hotel.
+ */
 const groupLabel = (room: Room, siblings: Room[]): string => {
-  if (siblings.length === 0) return room.name;
-  const [layout, ...tail] = room.name.split('・');
-  const occupancies = [tail.join('・'), ...siblings.map((s) => s.name.split('・').slice(1).join('・'))]
+  const name = (entry: Room) => roomName(entry, 'dhm', locale);
+  if (siblings.length === 0) return name(room);
+  const [layout, ...tail] = name(room).split('・');
+  const occupancies = [tail.join('・'), ...siblings.map((s) => name(s).split('・').slice(1).join('・'))]
     .filter(Boolean);
-  return occupancies.length > 0 ? `${layout}・${occupancies.join('或 ')}` : layout!;
+  const join = locale === 'zh-hant' ? '或 ' : locale === 'ja' ? 'または ' : ' or ';
+  return occupancies.length > 0 ? `${layout}・${occupancies.join(join)}` : layout!;
 };
 
 const hits = Object.entries(roomNumbers)
@@ -72,17 +85,17 @@ const payload = hits.map((hit) => {
   return {
     number: hit.number,
     floor: hit.floor,
-    block: `${hit.block}xx 段`,
+    block: `${hit.block}xx`,
     roomName: hit.label,
     ambiguous: hit.siblings.length > 0,
-    view: viewByKey[hit.room.view]?.label ?? '景觀未指定',
+    view: viewLabel('dhm', locale, hit.room.view),
     viewKey: hit.room.view,
-    size: `${[...new Set(group.map((room) => room.size))].join(' 或 ')} m²`,
+    size: `${[...new Set(group.map((room) => room.size))].join(' / ')} m²`,
     capacity:
       hit.siblings.length > 0
-        ? `${group.map((room) => room.capacity).join(' 或 ')} 位大人`
-        : `${hit.room.capacity} 位大人＋最多 ${hit.room.coSleepers} 位不佔床孩童`,
-    category: hit.room.category === 'speciale' ? '尊榮客房＆套房' : '一般客房',
+        ? copy.capacityEither(group.map((room) => room.capacity).join(' / '))
+        : copy.capacityWithShare(hit.room.capacity, hit.room.coSleepers),
+    category: hit.room.category === 'speciale' ? copy.grades.speciale : copy.grades.standard,
     balcony: hit.balcony,
   };
 });
@@ -99,9 +112,9 @@ const connectingPairs = connecting
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">海港區房號索引</h2>
+        <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{copy.heading}</h2>
         <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-          收錄海港區 {hits.length} 間已知客房，分布在 {floors.length} 個樓層、{`${numberedTypes} 種房型`}。輸入拿到的房號，或按樓層與景觀往下查。
+          {copy.intro(hits.length, floors.length, numberedTypes)}
         </p>
       </div>
       <p
@@ -109,14 +122,14 @@ const connectingPairs = connecting
         data-index-count
         aria-live="polite"
       >
-        {hits.length} 間
+        {copy.roomCount(hits.length)}
       </p>
     </div>
 
     <div class="mt-6 rounded-xl border border-gold/30 bg-gold-soft/60 p-4 sm:p-5">
-      <p class="text-sm font-bold text-ink">這是編號順序索引，不是建築平面圖</p>
+      <p class="text-sm font-bold text-ink">{copy.caveatHeading}</p>
       <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
-        格子只按房號由小到大排列；同樣寬度不代表房間大小，格子間距也不代表實際距離。來源的位置圖足以核對房號、樓層與兩段走廊順序，卻沒有可用座標讓本站誠實重建比例，因此不畫一張看似精確的示意圖。
+        {copy.caveat}
       </p>
     </div>
 
@@ -124,7 +137,7 @@ const connectingPairs = connecting
       <div class="space-y-5">
         <form class="rounded-xl border border-line bg-paper-deep/35 p-4" data-room-lookup>
           <label for="miracosta-room-number" class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">
-            查 4 位房號
+            {copy.lookupLabel}
           </label>
           <div class="mt-2 flex gap-2">
             <input
@@ -135,23 +148,23 @@ const connectingPairs = connecting
               pattern="[0-9]{4}"
               maxlength="4"
               autocomplete="off"
-              placeholder="例如 5353"
+              placeholder={copy.lookupPlaceholder}
               class="min-w-0 flex-1 rounded-lg border border-line bg-card px-3.5 py-2.5 text-sm text-ink tabular-nums placeholder:text-ink-faint focus-visible:outline-brand"
             />
             <button
               type="submit"
               class="shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
             >
-              找房間
+              {copy.lookupSubmit}
             </button>
           </div>
           <p class="mt-2 min-h-5 text-xs leading-relaxed text-ink-faint" data-lookup-status aria-live="polite">
-            第一碼是樓層；本站只收錄來源逐間列出的海港區房號。
+            {copy.lookupHint}
           </p>
         </form>
 
         <fieldset>
-          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">樓層</legend>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{copy.floors}</legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
               ['all', ...floors].map((floor, index) => (
@@ -164,7 +177,7 @@ const connectingPairs = connecting
                     class="peer sr-only"
                   />
                   <span class="block rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft tabular-nums transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand hover:bg-paper-deep">
-                    {floor === 'all' ? '全部' : `${floor}F`}
+                    {floor === 'all' ? copy.all : `${floor}F`}
                   </span>
                 </label>
               ))
@@ -173,10 +186,10 @@ const connectingPairs = connecting
         </fieldset>
 
         <fieldset>
-          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">景觀</legend>
+          <legend class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase">{copy.views}</legend>
           <div class="mt-2.5 flex flex-wrap gap-2">
             {
-              [{ key: 'all', label: '全部' }, ...indexedViews].map((view, index) => (
+              [{ key: 'all', label: copy.all }, ...indexedViews.map((view) => ({ key: view.key, label: viewLabel('dhm', locale, view.key) }))].map((view, index) => (
                 <label class="cursor-pointer">
                   <input
                     type="radio"
@@ -197,33 +210,33 @@ const connectingPairs = connecting
 
       <aside class="rounded-xl border border-line bg-paper-deep/40 p-5" data-index-detail>
         <p class="text-2xs font-bold tracking-[0.15em] text-ink-faint uppercase" data-detail-kicker>
-          房號怎麼讀
+          {copy.readHeading}
         </p>
         <h3 class="mt-2 font-serif text-lg leading-snug font-bold text-ink" data-detail-name>
-          第一碼樓層，後三碼位置
+          {copy.readTitle}
         </h3>
         <p class="mt-2 text-[0.8125rem] leading-relaxed text-ink-soft" data-detail-summary>
-          例如 5353 是 5 樓、位置 353。這份調查列出的房號全部是奇數，它沒有說明偶數房號屬於哪裡，所以偶數不在這份索引內。
+          {copy.readBody}
         </p>
         <dl class="mt-4 hidden space-y-2.5 border-t border-line pt-4 text-[0.8125rem]" data-detail-facts>
           <div class="flex justify-between gap-3">
-            <dt class="shrink-0 text-ink-faint">景觀</dt>
+            <dt class="shrink-0 text-ink-faint">{copy.fields.view}</dt>
             <dd class="text-right font-bold text-ink" data-detail-view></dd>
           </div>
           <div class="flex justify-between gap-3">
-            <dt class="shrink-0 text-ink-faint">區段</dt>
+            <dt class="shrink-0 text-ink-faint">{copy.fields.block}</dt>
             <dd class="text-right font-bold text-ink" data-detail-block></dd>
           </div>
           <div class="flex justify-between gap-3">
-            <dt class="shrink-0 text-ink-faint">面積</dt>
+            <dt class="shrink-0 text-ink-faint">{copy.fields.area}</dt>
             <dd class="text-right font-bold text-ink" data-detail-size></dd>
           </div>
           <div class="flex justify-between gap-3">
-            <dt class="shrink-0 text-ink-faint">定員</dt>
+            <dt class="shrink-0 text-ink-faint">{copy.fields.capacity}</dt>
             <dd class="text-right font-bold text-ink" data-detail-capacity></dd>
           </div>
           <div class="flex justify-between gap-3">
-            <dt class="shrink-0 text-ink-faint">等級</dt>
+            <dt class="shrink-0 text-ink-faint">{copy.fields.grade}</dt>
             <dd class="text-right font-bold text-ink" data-detail-category></dd>
           </div>
         </dl>
@@ -235,9 +248,9 @@ const connectingPairs = connecting
         floors.map((floor) => (
           <section data-floor-group={floor}>
             <div class="flex items-baseline gap-3">
-              <h3 class="font-serif text-lg font-bold text-ink">{floor} 樓</h3>
+              <h3 class="font-serif text-lg font-bold text-ink">{copy.floorLabel(floor)}</h3>
               <span class="text-xs text-ink-faint" data-floor-count>
-                {hits.filter((hit) => hit.floor === floor).length} 間
+                {copy.roomCount(hits.filter((hit) => hit.floor === floor).length)}
               </span>
             </div>
             <div class="mt-3 grid gap-3 xl:grid-cols-2">
@@ -247,8 +260,10 @@ const connectingPairs = connecting
                 return (
                   <div class="rounded-xl border border-line bg-paper-deep/25 p-4" data-number-block>
                     <div>
-                      <p class="text-sm font-bold text-ink">{block.label}</p>
-                      <p class="mt-0.5 text-2xs leading-relaxed text-ink-faint">{block.summary}</p>
+                      <p class="text-sm font-bold text-ink">{blockLabel(block)}</p>
+                      {locale === 'zh-hant' && (
+                        <p class="mt-0.5 text-2xs leading-relaxed text-ink-faint">{block.summary}</p>
+                      )}
                     </div>
                     <ul class="mt-3 flex flex-wrap gap-1.5">
                       {entries.map((hit) => (
@@ -265,7 +280,7 @@ const connectingPairs = connecting
                               viewTone[hit.room.view] ?? 'border-line bg-card text-ink',
                               hit.room.category === 'speciale' && 'ring-1 ring-gold/50',
                             ]}
-                            aria-label={`${hit.number}，${hit.label}${hit.balcony ? '，可走上戶外陽台' : ''}`}
+                            aria-label={`${hit.number} ${hit.label}`}
                             title={hit.label}
                           >
                             {hit.number}
@@ -289,24 +304,26 @@ const connectingPairs = connecting
     </div>
 
     <section class="mt-8 rounded-xl border border-line bg-paper-deep/25 p-5 sm:p-6">
-      <h3 class="font-serif text-base font-bold text-ink">可以連通的房型組合</h3>
+      <h3 class="font-serif text-base font-bold text-ink">{copy.connectingHeading}</h3>
       <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
-        同一份調查列出海港區 {`${connectingPairs.length} 組`}能打通成連通房的分類。這是分類層級的清單，不是特定房號；連通房也不是訂房選項——必須<strong
-          class="font-bold text-ink">同時訂下兩種房型</strong
-        >，再打電話向飯店提出希望，而且仍然不保證安排得到。
+        {copy.connectingIntro(connectingPairs.length)}<strong class="font-bold text-ink"
+          >{copy.connectingEmphasis}</strong
+        >{copy.connectingTail}
       </p>
       <ul class="mt-4 space-y-2.5">
         {
           connectingPairs.map((pair) => (
             <li class="rounded-lg border border-line-soft bg-card px-4 py-3">
               <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-ink">
-                <span class="font-medium">{pair.rooms[0]!.name}</span>
+                <span class="font-medium">{roomName(pair.rooms[0]!, 'dhm', locale)}</span>
                 <span class="text-ink-faint" aria-hidden="true">
                   ●―●
                 </span>
-                <span class="font-medium">{pair.rooms[1]!.name}</span>
+                <span class="font-medium">{roomName(pair.rooms[1]!, 'dhm', locale)}</span>
               </p>
-              {pair.note && <p class="mt-1.5 text-2xs leading-relaxed text-ink-faint">{pair.note}</p>}
+              {locale === 'zh-hant' && pair.note && (
+                <p class="mt-1.5 text-2xs leading-relaxed text-ink-faint">{pair.note}</p>
+              )}
             </li>
           ))
         }
@@ -314,21 +331,21 @@ const connectingPairs = connecting
     </section>
 
     <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-line-soft pt-5 text-xs text-ink-faint">
-      <span><span class="mr-1.5 inline-block h-2 w-2 rounded-full bg-gold"></span>可走到戶外陽台</span>
-      <span>金色外框＝尊榮客房或套房</span>
+      <span><span class="mr-1.5 inline-block h-2 w-2 rounded-full bg-gold"></span>{copy.balconyLegend}</span>
+      <span>{copy.specialeLegend}</span>
       <a
         href={sourceUrl}
         rel="noopener nofollow"
         target="_blank"
         class="ml-auto text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
       >
-        房號主要來源：dhoteloo
+        {copy.sourceLabel}
       </a>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload }}>
+<script is:inline define:vars={{ payload, copy: { hint: copy.lookupHint, incomplete: copy.lookupIncomplete, missing: copy.lookupMissing, ambiguous: copy.detail.ambiguous, balcony: copy.detail.balcony, plain: copy.detail.plain, found: copy.lookupFound('{number}', '{name}'), floorRoom: copy.detail.floorRoom(0, '{number}'), roomCount: copy.roomCount(0) } }}>
   (() => {
     const root = document.querySelector('[data-miracosta-index]');
     if (!root) return;
@@ -372,7 +389,7 @@ const connectingPairs = connecting
         ).length;
         group.hidden = shown === 0;
         const tally = group.querySelector('[data-floor-count]');
-        if (tally) tally.textContent = `${shown} 間`;
+        if (tally) tally.textContent = copy.roomCount.replace('0', String(shown));
         group.querySelectorAll('[data-number-block]').forEach((block) => {
           block.hidden =
             Array.from(block.querySelectorAll('[data-index-room]')).filter((card) => !card.hidden)
@@ -380,7 +397,7 @@ const connectingPairs = connecting
         });
       });
 
-      if (count) count.textContent = `${visible} 間`;
+      if (count) count.textContent = copy.roomCount.replace('0', String(visible));
     }
 
     function selectRoom(number) {
@@ -397,15 +414,14 @@ const connectingPairs = connecting
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
 
-      text('[data-detail-kicker]', `${room.floor} 樓・房號 ${room.number}`);
+      text(
+        '[data-detail-kicker]',
+        copy.floorRoom.replace('0', String(room.floor)).replace('{number}', room.number),
+      );
       text('[data-detail-name]', room.roomName);
       text(
         '[data-detail-summary]',
-        room.ambiguous
-          ? '來源按景觀分級列出這批房號，官方現在按定員分成兩種版本，因此能確定房型格局與景觀，但無法確定這一間現在賣哪個定員版本。'
-          : room.balcony
-            ? '這間可以走到戶外陽台。陽台能否舒服使用仍受風、雨與氣溫影響。'
-            : '這個號碼來自海港區的逐間調查；官方不接受指定房號，索引適合拿到房卡後判讀。',
+        room.ambiguous ? copy.ambiguous : room.balcony ? copy.balcony : copy.plain,
       );
       text('[data-detail-view]', room.view);
       text('[data-detail-block]', room.block);
@@ -436,10 +452,7 @@ const connectingPairs = connecting
 
         if (!room) {
           if (status) {
-            status.textContent =
-              number.length === 4
-                ? '這份索引找不到這個號碼。它可能在托斯卡納／威尼斯區，或屬於來源沒有逐間列號的景隅景觀。'
-                : '請輸入完整 4 位房號。';
+            status.textContent = number.length === 4 ? copy.missing : copy.incomplete;
           }
           return;
         }
@@ -450,7 +463,8 @@ const connectingPairs = connecting
         if (viewInput) viewInput.checked = true;
         applyFilters();
         selectRoom(number);
-        if (status) status.textContent = `找到 ${number}：${room.roomName}`;
+        if (status)
+          status.textContent = copy.found.replace('{number}', number).replace('{name}', room.roomName);
         const button = root.querySelector(`[data-room-number="${number}"]`);
         if (button) button.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
