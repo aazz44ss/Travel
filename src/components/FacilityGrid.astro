@@ -3,9 +3,11 @@ import type { Facility } from '~/data/hotel';
 
 interface Props {
   facilities: Facility[];
+  /** Badge shown on facilities only guests can reach. */
+  guestOnlyLabel: string;
 }
 
-const { facilities } = Astro.props;
+const { facilities, guestOnlyLabel } = Astro.props;
 ---
 
 <div class="not-prose my-8 grid gap-4 sm:grid-cols-2">
@@ -16,7 +18,7 @@ const { facilities } = Astro.props;
           <h4 class="font-serif text-base font-bold text-ink">{facility.name}</h4>
           {facility.guestOnly && (
             <span class="rounded-full bg-gold px-2 py-0.5 text-2xs font-bold text-white">
-              住客限定
+              {guestOnlyLabel}
             </span>
           )}
         </div>
