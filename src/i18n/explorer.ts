@@ -75,11 +75,6 @@ export interface ExplorerCopy {
     intro: (rooms: number, harbour: number) => string;
     floors: string;
     floorLabel: (floor: number) => string;
-    lookupLabel: string;
-    lookupPlaceholder: string;
-    lookupSubmit: string;
-    lookupIncomplete: string;
-    lookupMissing: string;
     tapHint: string;
     readTitle: string;
     readBody: string;
@@ -180,11 +175,6 @@ const zhHant: ExplorerCopy = {
       `${rooms} 間客房畫在 2 到 5 樓的平面上，其中 ${harbour} 間的窗戶朝地中海港灣那一側。點任一間房，看它看得到什麼、看不看得到水上表演。`,
     floors: '樓層',
     floorLabel: (floor) => `${floor} 樓`,
-    lookupLabel: '查房號',
-    lookupPlaceholder: '例如 5353',
-    lookupSubmit: '找房間',
-    lookupIncomplete: '請輸入完整 4 位房號。',
-    lookupMissing: '這張圖上找不到這個號碼。請確認第一碼是 2 到 5 的樓層。',
     tapHint: '點圖上任一間房',
     readTitle: '第一碼樓層，後三碼位置',
     readBody:
@@ -301,11 +291,6 @@ const ja: ExplorerCopy = {
       `2〜5 階の平面に ${rooms} 室を配置しています。うち ${harbour} 室はメディテレーニアンハーバー側。どの部屋をタップしても、窓の外と水上ショーが見えるかが分かります。`,
     floors: '階',
     floorLabel: (floor) => `${floor} 階`,
-    lookupLabel: '部屋番号を調べる',
-    lookupPlaceholder: '例：5353',
-    lookupSubmit: '調べる',
-    lookupIncomplete: '4 桁の部屋番号を入力してください。',
-    lookupMissing: 'この図に該当がありません。1 桁目が 2〜5 の階かご確認ください。',
     tapHint: '図の客室をタップ',
     readTitle: '1 桁目が階、下 3 桁が位置',
     readBody:
@@ -425,11 +410,6 @@ const en: ExplorerCopy = {
       `${rooms} rooms drawn on the plans of floors 2 to 5, ${harbour} of them with windows on the Mediterranean Harbor side. Tap any room to see what it looks at and whether a water show is visible from it.`,
     floors: 'Floor',
     floorLabel: (floor) => `Floor ${floor}`,
-    lookupLabel: 'Look up a room number',
-    lookupPlaceholder: 'e.g. 5353',
-    lookupSubmit: 'Find it',
-    lookupIncomplete: 'Enter all four digits.',
-    lookupMissing: 'Not on this plan. Check that the first digit is a floor from 2 to 5.',
     tapHint: 'Tap a room on the plan',
     readTitle: 'First digit the floor, last three the position',
     readBody:
