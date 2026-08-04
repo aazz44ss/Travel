@@ -4,6 +4,7 @@ import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import ElevationMap from '~/components/ElevationMap.astro';
+import SightlineMap from '~/components/SightlineMap.astro';
 import RateTable from '~/components/RateTable.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
 import BedTable from '~/components/BedTable.astro';
@@ -278,7 +279,10 @@ const schema = [
     </section>
 
     <section class="mt-20">
-      <ElevationMap locale={locale} />
+      <SightlineMap locale={locale} />
+      <div class="mt-14">
+        <ElevationMap locale={locale} />
+      </div>
     </section>
 
     <section class="mt-20">

@@ -1,0 +1,228 @@
+---
+import { FAN_DEGREES, FOOTPRINT, LANDMARKS, SOURCE } from '~/data/fsh-sightlines';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+
+/**
+ * The hotel's outline with a ray to each thing its windows can see.
+ *
+ * The fan is the point: the landmarks span 73 degrees as seen from the hotel, so
+ * no single window holds all of them, and which end of the fan a room faces is
+ * what the view grades are really selling.
+ */
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+const NAMES: Record<Locale, Record<string, string>> = {
+  'zh-hant': {
+    アナとエルサのフローズンジャーニー: '安娜與艾莎的冰雪之旅',
+    アレンデール城: '艾倫戴爾城堡',
+    ラプンツェルのランタンフェスティバル: '樂佩公主天燈盛會',
+    ピーターパンのネバーランドアドベンチャー: '小飛俠夢幻島歷險記',
+    プロメテウス火山: '普羅米修斯火山',
+  },
+  ja: {
+    アナとエルサのフローズンジャーニー: 'アナとエルサのフローズンジャーニー',
+    アレンデール城: 'アレンデール城',
+    ラプンツェルのランタンフェスティバル: 'ラプンツェルのランタンフェスティバル',
+    ピーターパンのネバーランドアドベンチャー: 'ピーターパンのネバーランドアドベンチャー',
+    プロメテウス火山: 'プロメテウス火山',
+  },
+  en: {
+    アナとエルサのフローズンジャーニー: "Anna and Elsa's Frozen Journey",
+    アレンデール城: 'Arendelle Castle',
+    ラプンツェルのランタンフェスティバル: "Rapunzel's Lantern Festival",
+    ピーターパンのネバーランドアドベンチャー: "Peter Pan's Never Land Adventure",
+    プロメテウス火山: 'Mount Prometheus',
+  },
+};
+
+const COPY: Record<
+  Locale,
+  {
+    heading: string;
+    intro: (fan: number) => string;
+    hotel: string;
+    north: string;
+    parkView: string;
+    offFrame: string;
+    sep: string;
+    caption: string;
+  }
+> = {
+  'zh-hant': {
+    heading: '從飯店看出去，這些東西各在哪個方向',
+    intro: (fan) =>
+      `樂園景觀的正面是普羅米修斯火山，而艾倫戴爾城堡在它左邊 ${fan} 度外——一扇窗裝不下兩者，這就是為什麼訂了樂園景觀看不到城堡。`,
+    hotel: '飯店',
+    north: '北',
+    parkView: '樂園景觀的正面',
+    offFrame: '在圖外',
+    sep: '：',
+    caption: '建築輪廓與各地標位置取自 OpenStreetMap，方位與距離由座標算出。',
+  },
+  ja: {
+    heading: 'ホテルから見て、それぞれが何度の方向にあるか',
+    intro: (fan) =>
+      `パークビューの正面はプロメテウス火山で、アレンデール城はそこから左に ${fan} 度。1 枚の窓に両方は収まりません。パークビューを取っても城が見えないのはこのためです。`,
+    hotel: 'ホテル',
+    north: '北',
+    parkView: 'パークビューの正面',
+    offFrame: '図の外',
+    sep: '：',
+    caption: '建物の輪郭と各地点の位置は OpenStreetMap から。方位と距離は座標から算出。',
+  },
+  en: {
+    heading: 'What lies in which direction from the hotel',
+    intro: (fan) =>
+      `A Park View room faces Mount Prometheus, and Arendelle Castle sits ${fan} degrees round to its left. One window cannot hold both, which is why booking Park View does not get you the castle.`,
+    hotel: 'Hotel',
+    north: 'N',
+    parkView: 'What Park View faces',
+    offFrame: 'off the frame',
+    sep: ': ',
+    caption:
+      'Building outline and landmark positions from OpenStreetMap; bearings and distances derived from the coordinates.',
+  },
+};
+
+const c = COPY[locale];
+
+/** Metres about the hotel centroid. Wide enough for the near landmarks. */
+const VIEW = { x0: -160, y0: -200, x1: 260, y1: 150 };
+const W = VIEW.x1 - VIEW.x0;
+const H = VIEW.y1 - VIEW.y0;
+
+const path = `M ${FOOTPRINT.map(([x, y]) => `${x} ${y}`).join(' L ')} Z`;
+
+/** Rays are clipped to the frame so a distant landmark still shows its direction. */
+function clip(x: number, y: number) {
+  const k = Math.min(
+    x > 0 ? VIEW.x1 / x : x < 0 ? VIEW.x0 / x : Infinity,
+    y > 0 ? VIEW.y1 / y : y < 0 ? VIEW.y0 / y : Infinity,
+    1,
+  );
+  return { x: x * k * 0.94, y: y * k * 0.94, clipped: k < 1 };
+}
+
+/**
+ * Names go in a legend rather than beside the ray tips. Three languages of very
+ * different length cannot all be laid out inside the frame without colliding, and
+ * a number on the tip reads the same in every one.
+ */
+const rays = LANDMARKS.map((landmark, i) => ({
+  ...landmark,
+  ...clip(landmark.x, landmark.y),
+  index: i + 1,
+  name: NAMES[locale][landmark.key] ?? landmark.key,
+  isVolcano: landmark.key === 'プロメテウス火山',
+}));
+---
+
+<figure id="sightlines" class="not-prose my-10 scroll-mt-32">
+  <figcaption class="mb-4">
+    <h3 class="font-serif text-lg font-bold text-ink">{c.heading}</h3>
+    <p class="mt-2 max-w-3xl text-[0.875rem] leading-[1.85] text-ink-soft">
+      {c.intro(FAN_DEGREES)}
+    </p>
+  </figcaption>
+
+  <div class="overflow-hidden rounded-2xl border border-line bg-paper-deep/40 p-3 sm:p-5">
+    <svg
+      viewBox={`${VIEW.x0} ${VIEW.y0} ${W} ${H}`}
+      class="block h-auto w-full"
+      role="img"
+      aria-label={c.heading}
+    >
+      <defs>
+        <marker
+          id="sight-tip"
+          viewBox="0 0 8 8"
+          refX="6"
+          refY="4"
+          markerWidth="5"
+          markerHeight="5"
+          orient="auto"
+        >
+          <path d="M0 0 L8 4 L0 8 z" fill="var(--color-gold)"></path>
+        </marker>
+      </defs>
+
+      {
+        rays.map((ray) => (
+          <g>
+            <line
+              x1="0"
+              y1="0"
+              x2={ray.x}
+              y2={ray.y}
+              stroke="var(--color-gold)"
+              stroke-width={ray.isVolcano ? 2.2 : 1.5}
+              stroke-opacity={ray.isVolcano ? 1 : 0.5}
+              marker-end="url(#sight-tip)"
+            />
+            <circle cx={ray.x} cy={ray.y} r="11" fill="var(--color-gold)" />
+            <text
+              x={ray.x}
+              y={ray.y + 4}
+              text-anchor="middle"
+              font-size="13"
+              font-weight="700"
+              fill="#fff"
+            >
+              {ray.index}
+            </text>
+          </g>
+        ))
+      }
+
+      <path d={path} fill="var(--color-card)" stroke="var(--color-brand-deep)" stroke-width="2" />
+
+      <circle cx="0" cy="0" r="5" fill="var(--color-brand-deep)" />
+      <text x="-10" y="4" text-anchor="end" font-size="13" class="fill-brand-deep font-bold">
+        {c.hotel}
+      </text>
+
+      <g transform={`translate(${VIEW.x0 + 26} ${VIEW.y0 + 42})`}>
+        <line x1="0" y1="16" x2="0" y2="-14" stroke="var(--color-ink-soft)" stroke-width="1.6" />
+        <path d="M0 -20 L5 -10 L-5 -10 z" fill="var(--color-ink-soft)" />
+        <text x="0" y="31" text-anchor="middle" font-size="12" class="fill-ink-soft">{c.north}</text>
+      </g>
+    </svg>
+  </div>
+
+  <ol class="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+    {
+      rays.map((ray) => (
+        <li class="flex items-baseline gap-2.5 text-[0.8125rem]">
+          <span
+            class:list={[
+              'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-bold text-white',
+              ray.isVolcano ? 'bg-gold' : 'bg-gold/60',
+            ]}
+          >
+            {ray.index}
+          </span>
+          <span class="text-ink">{ray.name}</span>
+          <span class="ml-auto shrink-0 tabular-nums text-ink-faint">
+            {ray.bearing}° · {ray.distance} m{ray.clipped ? `${c.sep}${c.offFrame}` : ''}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="mt-3 flex flex-wrap items-baseline gap-x-2 text-xs leading-relaxed text-ink-faint">
+    <span class="font-medium text-gold">{c.parkView}{c.sep}{rays.find((r) => r.isVolcano)!.name}</span>
+    <span>{c.caption}</span>
+    <a
+      href={SOURCE.url}
+      rel="noopener nofollow"
+      target="_blank"
+      class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+      >{SOURCE.licence}</a
+    >
+  </p>
+</figure>
