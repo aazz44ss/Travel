@@ -20,20 +20,22 @@
  * part of them — stay the width of a room instead of being stretched to fill the
  * wing.
  *
- * Where those corridors run is measured rather than drawn. The plans' own angles are
- * not used: they are schematic, and comparing them against the surveyed outline in
- * `./dhm-site` shows the drawing standing the north-west wing some 30 degrees
- * steeper than the building does. What is used instead is the plans' bay counts,
- * shared out along the measured frontage — which is the check on both, because the
- * count and the metres agree to within a tenth.
+ * Where those corridors run is measured rather than drawn. The plans' lengths and
+ * angles are not used, because they are schematic: on one sheet the south spine's
+ * rooms are drawn half again as wide as the north spine's, and no wall of the
+ * building is anything like that. What the plans are trusted for is the count — how
+ * many bays a corridor has and which of them it turns at — and each corridor is then
+ * stood on the wall of the surveyed outline in `./dhm-site` that runs where the plans
+ * put it. The two agree to within a tenth on three walls of the four, which is the
+ * check on both.
  *
  * What is still not faithful: two rooms of the same frontage and different floor
  * area, a 37 m² Superior and a 60 m² Harbor Room, are drawn the same size, and the
  * inland row's own back wall is nowhere measured. So read a cell as "this
- * position, this orientation", and read its depth as a standard room's. The plans
- * also put the north-west wing's turn three bays further along the frontage than the
- * outline does, and nothing available here settles which is right; the two rooms
- * either side of that turn are the worst-drawn on the figure.
+ * position, this orientation", and read its depth as a standard room's. The
+ * north-west wing's rooms also come out an eighth wider than the rest, and nothing
+ * available here settles whether they are wider or the plans miscount the wing by a
+ * room.
  *
  * Two things the plans show that the article's text does not:
  *
@@ -594,10 +596,11 @@ export function planRooms(): { number: string; facing: Facing; floor: number; ru
  *
  * Dividing the wall evenly would leave a bend of it in the middle of a room, and a
  * room that turns a bend loses depth × tan(half the turn) off its back on each side
- * — 3.3 m of a 3.9 m room at the north-west wing's 41 degrees, which turns it
- * inside out. So each bend is moved onto the nearest slot boundary, never further
- * than half a room, and the two rooms that then meet at it are widened by what
- * their backs lose to it, out of the rooms between that bend and the next.
+ * — 3.4 m of a 4.1 m room where the north-west wing and the north spine turn 43
+ * degrees apart, which turns it inside out. So each bend is moved onto the nearest
+ * slot boundary, never further than half a room, and the two rooms that then meet at
+ * it are widened by what their backs lose to it, out of the rooms between that bend
+ * and the next.
  *
  * Both rows of a corridor are given the same bends at the same slot boundaries,
  * which is why the pins come in by wall vertex and not by distance: the row set back
@@ -667,6 +670,31 @@ function pinsOf(wall: readonly Point[], slots: number): Map<number, number> {
 }
 
 /**
+ * A polygon cut back to one side of a line, by the usual corner-by-corner walk.
+ *
+ * A cell that falls entirely on the wrong side would come back empty, which would be a
+ * cell with no shape rather than no cell; that cannot happen here — the fences are at
+ * the ends of a run and every cell has a slot of its own on it — so it is left alone
+ * instead, where the overlap check will find it.
+ */
+function clip(shape: readonly Point[], by: { at: Point; keep: Point }): Point[] {
+  const side = (p: Point): number =>
+    (p[0] - by.at[0]) * by.keep[0] + (p[1] - by.at[1]) * by.keep[1];
+  const out: Point[] = [];
+  for (let i = 0; i < shape.length; i += 1) {
+    const a = shape[i]!;
+    const b = shape[(i + 1) % shape.length]!;
+    const [da, db] = [side(a), side(b)];
+    if (da >= 0) out.push(a);
+    if (da >= 0 !== db >= 0) {
+      const t = da / (da - db);
+      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+    }
+  }
+  return out.length >= 3 ? out : [...shape];
+}
+
+/**
  * A polygon's centre of area, which is where its number goes.
  *
  * Averaging the corners instead puts the number outside the room wherever the room
@@ -697,8 +725,9 @@ function centroid(shape: readonly Point[]): Point {
  * A room that spans one of the wall's bends turns with it, as the plans draw the
  * rooms at the frontage's bends turning. Its back follows the mitred offset of the
  * wall rather than a straight line between the two ends, which is what keeps it a
- * room: on the 41-degree bend in the north-west wing the straight line crosses
- * itself and the room comes out as a bow tie over its neighbour.
+ * room: on the 43-degree corner between the north-west wing and the north spine the
+ * straight line crosses itself and the room comes out as a bow tie over its
+ * neighbour.
  */
 export function layout(
   wall: readonly Point[],
@@ -713,28 +742,61 @@ export function layout(
 ): { points: string; cx: number; cy: number; angle: number; width: number }[] {
   if (slots === 0) return [];
 
+  const last = wall.length - 1;
+  const bearing = (a: Point, b: Point): Point => {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+  };
   /**
-   * The wall with a stub of the neighbouring wing's wall on each end it shares.
+   * Which ends of the wall the neighbouring wing actually has to be reckoned with on.
    *
-   * Everything a room needs at a corner — where the row set back from the wall turns,
-   * and where two rooms divide the corner between them — is read off the wall as a
-   * whole. Adding the stub and then dropping it again is what lets a run's end be
-   * treated as a bend rather than as the end of the world, so the two wings that meet
-   * on a corner of the building mitre it identically and meet on the bisector.
+   * Only the ones where the wall turns towards the rooms, because those are the ones
+   * where the two wings would otherwise take the same corner twice. Where it turns
+   * away they leave a gap at the corner instead, and reckoning with it there would do
+   * harm: mitring the corner lengthens the row set back from the wall, and its slots,
+   * divided over a longer line, would walk out of step with the row opposite.
    */
-  const STUB = 8;
-  const guide: Point[] = [...wall];
-  const head = joint.before ? 1 : 0;
-  if (joint.before) {
-    const p = wall[0]!;
-    guide.unshift([p[0] - joint.before[0] * STUB, p[1] - joint.before[1] * STUB]);
+  const turnsIn = (u: Point, v: Point): boolean =>
+    (u[0] * v[1] - u[1] * v[0]) * (side === 'left' ? -1 : 1) > 0;
+  const before =
+    joint.before && turnsIn(joint.before, bearing(wall[0]!, wall[1]!)) ? joint.before : null;
+  const after =
+    joint.after && turnsIn(bearing(wall[last - 1]!, wall[last]!), joint.after) ? joint.after : null;
+
+  /**
+   * The bisector of a corner the wall shares with the next wing, as a line the wing's
+   * own rooms are kept behind.
+   *
+   * On the inside of such a corner the two wings' rooms cover the same wedge of it
+   * twice, and the wedge grows with depth: at 43 degrees it is 4 m across where the
+   * rooms' fronts are and 8 m at their backs, so leaving the corner slot empty on both
+   * sides — which the plans do — is not enough to clear it. Both wings stop at the
+   * bisector instead.
+   *
+   * The fence is only a fence. The slots are divided along the wall itself, before any
+   * of this, because they have to divide the same way for both rows of the corridor:
+   * moving a row's line in to the bisector would stretch it, and its rooms would walk
+   * out of step with the rooms opposite by most of a room.
+   */
+  const sign = side === 'left' ? -1 : 1;
+  const fences: { at: Point; keep: Point }[] = [];
+  const fence = (at: Point, into: Point, out: Point, along: Point): void => {
+    const normal = (u: Point): Point => [-u[1] * sign, u[0] * sign];
+    const [a, b] = [normal(into), normal(out)];
+    const len = Math.hypot(a[0] + b[0], a[1] + b[1]) || 1;
+    const bisector: Point = [(a[0] + b[0]) / len, (a[1] + b[1]) / len];
+    const keep: Point = [-bisector[1], bisector[0]];
+    const facing = keep[0] * along[0] + keep[1] * along[1] >= 0 ? 1 : -1;
+    fences.push({ at, keep: [keep[0] * facing, keep[1] * facing] });
+  };
+  if (before) fence(wall[0]!, before, bearing(wall[0]!, wall[1]!), bearing(wall[0]!, wall[1]!));
+  if (after) {
+    const u = bearing(wall[last - 1]!, wall[last]!);
+    fence(wall[last]!, u, after, [-u[0], -u[1]]);
   }
-  if (joint.after) {
-    const p = wall[wall.length - 1]!;
-    guide.push([p[0] + joint.after[0] * STUB, p[1] + joint.after[1] * STUB]);
-  }
-  const drawn = offsetLine(guide, side, behind);
-  const path = behind === 0 ? wall : drawn.slice(head, head + wall.length);
+
+  /** The row's own front: the wall itself, or the wall moved in, its ends square to it. */
+  const path = behind === 0 ? wall : offsetLine(wall, side, behind);
   const pins = pinsOf(wall, slots);
   const bounds = slotBounds(path, slots, pins, side, depth);
   /**
@@ -742,25 +804,20 @@ export function layout(
    *
    * A bend that turns towards the rooms eats depth × tan(half the turn) off the back
    * of the room on either side of it, and where that is most of the room — the
-   * north-west wing turns 41 degrees, and the plans put the row behind the corridor
-   * nineteen metres in from a wall that is turning — the room would come out inside
-   * out. So at a bend like that the rooms reach only as far as leaves them a back:
-   * they shallow towards the corner instead of folding through it.
+   * north-west wing meets the north spine at 43 degrees, and the plans put the row
+   * behind the corridor nineteen metres in from a wall that is turning — the room
+   * would come out inside out. So at a bend like that the rooms reach only as far as
+   * leaves them a back: they shallow towards the corner instead of folding through it.
    */
   const reach = new Map<number, number>();
-  const shallow = (vertex: number, room: number): void => {
-    const lost = lostAtBend(drawn, vertex, side, depth);
-    if (lost > 0) reach.set(vertex, Math.min(depth, (depth * room * 0.55) / lost));
-  };
   for (const [slot, vertex] of pins) {
-    shallow(vertex + head, Math.min(bounds[slot]! - bounds[slot - 1]!, bounds[slot + 1]! - bounds[slot]!));
+    const lost = lostAtBend(path, vertex, side, depth);
+    if (lost === 0) continue;
+    const room = Math.min(bounds[slot]! - bounds[slot - 1]!, bounds[slot + 1]! - bounds[slot]!);
+    reach.set(vertex, Math.min(depth, (depth * room * 0.55) / lost));
   }
-  /** A corner shared with the next wing shallows the same way the run's own bends do. */
-  if (joint.before) shallow(head, bounds[1]! - bounds[0]!);
-  if (joint.after) shallow(head + path.length - 1, bounds[slots]! - bounds[slots - 1]!);
-  const back = path.map((_, i) => offsetPoint(drawn, i + head, side, reach.get(i + head) ?? depth));
+  const back = path.map((_, i) => offsetPoint(path, i, side, reach.get(i) ?? depth));
   const arc = path.map((_, i) => lineLength(path.slice(0, i + 1)));
-  const sign = side === 'left' ? -1 : 1;
   const round = (n: number) => Math.round(n * 100) / 100;
   /** The wall's own point `depth` into the building, perpendicular to it there. */
   const inner = (p: Point, u: Point): Point => [
@@ -781,38 +838,32 @@ export function layout(
     }
     front.push(pointAt(path, to).at);
     /**
-     * The room's own edges, read off its ends rather than from the wall's arc
-     * length, so that a room beginning exactly at a corner squares up to the wall it
-     * is on and not to the one before it.
-     */
-    const heading = (p: Point, q: Point): Point => {
-      const len = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
-      return [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
-    };
-    /**
-     * Two rooms meeting at a corner of the wall share it along its bisector, not
-     * along a line square to either wall: square to both, on the inside of the turn,
-     * they would take the same 30 m² of the corner twice.
+     * Two rooms meeting at a bend of the wall share it along its bisector, not along a
+     * line square to either side of the bend: square to both, on the inside of the
+     * turn, they would take the same 30 m² of the corner twice.
      */
     const corner = (d: number): Point | null => {
       const i = arc.findIndex((v) => Math.abs(v - d) < 0.05);
-      if (i < 0) return null;
-      if (i === 0) return joint.before ? back[0]! : null;
-      if (i === path.length - 1) return joint.after ? back[i]! : null;
-      return back[i]!;
+      return i > 0 && i < path.length - 1 ? back[i]! : null;
     };
     const a = front[0]!;
     const b = front[front.length - 1]!;
+    /**
+     * A room's own end edges are square to the piece of wall it is on, read off its
+     * ends rather than from the wall's arc length, so that a room beginning exactly at
+     * a corner squares up to the wall it is on and not to the one before it.
+     */
     const shape: Point[] = [
       ...front,
-      corner(to) ?? inner(b, heading(front[front.length - 2]!, b)),
+      corner(to) ?? inner(b, bearing(front[front.length - 2]!, b)),
       ...rear.reverse(),
-      corner(from) ?? inner(a, heading(a, front[1]!)),
+      corner(from) ?? inner(a, bearing(a, front[1]!)),
     ];
-    const middle = centroid(shape);
+    const kept = fences.reduce(clip, shape);
+    const middle = centroid(kept);
     return {
       width: round(to - from),
-      points: shape.map(([x, y]) => `${round(x)},${round(y)}`).join(' '),
+      points: kept.map(([x, y]) => `${round(x)},${round(y)}`).join(' '),
       cx: round(middle[0]),
       cy: round(middle[1]),
       /** Kept upright: a run walked leftwards would otherwise read upside down. */
