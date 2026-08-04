@@ -105,27 +105,45 @@ const place = ([x, y]: readonly [number, number]): [number, number] => [
  * one matrix carries them across — the inverse of `place`, then metres to pixels.
  */
 const mpp = PHOTO.metresPerPixel;
+/**
+ * Absolute tile pixels run to about 60 million here, which is past the precision
+ * browsers keep for path coordinates — enough to make the whole figure vanish. So
+ * the window's own corner is the origin and everything is expressed relative to
+ * it, leaving numbers in the hundreds.
+ */
+const originX = PHOTO.originX + PHOTO.window.x0 / mpp;
+const originY = PHOTO.originY + PHOTO.window.y0 / mpp;
 const view = {
-  x: PHOTO.originX + PHOTO.window.x0 / mpp,
-  y: PHOTO.originY + PHOTO.window.y0 / mpp,
-  width: (PHOTO.window.x1 - PHOTO.window.x0) / mpp,
-  height: (PHOTO.window.y1 - PHOTO.window.y0) / mpp,
+  width: Math.round((PHOTO.window.x1 - PHOTO.window.x0) / mpp),
+  height: Math.round((PHOTO.window.y1 - PHOTO.window.y0) / mpp),
 };
+/**
+ * The photograph is a lazy layer of plain images under a transparent drawing, not
+ * pixels inside it: at this zoom it is 54 tiles, and a reader who never scrolls
+ * this far should not pay for them. Positions are percentages so the two layers
+ * stay locked together at any width.
+ */
 const tiles = [];
 for (let tx = PHOTO.tiles.x0; tx <= PHOTO.tiles.x1; tx += 1) {
   for (let ty = PHOTO.tiles.y0; ty <= PHOTO.tiles.y1; ty += 1) {
-    tiles.push({ href: PHOTO.url(tx, ty, PHOTO.zoom), x: tx * PHOTO.size, y: ty * PHOTO.size });
+    tiles.push({
+      href: PHOTO.url(tx, ty, PHOTO.zoom),
+      left: ((tx * PHOTO.size - originX) / view.width) * 100,
+      top: ((ty * PHOTO.size - originY) / view.height) * 100,
+    });
   }
 }
+/** Sizes are tuned on a 1000-unit-wide drawing; scaling keeps them constant on screen. */
+const ui = view.width / 1000;
 
 /** Plan units to photo pixels: undo `place`, then metres to pixels. */
 const planToPhoto = (() => {
   const k = 1 / (unitsPerMetre * mpp);
   const c = Math.cos(-turn) * k;
   const sn = Math.sin(-turn) * k;
-  /** Where the plan's anchor sits in pixels, so the two frames share that point. */
-  const ax = PHOTO.originX + mA[0] / mpp;
-  const ay = PHOTO.originY + mA[1] / mpp;
+  /** Where the plan's anchor sits in the window, so the two frames share it. */
+  const ax = PHOTO.originX + mA[0] / mpp - originX;
+  const ay = PHOTO.originY + mA[1] / mpp - originY;
   return {
     a: c,
     b: sn,
@@ -138,9 +156,9 @@ const planToPhoto = (() => {
 const matrix = `matrix(${planToPhoto.a} ${planToPhoto.b} ${planToPhoto.c} ${planToPhoto.d} ${planToPhoto.e} ${planToPhoto.f})`;
 
 const scaleBar = {
-  x: view.x + 30,
-  y: view.y + view.height - 26,
-  length: SITE_SCALE_BAR / mpp,
+  x: 30 * ui,
+  y: view.height - 26 * ui,
+  length: Math.round(SITE_SCALE_BAR / mpp),
 };
 
 /**
@@ -179,19 +197,16 @@ const cells = PLAN_RUNS.flatMap((run) =>
         const number = spans[i]!.number;
         const sold = typeOf.get(number);
         const grade = seenFrom(number, run[side].facing);
-        /** A number needs about 20 units; narrow cells get it written across. */
-        const across = cell.width < 22;
-        /** Whatever the run's direction, the label has to end up upright. */
-        const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
         return {
           number,
-          across,
-          labelAngle: upright(across ? cell.angle + 90 : cell.angle),
           floor,
           run: run.key,
           facing: run[side].facing,
           grade,
           ...cell,
+          /** Centre in photo pixels, for a callout drawn at readable size. */
+          vx: planToPhoto.a * cell.cx + planToPhoto.c * cell.cy + planToPhoto.e,
+          vy: planToPhoto.b * cell.cx + planToPhoto.d * cell.cy + planToPhoto.f,
           roomId: sold?.room.id ?? null,
           balcony: sold?.balcony ?? false,
           ambiguous: sold?.ambiguous ?? false,
@@ -249,6 +264,8 @@ const payload = Object.fromEntries(
       balcony: cell.balcony,
       ambiguous: cell.ambiguous,
       fromPlan: !cell.roomId && PARTIAL_VIEW_FROM_PLAN.includes(cell.number),
+      vx: Math.round(cell.vx * 10) / 10,
+      vy: Math.round(cell.vy * 10) / 10,
     },
   ]),
 );
@@ -332,100 +349,96 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
 
     <div class="mt-5 space-y-5">
       <div class="table-scroll rounded-xl border border-line bg-[#f7f4ee] p-2">
-        <svg
-          viewBox={`${view.x} ${view.y} ${view.width} ${view.height}`}
-          class="h-auto w-full min-w-[46rem]"
-          role="img"
-          aria-labelledby="dhm-plan-title dhm-plan-desc"
+        <div
+          class="relative min-w-[46rem] overflow-hidden bg-[#25303a]"
+          style={`aspect-ratio:${view.width}/${view.height}`}
         >
-          <title id="dhm-plan-title">{copy.svgTitle}</title>
-          <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
-
           {
             tiles.map((tile) => (
-              <image
-                href={tile.href}
-                x={tile.x}
-                y={tile.y}
-                width={PHOTO.size}
-                height={PHOTO.size}
-                preserveAspectRatio="none"
+              <img
+                src={tile.href}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+                class="absolute select-none"
+                style={`left:${tile.left}%;top:${tile.top}%;width:${(PHOTO.size / view.width) * 100}%;height:${(PHOTO.size / view.height) * 100}%`}
               />
             ))
           }
+          <svg
+            viewBox={`0 0 ${view.width} ${view.height}`}
+            preserveAspectRatio="none"
+            class="absolute inset-0 h-full w-full"
+            role="img"
+            aria-labelledby="dhm-plan-title dhm-plan-desc"
+          >
+            <title id="dhm-plan-title">{copy.svgTitle}</title>
+            <desc id="dhm-plan-desc">{copy.svgDesc}</desc>
 
-          <g>
-            <line
-              x1={scaleBar.x}
-              y1={scaleBar.y}
-              x2={scaleBar.x + scaleBar.length}
-              y2={scaleBar.y}
-              stroke="#4f4739"
-              stroke-width="2.5"
-            />
-            <line
-              x1={scaleBar.x}
-              y1={scaleBar.y - 6}
-              x2={scaleBar.x}
-              y2={scaleBar.y + 6}
-              stroke="#4f4739"
-              stroke-width="2.5"
-            />
-            <line
-              x1={scaleBar.x + scaleBar.length}
-              y1={scaleBar.y - 6}
-              x2={scaleBar.x + scaleBar.length}
-              y2={scaleBar.y + 6}
-              stroke="#4f4739"
-              stroke-width="2.5"
-            />
+            <g stroke="#f4efe4" stroke-width={2.5 * ui} stroke-linecap="round">
+              <line x1={scaleBar.x} y1={scaleBar.y} x2={scaleBar.x + scaleBar.length} y2={scaleBar.y} />
+              <line x1={scaleBar.x} y1={scaleBar.y - 6 * ui} x2={scaleBar.x} y2={scaleBar.y + 6 * ui} />
+              <line
+                x1={scaleBar.x + scaleBar.length}
+                y1={scaleBar.y - 6 * ui}
+                x2={scaleBar.x + scaleBar.length}
+                y2={scaleBar.y + 6 * ui}
+              />
+            </g>
             <text
               x={scaleBar.x + scaleBar.length / 2}
-              y={scaleBar.y - 11}
-              font-size="15"
-              fill="#4f4739"
+              y={scaleBar.y - 11 * ui}
+              font-size={15 * ui}
+              font-weight="700"
+              fill="#f4efe4"
               text-anchor="middle"
+              style="paint-order:stroke"
+              stroke="#00000055"
+              stroke-width={3 * ui}
             >
               {siteCopy.scaleBar(SITE_SCALE_BAR)}
             </text>
-          </g>
 
-
-          <g transform={matrix}>
-          {
-            PLAN_FLOORS.map((floor) => (
-              <g
-                data-floor-layer={floor}
-                style={floor === PLAN_FLOORS[0] ? undefined : 'display:none'}
-              >
-                {byFloor[floor]!.map((cell) => (
-                  <g data-cell={`${cell.floor}:${cell.number}`} class="cursor-pointer">
-                    <polygon
-                      points={cell.points}
-                      fill={TONE[cell.grade]!.fill}
-                      stroke="#ffffff"
-                      stroke-width="1.2"
-                      data-shape
-                    />
-                    <text
-                      x={cell.cx}
-                      y={cell.cy + 3}
-                      text-anchor="middle"
-                      font-size={cell.across ? 7.5 : 8.5}
-                      font-weight="700"
-                      fill={TONE[cell.grade]!.text}
-                      transform={`rotate(${cell.labelAngle} ${cell.cx} ${cell.cy})`}
-                      pointer-events="none"
-                    >
-                      {cell.number}
-                    </text>
+            <g transform={matrix}>
+              {
+                PLAN_FLOORS.map((floor) => (
+                  <g
+                    data-floor-layer={floor}
+                    style={floor === PLAN_FLOORS[0] ? undefined : 'display:none'}
+                  >
+                    {byFloor[floor]!.map((cell) => (
+                      <g data-cell={`${cell.floor}:${cell.number}`} class="cursor-pointer">
+                        <polygon
+                          points={cell.points}
+                          fill={TONE[cell.grade]!.fill}
+                          fill-opacity="0.86"
+                          stroke="#ffffff"
+                          stroke-width="1.2"
+                          data-shape
+                        />
+                      </g>
+                    ))}
                   </g>
-                ))}
-              </g>
-            ))
-          }
-          </g>
-        </svg>
+                ))
+              }
+            </g>
+
+            <g data-plan-pin style="display:none" pointer-events="none">
+              <line data-pin-leader stroke="#15181d" stroke-width={1.6 * ui} />
+              <circle data-pin-dot r={4.5 * ui} fill="none" stroke="#15181d" stroke-width={2 * ui} />
+              <rect data-pin-box rx={5 * ui} height={24 * ui} fill="#15181d" />
+              <text
+                data-pin-text
+                font-size={15 * ui}
+                font-weight="700"
+                fill="#ffffff"
+                text-anchor="middle"
+                dominant-baseline="central"
+              />
+            </g>
+          </svg>
+        </div>
       </div>
 
       <div
@@ -458,7 +471,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
           target="_blank"
           class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
         >
-          出典：{PHOTO.credit}
+          {siteCopy.credit}{PHOTO.credit}
         </a>
       </p>
     </div>
@@ -510,6 +523,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
   is:inline
   define:vars={{
     payload,
+    ui,
     text: {
       floorLabel: copy.floorLabel(0),
       tapHint: copy.tapHint,
@@ -553,11 +567,38 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
       set('[data-plan-floor-label]', text.floorLabel.replace('0', String(current)));
     }
 
+    const pin = root.querySelector('[data-plan-pin]');
+
     function clearActive() {
       root.querySelectorAll('[data-cell] [data-shape]').forEach((shape) => {
         shape.setAttribute('stroke', '#ffffff');
         shape.setAttribute('stroke-width', '1.2');
       });
+      if (pin) pin.style.display = 'none';
+    }
+
+    /** A room is 18 px wide on the photo, so the number is called out instead. */
+    function drawPin(room) {
+      if (!pin) return;
+      const width = (22 + String(room.number).length * 10) * ui;
+      const up = room.vy > 180 * ui;
+      const y = up ? room.vy - 34 * ui : room.vy + 34 * ui;
+      pin.querySelector('[data-pin-dot]').setAttribute('cx', room.vx);
+      pin.querySelector('[data-pin-dot]').setAttribute('cy', room.vy);
+      const leader = pin.querySelector('[data-pin-leader]');
+      leader.setAttribute('x1', room.vx);
+      leader.setAttribute('y1', room.vy + (up ? -6 : 6) * ui);
+      leader.setAttribute('x2', room.vx);
+      leader.setAttribute('y2', up ? y + 12 * ui : y - 12 * ui);
+      const box = pin.querySelector('[data-pin-box]');
+      box.setAttribute('x', room.vx - width / 2);
+      box.setAttribute('y', y - 12 * ui);
+      box.setAttribute('width', width);
+      const label = pin.querySelector('[data-pin-text]');
+      label.setAttribute('x', room.vx);
+      label.setAttribute('y', y);
+      label.textContent = room.number;
+      pin.style.display = '';
     }
 
     function select(key) {
@@ -570,6 +611,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
         shape.setAttribute('stroke', '#15181d');
         shape.setAttribute('stroke-width', '2.6');
       }
+      drawPin(room);
 
       set('[data-plan-kicker]', `${room.floor}F · ${room.number}`);
       set('[data-plan-name]', room.name);
