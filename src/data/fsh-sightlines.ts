@@ -12,12 +12,37 @@
  * being used. Landmark positions are the centroids of their own OpenStreetMap
  * features, so bearing and distance are derived rather than estimated.
  *
- * There is no photograph under the drawing. The hotel opened in June 2024 and
- * this build cannot reach the aerial tile service the rest of the site credits,
- * so there is no way to confirm the imagery shows the finished building; an
- * outline that is known to be right is worth more than a photograph that might
- * be of a building site.
+ * The photograph under the drawing was ruled out once, on the grounds that this
+ * build could not reach the tile service and so could not confirm the imagery
+ * postdated the hotel's June 2024 opening. Both halves of that turned out to be
+ * wrong: the service answers, and its zoom 19 imagery shows the finished
+ * building, entrance canopy and all. The outline lands on that building to
+ * within half a metre, which is the check the drawing was waiting for.
  */
+
+/**
+ * Aerial photography under the bearing drawing, on the same Web Mercator grid
+ * the outline was checked against.
+ *
+ * Zoom 18 rather than the 19 the room plans use. This frame is 420 m across so
+ * that landmarks 200 m out still fit, and at that width zoom 19 would be 42
+ * tiles to serve about a thousand pixels of drawing. Zoom 18 covers it in 20 and
+ * is still a real capture, not an upscale of 17.
+ */
+export const PHOTO = {
+  zoom: 18,
+  /** Metres per pixel at the hotel's latitude. */
+  metresPerPixel: 0.48538,
+  /** Absolute pixel coordinates of the outline's origin in that grid. */
+  originX: 59629320.59,
+  originY: 26438008.19,
+  tiles: { x0: 232925, y0: 103271, x1: 232929, y1: 103274 },
+  size: 256,
+  url: (x: number, y: number, z: number) =>
+    `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+  credit: 'Esri, Vantor, Earthstar Geographics',
+  creditUrl: 'https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9',
+} as const;
 
 export interface Landmark {
   /** Official Japanese name, which is also the key into the locale dictionary. */

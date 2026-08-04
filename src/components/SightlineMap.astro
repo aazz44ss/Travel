@@ -1,5 +1,5 @@
 ---
-import { FAN_DEGREES, FOOTPRINT, LANDMARKS, SOURCE } from '~/data/fsh-sightlines';
+import { FAN_DEGREES, FOOTPRINT, LANDMARKS, PHOTO, SOURCE } from '~/data/fsh-sightlines';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 
 /**
@@ -50,6 +50,7 @@ const COPY: Record<
     offFrame: string;
     sep: string;
     caption: string;
+    credit: string;
   }
 > = {
   'zh-hant': {
@@ -62,6 +63,7 @@ const COPY: Record<
     offFrame: '在圖外',
     sep: '：',
     caption: '建築輪廓與各地標位置取自 OpenStreetMap，方位與距離由座標算出。',
+    credit: '底圖航照：',
   },
   ja: {
     heading: 'ホテルから見て、それぞれが何度の方向にあるか',
@@ -73,6 +75,7 @@ const COPY: Record<
     offFrame: '図の外',
     sep: '：',
     caption: '建物の輪郭と各地点の位置は OpenStreetMap から。方位と距離は座標から算出。',
+    credit: '航空写真の出典：',
   },
   en: {
     heading: 'What lies in which direction from the hotel',
@@ -85,6 +88,7 @@ const COPY: Record<
     sep: ': ',
     caption:
       'Building outline and landmark positions from OpenStreetMap; bearings and distances derived from the coordinates.',
+    credit: 'Imagery: ',
   },
 };
 
@@ -119,6 +123,26 @@ const rays = LANDMARKS.map((landmark, i) => ({
   name: NAMES[locale][landmark.key] ?? landmark.key,
   isVolcano: landmark.key === 'プロメテウス火山',
 }));
+
+/**
+ * The photograph is a lazy layer of plain images behind the drawing rather than
+ * pixels inside it, positioned in percentages so the two stay locked together at
+ * any width. The drawing is what carries the measurements, so a scrim goes over
+ * the photograph first: at full strength the car parks and the tree canopy have
+ * as much contrast as the rays do.
+ */
+const PHOTO_WASH = 0.34;
+const tiles = [];
+for (let tx = PHOTO.tiles.x0; tx <= PHOTO.tiles.x1; tx += 1) {
+  for (let ty = PHOTO.tiles.y0; ty <= PHOTO.tiles.y1; ty += 1) {
+    tiles.push({
+      href: PHOTO.url(tx, ty, PHOTO.zoom),
+      left: ((tx * PHOTO.size - (PHOTO.originX + VIEW.x0 / PHOTO.metresPerPixel)) / (W / PHOTO.metresPerPixel)) * 100,
+      top: ((ty * PHOTO.size - (PHOTO.originY + VIEW.y0 / PHOTO.metresPerPixel)) / (H / PHOTO.metresPerPixel)) * 100,
+      size: (PHOTO.size / (W / PHOTO.metresPerPixel)) * 100,
+    });
+  }
+}
 ---
 
 <figure id="sightlines" class="not-prose my-10 scroll-mt-32">
@@ -130,12 +154,29 @@ const rays = LANDMARKS.map((landmark, i) => ({
   </figcaption>
 
   <div class="overflow-hidden rounded-2xl border border-line bg-paper-deep/40 p-3 sm:p-5">
+    <div class="relative overflow-hidden rounded-lg bg-[#e9e3d7]" style={`aspect-ratio:${W}/${H}`}>
+      {
+        tiles.map((tile) => (
+          <img
+            src={tile.href}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            referrerpolicy="no-referrer"
+            class="absolute max-w-none"
+            style={`left:${tile.left}%;top:${tile.top}%;width:${tile.size}%`}
+          />
+        ))
+      }
     <svg
       viewBox={`${VIEW.x0} ${VIEW.y0} ${W} ${H}`}
-      class="block h-auto w-full"
+      class="relative block h-auto w-full"
       role="img"
       aria-label={c.heading}
     >
+      <rect x={VIEW.x0} y={VIEW.y0} width={W} height={H} fill="#f4efe4" opacity={PHOTO_WASH}></rect>
+
       <defs>
         <marker
           id="sight-tip"
@@ -178,7 +219,15 @@ const rays = LANDMARKS.map((landmark, i) => ({
         ))
       }
 
-      <path d={path} fill="var(--color-card)" stroke="var(--color-brand-deep)" stroke-width="2" />
+      {/* Translucent, so the outline reads as a shape without hiding the building
+          it was checked against. */}
+      <path
+        d={path}
+        fill="#ffffff"
+        fill-opacity="0.4"
+        stroke="var(--color-brand-deep)"
+        stroke-width="2"
+      />
 
       <circle cx="0" cy="0" r="5" fill="var(--color-brand-deep)" />
       <text x="-10" y="4" text-anchor="end" font-size="13" class="fill-brand-deep font-bold">
@@ -191,6 +240,7 @@ const rays = LANDMARKS.map((landmark, i) => ({
         <text x="0" y="31" text-anchor="middle" font-size="12" class="fill-ink-soft">{c.north}</text>
       </g>
     </svg>
+    </div>
   </div>
 
   <ol class="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
@@ -223,6 +273,13 @@ const rays = LANDMARKS.map((landmark, i) => ({
       target="_blank"
       class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
       >{SOURCE.licence}</a
+    >
+    <a
+      href={PHOTO.creditUrl}
+      rel="noopener nofollow"
+      target="_blank"
+      class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+      >{c.credit}{PHOTO.credit}</a
     >
   </p>
 </figure>
