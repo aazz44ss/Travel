@@ -25,8 +25,8 @@ export const PHOTO = {
   /**
    * The window drawn, in metres about that origin. Cropped to the rooms and the
    * water in front of them: at 480 m across, a 4.4 m room front was 7 px on a
-   * phone and could not carry its number. The rooms span 198 by 152 m, so 250 m
-   * across leaves 35 m of Mediterranean Harbor beyond the far end of the wing and
+   * phone and could not carry its number. The rooms span 212 by 158 m, so 250 m
+   * across leaves 21 m of Mediterranean Harbor beyond the far end of the wing and
    * makes a room front 17 px wide and 38 deep, which a four-digit number fits
    * across comfortably.
    */
