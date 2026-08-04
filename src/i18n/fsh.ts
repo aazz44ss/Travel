@@ -495,12 +495,25 @@ const FACT_LABELS: Record<Locale, string[]> = {
   ],
 };
 
-const FACT_TEXT: Record<Locale, { inPark: string; parkSub: string; floors: string; wings: (a: number, b: number) => string; rateSub: string; snapshot: string; datesOf: (open: number, total: number) => string }> = {
+const FACT_TEXT: Record<
+  Locale,
+  {
+    inPark: string;
+    parkSub: string;
+    floors: string;
+    wings: (a: number, b: number) => string;
+    bothWings: string;
+    rateSub: string;
+    snapshot: string;
+    datesOf: (open: number, total: number) => string;
+  }
+> = {
   'zh-hant': {
     inPark: '園區裡面',
     parkSub: '東京迪士尼海洋夢幻泉鄉，魔法清泉旁',
     floors: HOTEL.guestFloors,
     wings: (a, b) => `夢幻館 ${a} ＋ 豪華館 ${b}`,
+    bothWings: '兩館相同',
     rateSub: `每室每晚・2 位大人・${RATE_SOURCE.stayDateLabel}`,
     snapshot: `${AVAILABILITY_SOURCE.snapshotLabel}的快照`,
     datesOf: (open, total) => `${total} 天裡 ${open} 天`,
@@ -510,6 +523,7 @@ const FACT_TEXT: Record<Locale, { inPark: string; parkSub: string; floors: strin
     parkSub: '東京ディズニーシー・ファンタジースプリングス、魔法の泉のほとり',
     floors: '3〜9 階',
     wings: (a, b) => `ファンタジーシャトー ${a} ＋ グランドシャトー ${b}`,
+    bothWings: '両シャトー共通',
     rateSub: '1 室 1 泊・大人 2 名・2026 年 10 月 1 日（木）',
     snapshot: '2026 年 8 月 4 日時点',
     datesOf: (open, total) => `${total} 日中 ${open} 日`,
@@ -519,6 +533,7 @@ const FACT_TEXT: Record<Locale, { inPark: string; parkSub: string; floors: strin
     parkSub: 'Fantasy Springs, Tokyo DisneySea, beside the magic spring',
     floors: '3rd – 9th floors',
     wings: (a, b) => `${a} Fantasy Chateau + ${b} Grand Chateau`,
+    bothWings: 'The same in both wings',
     rateSub: 'Per room per night, two adults, 1 October 2026',
     snapshot: 'Snapshot of 4 August 2026',
     datesOf: (open, total) => `${open} of ${total}`,
@@ -537,7 +552,7 @@ export function facts(locale: Locale): HotelFact[] {
     },
     { label: labels[1]!, value: text.inPark, sub: text.parkSub },
     { label: labels[2]!, value: text.floors, sub: ex.typeCount(ROOMS.length) },
-    { label: labels[3]!, value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: text.rateSub },
+    { label: labels[3]!, value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: text.bothWings },
     {
       label: labels[4]!,
       value: formatYen(cheapestRoom(ROOMS)!.priceFrom!),

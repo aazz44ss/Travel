@@ -12,10 +12,14 @@
 | 夢幻泉鄉大飯店房型資料庫（31 種房型＋玫瑰庭區 147 間客房位置圖） | `/hotels/fantasy-springs-hotel` |
 | 東京迪士尼樂園大飯店完全指南 | `/articles/tokyo-disneyland-hotel` |
 | 東京迪士尼樂園大飯店房型資料庫（38 種房型，可篩選） | `/hotels/tokyo-disneyland-hotel` |
+| 飯店資料庫索引 | `/hotels` |
+
+三種語言：繁體中文在根路徑，日文在 `/ja/`，英文在 `/en/`。
 
 ## 技術
 
 - [Astro 7](https://astro.build)，靜態輸出，內容用 content collections 管理（含 zod schema）
+- 繁中／日文／英文三語，每個頁面用一條 `[...locale]` 路由產生三份，文案放在 `src/i18n/`
 - [Tailwind CSS 4](https://tailwindcss.com)，設計 token 定義在 `src/styles/global.css` 的 `@theme`
 - 沒有前端框架。互動功能（房型篩選、目錄高亮）以原生 TypeScript 實作
 - SEO：sitemap、RSS、JSON-LD（Article / BreadcrumbList / Hotel / FAQPage）、OG 與 Twitter meta
@@ -39,7 +43,16 @@ npm run audit    # 檢查 build 出來的 HTML（需要先 build）
 src/
 ├── components/       UI 元件（房型探索器、視線剖面圖、價格階梯、資料表格等）
 ├── content/
-│   └── articles/     文章（MDX，可直接嵌入元件）
+│   └── articles/
+│       ├── zh-hant/  繁體中文（根路徑）
+│       ├── ja/       日文
+│       └── en/       英文
+├── i18n/             各語言的文案；元件只收資料，不直接 import 某一間飯店
+│   ├── config.ts     語言清單與 localePath()
+│   ├── ui.ts         共用介面字串
+│   ├── explorer.ts   房型探索器與床型表的介面字串
+│   ├── hotel.ts      東京迪士尼樂園大飯店的頁面文案與 view model
+│   └── fsh.ts        夢幻泉鄉大飯店的頁面文案與 view model
 ├── content.config.ts 文章的 schema 定義
 ├── data/             結構化資料集，與文章分離維護
 │   ├── hotel-schema.ts        所有飯店共用的型別與換算
@@ -57,9 +70,11 @@ src/
 
 型別放在 `src/data/hotel-schema.ts`，每一間飯店一個資料檔；`src/components/` 底下的元件都以 props 接收資料，不直接 import 某一間飯店。新增飯店時要寫的是資料，不是元件。
 
+語言則是另一個維度：元件收到的字串已經是讀者的語言，由 `src/i18n/<飯店>.ts` 負責解析。飯店自己公布過的名字（房型、景觀分級、床型、餐廳）一律照抄該語言的官方頁面，不自己翻譯——讀者拿這個名字回官網搜尋要找得到同一間房。我們自己下的判斷（每個房型的一句評語）只有繁體中文，機器翻譯過的判斷不如不放。
+
 ## 新增一篇文章
 
-在 `src/content/articles/` 建立 `.mdx` 檔，frontmatter 需符合 `src/content.config.ts` 的 schema：
+在 `src/content/articles/<語言>/` 建立 `.mdx` 檔——檔名就是網址的 slug，三種語言用同一個檔名，語言切換器才配得起來。frontmatter 需符合 `src/content.config.ts` 的 schema：
 
 ```yaml
 ---
