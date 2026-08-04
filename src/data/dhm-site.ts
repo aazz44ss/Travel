@@ -19,6 +19,18 @@ export type Point = readonly [number, number];
 
 export const SITE_VIEW = { x0: -330.0, y0: -170.0, x1: 150.0, y1: 190.0 } as const;
 
+/**
+ * Two points on the measured frontage that also exist on the schematic room plan:
+ * the top of the harbour-facing spine, and the south-western tip. Matching this
+ * pair fixes the scale and the rotation for laying the measured water over that
+ * plan, and the fit is self-checking — it puts the plan's 17-unit room pitch at
+ * 4.37 m, which is what a 37 m² room's frontage actually is.
+ */
+export const ANCHORS: readonly [Point, Point] = [
+  [-24.8, -24.1],
+  [-70.8, 88.2],
+];
+
 /** 100 m, for the scale bar. */
 export const SITE_SCALE_BAR = 100;
 
