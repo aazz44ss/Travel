@@ -8,7 +8,6 @@ import {
   ROOM_DEPTH,
   RUN_WALLS,
   layout,
-  offsetLine,
   slotsOf,
   spansOf,
   type Facing,
@@ -147,15 +146,15 @@ const cells = PLAN_RUNS.flatMap((run) => {
   /** Positions no wall could be measured for are drawn as such, not as fact. */
   const approximate = !wall.measured;
   return (['left', 'right'] as const).flatMap((side) => {
-    const from =
-      side === wall.face ? wall.line : offsetLine(wall.line, wall.inward, ROOM_DEPTH + CORRIDOR);
+    /** The facade row stands on the wall; the other stands a room and a corridor in. */
+    const behind = side === wall.face ? 0 : ROOM_DEPTH + CORRIDOR;
     return PLAN_FLOORS.flatMap((floor) => {
       const spans = spansOf(run, side, floor);
-      return layout(from, slotsOf(run, side).length, spans, wall.inward, ROOM_DEPTH).map(
+      return layout(wall.line, slotsOf(run), spans, wall.inward, behind, ROOM_DEPTH).map(
         (cell, i) => {
           const number = spans[i]!.number;
           const sold = typeOf.get(number);
-          const grade = seenFrom(number, run[side].facing);
+          const grade = seenFrom(number, run.facing[side]);
           /** A room front is narrower than it is deep: write the number across it. */
           const across = cell.width < ROOM_DEPTH * 0.8;
           /** Whatever direction the run is walked, the number reads upright. */
@@ -167,7 +166,7 @@ const cells = PLAN_RUNS.flatMap((run) => {
             number,
             floor,
             run: run.key,
-            facing: run[side].facing,
+            facing: run.facing[side],
             grade,
             ...cell,
             /** Centre in photo pixels, for a callout drawn at readable size. */
