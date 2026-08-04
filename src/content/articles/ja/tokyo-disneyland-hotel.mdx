@@ -79,6 +79,30 @@ import Callout from '~/components/Callout.astro';
 import ViewDiagram from '~/components/ViewDiagram.astro';
 import PriceLadder from '~/components/PriceLadder.astro';
 import { localePath } from '~/i18n/config';
+import { ROOMS, VIEWS } from '~/data/tokyo-disneyland-hotel';
+
+export const priceOf = (id) => ROOMS.find((room) => room.id === id).priceFrom;
+export const viewName = (key) => VIEWS.find((view) => view.key === key).labelJa;
+export const viewLadder = [
+  {
+    view: viewName('none'),
+    price: priceOf('std-superior-twin'),
+    note: '窓の外は中庭・正面エントランス・建物側面',
+    tone: 'muted',
+  },
+  {
+    view: viewName('park'),
+    price: priceOf('std-superior-pv'),
+    note: '斜めにパークが見え、花火は見えるが構図は寄らない',
+    tone: 'mid',
+  },
+  {
+    view: viewName('grand'),
+    price: priceOf('std-superior-pgv-twin'),
+    note: 'パークの正面、すべて 5 階以上',
+    tone: 'full',
+  },
+];
 
 東京ディズニーランドホテルの客室は全 706 室、4 つのカテゴリーに分かれ、そのうちスタンダードだけで 457 室を占めます。公式の客室ページに並ぶ名前は 27 種類ですが、同じ名前の下にベッドや定員の違う版が隠れていることが多い。「スーペリアルーム」はダブルベッド 1 台の 48 m² と、レギュラーベッド 2 台の 40 m² の両方を含みます。それを分けて数えると 38 通り。このホテルの最大の関門は料金ではなく、この選択肢の数です。
 
@@ -148,7 +172,12 @@ import { localePath } from '~/i18n/config';
 
 ### 眺望の差額はどれくらいか
 
-<PriceLadder locale="ja" />
+<PriceLadder
+  title="同じスーペリアルーム、3 段階の眺望の差額"
+  caption="2026 年の参考最低料金で比較。客室の仕様は同じで、違うのは窓の外だけです。"
+  rungs={viewLadder}
+  footnote="言い換えると、眺望指定なしからパークビューへは約 6,000 円。そこからパークグランドビューへはさらに約 8,500 円かかります。中間の一段はほぼ誰にとっても押す価値のあるボタンで、最後の一段が本当に検討すべき支出です。"
+/>
 
 ただし眺望は料金の一つの軸にすぎません。同じ部屋のもっとも安い日ともっとも高い日の差は 4〜6 割で、眺望を上げる差額より大きいのが普通です。
 

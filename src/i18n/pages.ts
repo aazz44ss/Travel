@@ -86,9 +86,9 @@ const zhHant: PageCopy = {
     pipelineHeading: '接下來在查什麼',
     pipelineIntro: '下面這幾篇正在整理資料。順序會依查證的進度調整。',
     pipeline: [
-      { title: '東京迪士尼海洋觀海景大飯店', body: '威尼斯側與托斯卡尼側的房型與視野比較' },
       { title: '東京迪士尼度假區交通', body: '從成田、羽田到舞濱的四種走法與實際花費' },
       { title: '東京迪士尼樂園單日行程', body: '不買尊享卡的情況下，怎麼排才不會走冤枉路' },
+      { title: '東京迪士尼海洋夢幻泉鄉大飯店', body: '豪華館與夢幻館的權益、入口與房型差異' },
     ],
   },
   about: {
@@ -193,9 +193,12 @@ const ja: PageCopy = {
     pipelineHeading: 'いま調べているもの',
     pipelineIntro: '以下は資料を整理中の記事です。順番は確認の進み方によって変わります。',
     pipeline: [
-      { title: '東京ディズニーシー・ホテルミラコスタ', body: 'ヴェネツィア側とトスカーナ側の客室と眺望の比較' },
       { title: '東京ディズニーリゾートへの交通', body: '成田・羽田から舞浜までの四通りの経路と実際の費用' },
       { title: '東京ディズニーランド 一日の回り方', body: 'プレミアアクセスを買わない前提で、無駄に歩かない組み方' },
+      {
+        title: '東京ディズニーシー・ファンタジースプリングスホテル',
+        body: 'グランドシャトーとファンタジーシャトーの特典・入口・客室の違い',
+      },
     ],
   },
   about: {
@@ -301,16 +304,16 @@ const en: PageCopy = {
     pipelineIntro: 'These are in progress. The order shifts with how the fact-checking goes.',
     pipeline: [
       {
-        title: 'Tokyo DisneySea Hotel MiraCosta',
-        body: 'Comparing the Venice and Tuscany sides, room by room and view by view',
-      },
-      {
         title: 'Getting to Tokyo Disney Resort',
         body: 'Four routes from Narita and Haneda to Maihama, with what each actually costs',
       },
       {
         title: 'One day at Tokyo Disneyland',
         body: 'How to order the day without Premier Access and without doubling back',
+      },
+      {
+        title: 'Tokyo DisneySea Fantasy Springs Hotel',
+        body: 'What separates Grand Chateau from Fantasy Chateau: benefits, entrances and rooms',
       },
     ],
   },

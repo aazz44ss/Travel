@@ -12,27 +12,24 @@
  * Image ids are not derivable from the slug, so both are recorded.
  */
 
-export interface RoomLayoutRef {
-  /** Wing segment of the official URL. */
-  wing: 'fcu' | 'gcu';
-  /** Slug of the official room detail page. */
-  slug: string;
-  /** Numeric id the CDN uses for this page's assets. */
-  imageId: number;
-  /** Which drawing on the page, for the one page with two. */
-  layout?: number;
-  /** Most drawings are PNG; the newest room type's is JPEG. */
-  ext?: 'png' | 'jpg';
-}
+import type { RoomLayoutRef, RoomLayoutSet } from '~/data/hotel';
 
+/**
+ * The slug carries the wing, because the two wings have separate URL trees, and
+ * an extension because the newest room type's drawing is a JPEG among PNGs.
+ */
 const page = (
   wing: 'fcu' | 'gcu',
   slug: string,
   imageId: number,
-  extra: Partial<RoomLayoutRef> = {},
-): RoomLayoutRef => ({ wing, slug, imageId, ...extra });
+  extra: { layout?: number; ext?: 'png' | 'jpg' } = {},
+): RoomLayoutRef & { ext?: string } => ({
+  slug: `${wing}/${slug}`,
+  imageId,
+  ...extra,
+});
 
-export const ROOM_LAYOUTS: Record<string, RoomLayoutRef> = {
+const ROOM_LAYOUTS: Record<string, RoomLayoutRef> = {
   // Fantasy Chateau — Bay Area Side
   'bay-superior': page('fcu', 'bayarea_superior', 1898),
   'bay-alcove': page('fcu', 'bayarea_superior_cove', 1903),
@@ -75,25 +72,13 @@ export const ROOM_LAYOUTS: Record<string, RoomLayoutRef> = {
   'gc-grand-terrace': page('gcu', 'grand_terrace', 1893),
 };
 
-export const layoutImageUrl = (ref: RoomLayoutRef): string =>
-  `https://media1.tokyodisneyresort.jp/images/adventure/dh_room/${ref.imageId}_layout_image_${ref.layout ?? 1}.${ref.ext ?? 'png'}`;
-
-export const layoutPageUrl = (ref: RoomLayoutRef): string =>
-  `https://www.tokyodisneyresort.jp/tc/hotel/fsh/${ref.wing}/room/detail/${ref.slug}/`;
-
-/** Native size of every drawing, used to reserve space before it loads. */
-export const LAYOUT_IMAGE_SIZE = { width: 910, height: 400 } as const;
-
-/** True when the official page this drawing came from covers several of our types. */
-export function layoutIsShared(id: string): boolean {
-  const ref = ROOM_LAYOUTS[id];
-  if (!ref) return false;
-  return (
-    Object.values(ROOM_LAYOUTS).filter(
-      (other) =>
-        other.slug === ref.slug &&
-        other.wing === ref.wing &&
-        (other.layout ?? 1) === (ref.layout ?? 1),
-    ).length > 1
-  );
-}
+export const LAYOUTS: RoomLayoutSet = {
+  refs: ROOM_LAYOUTS,
+  imageUrl: (ref) =>
+    `https://media1.tokyodisneyresort.jp/images/adventure/dh_room/${ref.imageId}_layout_image_${ref.layout ?? 1}.${(ref as { ext?: string }).ext ?? 'png'}`,
+  pageUrl: (ref) => {
+    const [wing, name] = ref.slug.split('/');
+    return `https://www.tokyodisneyresort.jp/tc/hotel/fsh/${wing}/room/detail/${name}/`;
+  },
+  imageSize: { width: 910, height: 400 },
+};

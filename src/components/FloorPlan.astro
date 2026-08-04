@@ -2,7 +2,7 @@
 import { HOTEL, ROOMS } from '~/data/tokyo-disneyland-hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
-import { CATEGORY_LABELS, VIEW_LABELS, roomName } from '~/i18n/rooms';
+import { categoryLabel, roomName, viewLabel } from '~/i18n/rooms';
 import { KNOWN_ROOM_NUMBERS } from '~/data/tdh-room-numbers';
 import { PLAN_HEIGHT, PLAN_ROOMS, PLAN_WIDTH, type Tone } from '~/data/tdh-plan';
 
@@ -31,24 +31,24 @@ for (const hit of KNOWN_ROOM_NUMBERS) {
 }
 
 const TONE: Record<Tone, { fill: string; text: string; label: string; note: string }> = {
-  grand: { fill: '#0f4c5c', text: '#ffffff', label: VIEW_LABELS[locale].grand!, note: '' },
-  park: { fill: '#5b93a1', text: '#ffffff', label: VIEW_LABELS[locale].park!, note: '' },
+  grand: { fill: '#0f4c5c', text: '#ffffff', label: viewLabel('tdh', locale, 'grand'), note: '' },
+  park: { fill: '#5b93a1', text: '#ffffff', label: viewLabel('tdh', locale, 'park'), note: '' },
   entrance: {
     fill: '#d8a9b7',
     text: '#5c3140',
-    label: CATEGORY_LABELS[locale].character!,
+    label: categoryLabel('tdh', locale, 'character'),
     note: '',
   },
-  inner: { fill: '#cdc2ae', text: '#4f4739', label: VIEW_LABELS[locale].none!, note: '' },
+  inner: { fill: '#cdc2ae', text: '#4f4739', label: viewLabel('tdh', locale, 'none'), note: '' },
   turret: { fill: '#b4832c', text: '#ffffff', label: plan.turretLabel, note: '' },
 };
 
 /** Sales category, using the same pink / yellow / blue as the published plans. */
 const CATEGORY = {
-  standard: { fill: '#f3c9dc', text: '#7a4658', label: CATEGORY_LABELS[locale].standard! },
-  character: { fill: '#f7e491', text: '#6b5a12', label: CATEGORY_LABELS[locale].character! },
-  concierge: { fill: '#b6dcec', text: '#1d5468', label: CATEGORY_LABELS[locale].concierge! },
-  suite: { fill: '#4a90a8', text: '#ffffff', label: CATEGORY_LABELS[locale].suite! },
+  standard: { fill: '#f3c9dc', text: '#7a4658', label: categoryLabel('tdh', locale, 'standard') },
+  character: { fill: '#f7e491', text: '#6b5a12', label: categoryLabel('tdh', locale, 'character') },
+  concierge: { fill: '#b6dcec', text: '#1d5468', label: categoryLabel('tdh', locale, 'concierge') },
+  suite: { fill: '#4a90a8', text: '#ffffff', label: categoryLabel('tdh', locale, 'suite') },
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY;
@@ -118,7 +118,7 @@ const cells = PLAN_ROOMS.map((room) => {
     names: Object.fromEntries(
       [...(byCode.get(room.code)?.entries() ?? [])].map(([floor, id]) => [
         floor,
-        roomById[id] ? roomName(roomById[id]!, locale) : '',
+        roomById[id] ? roomName(roomById[id]!, 'tdh', locale) : '',
       ]),
     ),
   };

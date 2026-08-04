@@ -19,6 +19,8 @@
  * which `roseCourtTally()` recomputes from the data on every build.
  */
 
+import type { RoomNumbers } from '~/data/hotel';
+
 export type RoseCategory = 'superior' | 'alcove' | 'deluxe' | 'accessible';
 
 export interface ElevationColumn {
@@ -222,3 +224,22 @@ for (const [key, expected] of Object.entries(PUBLISHED_COUNTS)) {
   }
 }
 
+
+/**
+ * Room numbers per bookable type, in the shape the room explorer expects. Only
+ * the Rose Court Side has them; the other three sides and the Grand Chateau have
+ * no published room-by-room survey.
+ */
+export const ROOM_NUMBERS: RoomNumbers = Object.fromEntries(
+  [...new Set(ROSE_ROOMS.map((room) => room.roomType).filter((id): id is string => !!id))].map(
+    (id) => [
+      id,
+      {
+        numbers: roseNumbersFor(id),
+        balcony: [],
+        complete: true,
+        note: '房號的第一位是樓層，後三位是位置。來源是逐間調查，含作者推測。',
+      },
+    ],
+  ),
+);

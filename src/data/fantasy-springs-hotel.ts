@@ -18,24 +18,18 @@
  * publishes a per-type figure for it.
  */
 
-import {
-  cheapestRoom,
-  formatYen,
-  type BedSpec,
-  type Benefit,
-  type Dining,
-  type Facility,
-  type Faq,
-  type HotelFact,
-  type Room,
-  type RoomCategory,
-  type RoomView,
-} from '~/data/hotel-schema';
-import { AVAILABILITY_SOURCE, AVAILABILITY_TOTAL, RATE_SOURCE, rateFor } from '~/data/fsh-rates';
-import { ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
-
-export type ViewKey = 'grand' | 'park' | 'partial' | 'none' | 'allpark';
-export type CategoryKey = 'springs' | 'rose' | 'bay' | 'entrance' | 'grand';
+import type {
+  BedSpec,
+  Benefit,
+  Dining,
+  Facility,
+  Faq,
+  Room,
+  RoomCategory,
+  RoomFlag,
+  RoomView,
+} from '~/data/hotel';
+import { rateFor } from '~/data/fsh-rates';
 
 export const HOTEL = {
   name: '東京迪士尼海洋夢幻泉鄉大飯店',
@@ -49,6 +43,11 @@ export const HOTEL = {
   style: '以夢幻泉鄉的動植物與神奇清泉為設計主題',
   checkIn: '15:00',
   checkOut: '12:00',
+  slug: 'fantasy-springs-hotel',
+  region: '千葉縣',
+  locality: '浦安市',
+  /** Yen per TWD, rounded, used only for rough conversions in the UI. */
+  jpyPerTwd: 4.7,
   officialUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/fsh.html',
   rooms: {
     'zh-hant': 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu/room.html',
@@ -155,6 +154,13 @@ export const CATEGORIES: RoomCategory[] = [
   },
 ];
 
+export const FLAGS: RoomFlag[] = [
+  { key: 'alcove', label: '凹室床', badge: true, filter: true },
+  { key: 'balcony', label: '陽台或露台', badge: true, filter: true },
+  { key: 'lounge', label: '專用接待廳', badge: true },
+  { key: 'accessible', label: '無障礙', badge: true },
+];
+
 const SUPERIOR_BEDS = '2 張標準床、1 張推拉床、1 張郵輪床';
 const ALCOVE_BEDS = '2 張標準床、1 張推拉床、1 張凹室床';
 const SPRINGS_ALCOVE_BEDS = '2 張標準床、1 張推拉床、1 張凹室床、1 張郵輪床';
@@ -175,11 +181,7 @@ export const ROOMS: Room[] = [
     size: '50',
     sizeValue: 50,
     priceFrom: rateFor('springs-balcony-alcove-grand'),
-    alcove: true,
-    balcony: true,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony'],
     verdict: '和只有陽台的那一格同價，多一張凹室床。五個人要住進一間房的話，這是夢幻館的答案。',
   },
   {
@@ -194,11 +196,7 @@ export const ROOMS: Room[] = [
     size: '50',
     sizeValue: 50,
     priceFrom: rateFor('springs-balcony-grand'),
-    alcove: false,
-    balcony: true,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['balcony'],
     verdict: '正面全景加陽台，夢幻館的價格天花板。能走到戶外看園區的房型只有這一格和上一格。',
   },
   {
@@ -213,11 +211,7 @@ export const ROOMS: Room[] = [
     size: '50',
     sizeValue: 50,
     priceFrom: rateFor('springs-alcove-grand'),
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '樂園全景觀裡最便宜的一格，比有陽台的便宜一萬日圓。看得到的東西一樣，只是走不出去。',
   },
   {
@@ -232,11 +226,7 @@ export const ROOMS: Room[] = [
     size: '50',
     sizeValue: 50,
     priceFrom: rateFor('springs-alcove-partial'),
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict:
       '房間規格和樂園全景觀一模一樣，便宜一萬二日圓，代價是官方直接告訴你視野會被建築物擋掉一部分。',
   },
@@ -252,11 +242,7 @@ export const ROOMS: Room[] = [
     size: '50',
     sizeValue: 50,
     priceFrom: rateFor('springs-access-partial'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: true,
+    flags: ['accessible'],
     verdict: '泉鄉區最便宜的一格，而且是 50 平方公尺。人數上限 3 位。',
   },
 
@@ -273,11 +259,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('rose-deluxe-access-park'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: true,
+    flags: ['accessible'],
     verdict:
       '2026 年 10 月新增的分類，比同款沒有景觀的版本只貴 2,500 日圓——玫瑰庭區其他樂園景觀的價差是一萬。',
     note: '官方沒有公布這一間在幾樓。位置圖顯示這一側只有兩間無障礙客房，分別在 5 樓與 8 樓。',
@@ -294,11 +276,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('rose-superior-park'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '這一分類只有 4 間，全部在同一直排的 6 到 9 樓。想要沙發不要凹室床的話只有這一格。',
   },
   {
@@ -313,11 +291,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('rose-alcove-park'),
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict:
       '和上一格同價，房間數多五倍，是樂園景觀的預設選擇。同一分類裡越靠左的房號看到的園區越多。',
   },
@@ -333,11 +307,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('rose-deluxe'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '和樂園景觀同價，但買的是 7 平方公尺而不是窗外。中庭那一側最容易後悔的一格。',
   },
   {
@@ -352,11 +322,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('rose-deluxe-access'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: true,
+    flags: ['accessible'],
     verdict: '48 平方公尺的無障礙房型，和同區的尊爵客房同價。',
   },
   {
@@ -372,11 +338,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: rateFor('rose-superior-high'),
     floors: '5～7 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '比 3～4 樓貴 2,500 日圓，買到的是「窗外不會是樹」。中庭側最務實的一格。',
   },
   {
@@ -392,11 +354,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: rateFor('rose-alcove-high'),
     floors: '5～9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict:
       '玫瑰庭區房間數最多的一格，樓層範圍也比精緻客房多兩層。有機會分到斜看得到艾倫戴爾城堡的那一面。',
   },
@@ -413,11 +371,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: rateFor('rose-superior-low'),
     floors: '3～4 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '價格被壓到和灣岸區、飯店入口區同一格。窗外是中庭的植栽，但你事先就知道。',
     note: '官方在房名旁邊註明：「本客房視野會受到造景樹木阻擋。」',
   },
@@ -434,11 +388,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: rateFor('rose-alcove-low'),
     floors: '3～4 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '和上一格同價，多一張凹室床。整間飯店最便宜的並列第一。',
     note: '官方在房名旁邊註明：「本客房視野會受到造景樹木阻擋。」',
   },
@@ -456,11 +406,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('bay-deluxe'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '比同區的精緻客房多 7 平方公尺、貴一萬日圓。窗外完全一樣。',
   },
   {
@@ -475,11 +421,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('bay-deluxe-access'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: true,
+    flags: ['accessible'],
     verdict: '48 平方公尺的無障礙房型。玫瑰庭區與泉鄉區也各有一種無障礙客房可以比。',
   },
   {
@@ -494,11 +436,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('bay-superior'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '和飯店入口區、玫瑰庭區 3～4 樓並列最低價。買的是位置和專用入口，不是窗外。',
   },
   {
@@ -513,11 +451,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('bay-alcove'),
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '官方說這是夢幻館數量最多的客房。同價多一張凹室床，帶小孩沒有理由選上一格。',
   },
 
@@ -534,11 +468,7 @@ export const ROOMS: Room[] = [
     size: '48',
     sizeValue: 48,
     priceFrom: rateFor('entrance-deluxe'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '和灣岸區的尊爵客房同價同面積。',
   },
   {
@@ -553,11 +483,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('entrance-superior'),
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '最低價位的三個並列選項之一。窗外是飯店正門那一側。',
   },
   {
@@ -572,11 +498,7 @@ export const ROOMS: Room[] = [
     size: '41',
     sizeValue: 41,
     priceFrom: rateFor('entrance-alcove'),
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '同價多一張凹室床，和灣岸區的同款完全對稱。',
   },
 
@@ -593,11 +515,7 @@ export const ROOMS: Room[] = [
     size: '100',
     sizeValue: 100,
     floors: '8 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['balcony', 'lounge'],
     verdict: '100 平方公尺，只在 8 樓。豪華館房型表上的最後一格。',
   },
   {
@@ -612,11 +530,7 @@ export const ROOMS: Room[] = [
     size: '100',
     sizeValue: 100,
     floors: '9 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['balcony', 'lounge'],
     verdict: '和 5～6 樓那一格同款，位在最高層。',
   },
   {
@@ -631,11 +545,7 @@ export const ROOMS: Room[] = [
     size: '100',
     sizeValue: 100,
     floors: '5～6 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['balcony', 'lounge'],
     verdict: '100 平方公尺，是夢幻館最大房型的兩倍。官方客房頁沒有列出加床的配置。',
   },
   {
@@ -650,11 +560,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '8～9 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge'],
     verdict: '豪華館凹室客房的最高樓層版本，陽台有桌椅。',
     note: '官方註明：「陽台設有桌椅。」',
   },
@@ -670,11 +576,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '4～7 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge'],
     verdict: '和下一格的樓層幾乎重疊，差別是陽台上有桌椅。官方的兩張平面圖也真的畫出了這個差別。',
     note: '官方註明：「陽台設有桌椅。」',
   },
@@ -690,11 +592,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '4、5、7 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge'],
     verdict: '陽台上沒有桌椅。想坐在陽台上看園區的話，這是要避開的一格。',
     note: '官方註明：「陽台無設桌椅。」',
   },
@@ -710,11 +608,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '5～7 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['balcony', 'lounge'],
     verdict: '70 平方公尺，沒有凹室床，加床用推拉床與郵輪床。',
   },
   {
@@ -729,11 +623,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '3～4 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge'],
     verdict: '官方把同款客房拆成兩個樓層組合，除了樓層以外沒有公布任何差異。',
   },
   {
@@ -748,11 +638,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '3、5 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge'],
     verdict: '和上一格是同一頁上的兩個分類，共用一張平面圖。',
   },
   {
@@ -767,11 +653,7 @@ export const ROOMS: Room[] = [
     size: '70',
     sizeValue: 70,
     floors: '3 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: false,
-    accessible: true,
+    flags: ['balcony', 'lounge', 'accessible'],
     verdict: '豪華館唯一的無障礙房型，只在 3 樓。',
   },
 ];
@@ -986,25 +868,12 @@ export const FAQS: Faq[] = [
 
 export const ROOM_COUNT = ROOMS.length;
 
-export const FACTS: HotelFact[] = [
-  {
-    label: '客房總數',
-    value: `${HOTEL.totalRooms} 間`,
-    sub: `夢幻館 ${HOTEL.fantasyChateauRooms} ＋ 豪華館 ${HOTEL.grandChateauRooms}`,
-  },
-  { label: '位置', value: '園區裡面', sub: '東京迪士尼海洋夢幻泉鄉，魔法清泉旁' },
-  { label: '客房樓層', value: HOTEL.guestFloors, sub: `${ROOMS.length} 種房型` },
-  { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '兩館相同' },
-  {
-    label: '最低參考價',
-    value: formatYen(cheapestRoom(ROOMS)!.priceFrom!),
-    sub: `每室每晚・2 位大人・${RATE_SOURCE.stayDateLabel}`,
-  },
-  {
-    label: '官方日曆還有房的日期',
-    value: `${AVAILABILITY_TOTAL.dates} 天裡 ${AVAILABILITY_TOTAL.open} 天`,
-    sub: `${AVAILABILITY_SOURCE.snapshotLabel}的快照`,
-  },
-];
+export function roomsByCategory(key: string): Room[] {
+  return ROOMS.filter((room) => room.category === key);
+}
 
-export { ROSE_ROOM_COUNT };
+export function cheapestRoom(): Room {
+  return ROOMS.filter((room) => room.priceFrom !== undefined).reduce((min, room) =>
+    room.priceFrom! < min.priceFrom! ? room : min,
+  );
+}

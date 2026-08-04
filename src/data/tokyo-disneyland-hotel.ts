@@ -11,23 +11,20 @@
  * gaps removed, so a floor can no longer be chosen at booking time.
  */
 
-import {
-  cheapestRoom,
-  formatYen,
-  type BedSpec,
-  type Benefit,
-  type Dining,
-  type Facility,
-  type Faq,
-  type HotelFact,
-  type Room,
-  type RoomCategory,
-  type RoomView,
-  type SocialInsight,
-} from '~/data/hotel-schema';
-
-export type ViewKey = 'grand' | 'park' | 'none';
-export type CategoryKey = 'standard' | 'character' | 'concierge' | 'suite';
+import type {
+  BedSpec,
+  Benefit,
+  Dining,
+  Facility,
+  Faq,
+  HotelFact,
+  Room,
+  RoomCategory,
+  RoomFlag,
+  RoomView,
+  SocialInsight,
+} from './hotel';
+import { byPrice, formatYen, lowestRate, toTwd } from './hotel';
 
 export const HOTEL = {
   name: '東京迪士尼樂園大飯店',
@@ -41,7 +38,20 @@ export const HOTEL = {
   checkOut: '12:00',
   officialUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/tdh.html',
   roomsUrl: 'https://www.tokyodisneyresort.jp/tc/hotel/tdh/room.html',
+  slug: 'tokyo-disneyland-hotel',
+  region: '千葉縣',
+  locality: '浦安市',
+  /** Yen per TWD, rounded, used only for rough conversions in the UI. */
+  jpyPerTwd: 4.7,
 } as const;
+
+export const FLAGS: RoomFlag[] = [
+  { key: 'alcove', label: '凹室床', badge: true, filter: true },
+  { key: 'balcony', label: '陽台', badge: true, filter: true },
+  { key: 'lounge', label: '貴賓室', badge: true },
+  { key: 'breakfast', label: '含早餐', badge: true, filter: true },
+  { key: 'accessible', label: '無障礙', badge: true },
+];
 
 export const VIEWS: RoomView[] = [
   {
@@ -119,11 +129,7 @@ export const ROOMS: Room[] = [
     sizeValue: 48,
     priceFrom: 64500,
     floors: '3–4 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '兩人入住最便宜的選擇，而且是 48 平方公尺，比同價位的雙床房大 8 平方公尺。',
   },
   {
@@ -139,11 +145,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 64500,
     floors: '1–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '全飯店入住門檻最低的四人房。窗外看不到樂園，但省下來的錢夠再買一天門票。',
   },
   {
@@ -159,11 +161,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 70500,
     floors: '3–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '只比無景觀貴約 6,000 日圓就能看到樂園，整間飯店 CP 值最高的一格。',
   },
   {
@@ -179,11 +177,7 @@ export const ROOMS: Room[] = [
     sizeValue: 48,
     priceFrom: 79000,
     floors: '5–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '兩人旅行想看正面景的最佳解：48 平方公尺加正對城堡，價格還在六位數以內。',
   },
   {
@@ -199,11 +193,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 79000,
     floors: '5–7 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '四人房裡最容易搶到的正面景，網路上絕大多數的房內煙火影片都出自這一格。',
   },
   {
@@ -219,11 +209,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 68000,
     floors: '1–9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '牆上挖出來的凹室床是小孩的秘密基地。四張床全部固定，不用移動家具。',
   },
   {
@@ -239,11 +225,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 73500,
     floors: '3–8 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '帶小孩又想看樂園的話，這一格幾乎是為你設計的。',
   },
   {
@@ -259,11 +241,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 81000,
     floors: '5–6 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '標準房裡唯一同時有凹室床和正面景的房型，數量少、開賣後很快消失。',
   },
   {
@@ -279,11 +257,7 @@ export const ROOMS: Room[] = [
     sizeValue: 48,
     priceFrom: 72000,
     floors: '1–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '比精緻客房多 8 平方公尺，行李攤開來還走得動路。但沒有景觀選項。',
   },
   {
@@ -299,11 +273,7 @@ export const ROOMS: Room[] = [
     sizeValue: 48,
     priceFrom: 72000,
     floors: '4 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '兩大一小、又不想擠推拉床的組合可以看這一格。',
   },
   {
@@ -319,11 +289,7 @@ export const ROOMS: Room[] = [
     sizeValue: 48,
     priceFrom: 78500,
     floors: '3–4 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '四個大人想住得寬一點又不想加價到家庭客房，這是中間解。',
   },
   {
@@ -339,11 +305,7 @@ export const ROOMS: Room[] = [
     sizeValue: 66,
     priceFrom: 72000,
     floors: '4–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: true,
+    flags: ['accessible'],
     verdict: '66 平方公尺、輪椅可迴轉，價格卻和一般尊爵客房相同。',
     note: '床高 45 公分（一般標準床為 55 公分），浴室為無障礙規格。',
   },
@@ -360,11 +322,7 @@ export const ROOMS: Room[] = [
     sizeValue: 59,
     priceFrom: 75500,
     floors: '3 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '位在建築轉角，兩面採光。59 平方公尺卻只要標準房的價位。',
     note: '全飯店只有 3215、3515 兩間。這一整欄由下往上是：3 樓景隅客房、4–7 樓塔樓客房、8–9 樓套房，越高等級越高。',
   },
@@ -381,11 +339,7 @@ export const ROOMS: Room[] = [
     sizeValue: 59,
     priceFrom: 85000,
     floors: '3–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '臥室和客廳之間有門可以關起來，帶小孩早睡、大人晚睡的家庭最有感。',
   },
   {
@@ -401,11 +355,7 @@ export const ROOMS: Room[] = [
     sizeValue: 57,
     priceFrom: 87000,
     floors: '1–3 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '三張正規床加推拉床，最多 4 大 3 小。三代同行不用拆成兩間房。',
   },
   {
@@ -421,11 +371,7 @@ export const ROOMS: Room[] = [
     sizeValue: 57,
     priceFrom: 94000,
     floors: '4–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '小家庭客房加上樂園景觀，7 樓的部分房間據住客回報可以走到陽台。',
     note: '陽台不是這個房型的標配，而且訂房時無法指定樓層，別把它當成必得的條件。',
   },
@@ -442,11 +388,7 @@ export const ROOMS: Room[] = [
     sizeValue: 93,
     priceFrom: 137000,
     floors: '5–9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '93 平方公尺、兩套衛浴、最多 5 大 2 小，而且一定是 5 樓以上的樂園景觀。',
   },
 
@@ -464,11 +406,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 71500,
     floors: '5–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '以「精靈谷」為主題的綠色房間，牆上的巨大花草會讓人有縮小成小仙子的錯覺。',
   },
   {
@@ -484,11 +422,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 75500,
     floors: '3–9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '四種主題房裡最便宜的四人版本，凹室床本身就很符合小仙子的尺度感。',
   },
   {
@@ -504,11 +438,7 @@ export const ROOMS: Room[] = [
     sizeValue: 41,
     priceFrom: 71500,
     floors: '3–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '床頭是撲克牌士兵與紅心皇后，地毯做成迷宮，電視上方蹲著白兔。細節密度最高的一間。',
   },
   {
@@ -524,11 +454,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 75500,
     floors: '3–8 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '同樣的愛麗絲主題加上凹室床，四張床各睡一人不用擠。',
   },
   {
@@ -544,11 +470,7 @@ export const ROOMS: Room[] = [
     sizeValue: 51,
     priceFrom: 78500,
     floors: '3–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '深紅與金色的野獸城堡。四種主題房裡人氣最高，也是最難訂的一間。',
   },
   {
@@ -564,11 +486,7 @@ export const ROOMS: Room[] = [
     sizeValue: 51,
     priceFrom: 83000,
     floors: '5–9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: ['alcove'],
     verdict: '美女與野獸主題加凹室床。加價約 4,500 日圓換一張獨立的床，划算。',
   },
   {
@@ -584,11 +502,7 @@ export const ROOMS: Room[] = [
     sizeValue: 61,
     priceFrom: 85000,
     floors: '1–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '主題房裡最寬敞的雙床版本，61 平方公尺住三人非常鬆。',
   },
   {
@@ -604,11 +518,7 @@ export const ROOMS: Room[] = [
     sizeValue: 61,
     priceFrom: 85500,
     floors: '1–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '三張正規床、最多 4 大 3 小，是主題房裡唯一能塞下七個人的房型。',
   },
   {
@@ -624,11 +534,7 @@ export const ROOMS: Room[] = [
     sizeValue: 71,
     priceFrom: 78500,
     floors: '5–7 樓',
-    alcove: false,
-    balcony: false,
-    lounge: false,
-    breakfast: false,
-    accessible: false,
+    flags: [],
     verdict: '71 平方公尺、臥室與客廳分離的公主房。以每平方公尺計算是全飯店最便宜的房型之一。',
   },
 
@@ -646,11 +552,7 @@ export const ROOMS: Room[] = [
     sizeValue: 43,
     priceFrom: 96000,
     floors: '3–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '禮賓房的入門款。四人份早餐折算下來，和標準房的價差沒有帳面上那麼可怕。',
   },
   {
@@ -666,11 +568,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 103500,
     floors: '8–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '正面景加貴賓室。原本集中在 8–9 樓，是視野最好的一批房間。',
   },
   {
@@ -686,11 +584,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 101000,
     floors: '7–9 樓',
-    alcove: true,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['alcove', 'lounge', 'breakfast'],
     verdict: '比不含凹室的同級房還便宜 2,500 日圓，卻多一張床。禮賓房裡最被低估的一格。',
   },
   {
@@ -706,11 +600,7 @@ export const ROOMS: Room[] = [
     sizeValue: 58,
     priceFrom: 105500,
     floors: '3–8 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '58 平方公尺加貴賓室，而且是少數可以叫客房送餐的房型。',
   },
   {
@@ -726,11 +616,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 109000,
     floors: '8 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['balcony', 'lounge', 'breakfast'],
     verdict: '房名直接寫「陽台」的兩個房型之一。想站在戶外看煙火，只能從這裡選。',
     note: '只有房名含「陽台」的類別才保證有陽台；一般的樂園全景觀不會附陽台。',
   },
@@ -747,11 +633,7 @@ export const ROOMS: Room[] = [
     sizeValue: 40,
     priceFrom: 106500,
     floors: '8 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge', 'breakfast'],
     verdict: '陽台、凹室床、正面景、貴賓室、早餐全都有，還比純陽台房便宜 2,500 日圓。',
   },
   {
@@ -767,11 +649,7 @@ export const ROOMS: Room[] = [
     sizeValue: 55,
     priceFrom: 104500,
     floors: '3–7 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '位在飯店的圓形小塔裡，窗戶朝多個方向。房間本身沒有景觀保證，但形狀獨一無二。',
     note: '房號 3121、4121、5121、6121、7121，全飯店只有五間，一層一間。有住客回報 7 樓的雙床塔樓客房可以走到戶外，但訂房時無法指定樓層。',
   },
@@ -788,11 +666,7 @@ export const ROOMS: Room[] = [
     sizeValue: 59,
     priceFrom: 104500,
     floors: '4–7 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '59 平方公尺的塔樓，是進入禮賓房層級最便宜的路徑之一。',
     note: '房號結尾是 215 與 515，也就是正面兩座角塔。同一欄的 8–9 樓就是套房，等於用禮賓房的價格住進套房的正下方。',
   },
@@ -809,11 +683,7 @@ export const ROOMS: Room[] = [
     sizeValue: 71,
     priceFrom: 112000,
     floors: '8–9 樓',
-    alcove: false,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['lounge', 'breakfast'],
     verdict: '公主房加貴賓室加客房送餐。台灣旅客口中的「圓夢房」大多指這一間。',
     note: '這間禮賓房面向飯店正門側，不是樂園側。',
   },
@@ -832,11 +702,7 @@ export const ROOMS: Room[] = [
     sizeValue: 99,
     priceFrom: 260000,
     floors: '8 樓',
-    alcove: true,
-    balcony: false,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['alcove', 'lounge', 'breakfast'],
     verdict: '99 平方公尺、兩座洗手台、淋浴間與浴缸分離。8 樓的版本不能走到陽台。',
     note: '房號 8215 與 8515，位在飯店正面兩側角塔的頂端。官方客房一覽沒有給套房景觀分類，實際是從塔樓的角度看出去，正面與側面都有窗。'
   },
@@ -853,11 +719,7 @@ export const ROOMS: Room[] = [
     sizeValue: 99,
     priceFrom: 290000,
     floors: '9 樓',
-    alcove: true,
-    balcony: true,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['alcove', 'balcony', 'lounge', 'breakfast'],
     verdict: '和 8 樓同格局，但可以走到陽台上。多付 30,000 日圓買的就是那一道門。',
     note: '全飯店只有 9515 一間，位在角塔的最頂層。官方客房一覽沒有給套房景觀分類。'
   },
@@ -874,16 +736,11 @@ export const ROOMS: Room[] = [
     sizeValue: 235,
     priceFrom: 600000,
     floors: '9 樓',
-    alcove: false,
-    balcony: true,
-    lounge: true,
-    breakfast: true,
-    accessible: false,
+    flags: ['balcony', 'lounge', 'breakfast'],
     verdict: '全飯店唯一的 King size 床與 235 平方公尺，價格全年不變。',
     note: '全飯店唯一的 9215 號房，位在另一座角塔的最頂層。官方客房一覽沒有給套房景觀分類。'
   },
 ];
-
 
 export const BED_SPECS: BedSpec[] = [
   {
@@ -943,7 +800,6 @@ export const BED_SPECS: BedSpec[] = [
     note: '需事先預約，數量有限。',
   },
 ];
-
 
 export const FACILITIES: Facility[] = [
   {
@@ -1013,7 +869,6 @@ export const FACILITIES: Facility[] = [
   },
 ];
 
-
 export const DINING: Dining[] = [
   {
     name: '雪伍德花園餐廳',
@@ -1045,7 +900,6 @@ export const DINING: Dining[] = [
     reservation: '不適用優先入席，僅部分餐點可事先預約',
   },
 ];
-
 
 export const BENEFITS: Benefit[] = [
   {
@@ -1081,7 +935,6 @@ export const BENEFITS: Benefit[] = [
   },
 ];
 
-
 export const SOCIAL_INSIGHTS: SocialInsight[] = [
   {
     platform: 'TikTok',
@@ -1108,7 +961,6 @@ export const SOCIAL_INSIGHTS: SocialInsight[] = [
     verdict: '進浴室先看一眼切換閥的方向，這條建議很無聊但真的有用。',
   },
 ];
-
 
 export const FAQS: Faq[] = [
   {
@@ -1152,16 +1004,29 @@ export const FAQS: Faq[] = [
 
 export const ROOM_COUNT = ROOMS.length;
 
-export const FACTS: HotelFact[] = [
+export function roomsByCategory(key: string): Room[] {
+  return ROOMS.filter((room) => room.category === key);
+}
+
+export function cheapestRoom(): Room {
+  return ROOMS.reduce((min, room) => (byPrice(room, min) < 0 ? room : min));
+}
+
+export const HOTEL_FACTS: HotelFact[] = [
   { label: '客房總數', value: `${HOTEL.totalRooms} 間`, sub: `${ROOMS.length} 種房型` },
   { label: '到樂園正門', value: '步行 1 分鐘', sub: '4 座迪士尼飯店中最近' },
   { label: '到 JR 舞濱車站', value: '步行 8 分鐘', sub: '東京車站搭車約 15 分鐘' },
-  { label: '入住／退房', value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`, sub: '退房時間比多數飯店晚' },
+  {
+    label: '入住／退房',
+    value: `${HOTEL.checkIn} / ${HOTEL.checkOut}`,
+    sub: '退房時間比多數飯店晚',
+  },
   {
     label: '最低參考價',
-    value: formatYen(cheapestRoom(ROOMS)!.priceFrom!),
+    value: formatYen(lowestRate(ROOMS)),
     sub: '每室每晚・2 位大人',
   },
   { label: '訂房開放', value: '4 個月前 11:00', sub: '日本時間・最多 5 晚 3 房' },
 ];
 
+export const twd = (yen: number): number => toTwd(yen, HOTEL.jpyPerTwd);
