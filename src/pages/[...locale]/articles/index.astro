@@ -1,0 +1,81 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import { articleLocale } from '~/content.config';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import { LOCALE_META, localeParams, localePath } from '~/i18n/config';
+import { t } from '~/i18n/ui';
+
+export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props;
+const ui = t(locale);
+
+const articles = (await getCollection('articles'))
+  .filter((article) => articleLocale(article.id) === locale)
+  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+
+const collator = new Intl.Collator(LOCALE_META[locale].dateLocale);
+const tags = [...new Set(articles.flatMap((article) => article.data.tags))].sort(collator.compare);
+
+const [latest, ...older] = articles;
+
+const INTRO = {
+  'zh-hant': (n: number) =>
+    `目前收錄 ${n} 篇深度旅遊指南，每一篇都標明資料來源與查證日期。內容以住宿、交通與行程規劃為主，寫的都是那種「查了三小時還是不確定要選哪個」的題目。`,
+  ja: (n: number) =>
+    `現在 ${n} 本の詳細ガイドを掲載しています。すべて出典と確認日を明記。宿泊・交通・行程の組み立てを中心に、「三時間調べてもまだ決められない」種類の疑問を扱っています。`,
+  en: (n: number) =>
+    `${n} in-depth guide${n === 1 ? '' : 's'} so far, each one citing its sources and the date they were checked. Mostly hotels, transport and itinerary decisions — the kind you can research for three hours and still not settle.`,
+}[locale];
+
+const description = INTRO(articles.length);
+---
+
+<BaseLayout title={ui.articleIndex.heading} description={description} locale={locale} path="/articles">
+  <section class="border-b border-line bg-paper-deep/40">
+    <div class="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label={ui.common.breadcrumb}>
+        <a href={localePath(locale, '/')} class="transition-colors hover:text-brand">{ui.common.home}</a>
+        <span aria-hidden="true">/</span>
+        <span>{ui.articleIndex.heading}</span>
+      </nav>
+      <h1 class="mt-6 font-serif text-3xl font-bold text-ink sm:text-4xl">{ui.articleIndex.heading}</h1>
+      <p class="mt-4 max-w-2xl text-[0.9375rem] leading-[1.95] text-ink-soft">
+        {description}
+      </p>
+      {
+        tags.length > 0 && (
+          <ul class="mt-7 flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <li class="rounded-full border border-line bg-card px-3 py-1.5 text-xs text-ink-soft">
+                #{tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl space-y-6 px-5 py-14 sm:px-8 sm:py-16">
+    {latest ? <ArticleCard article={latest} featured locale={locale} /> : null}
+    {
+      older.length > 0 && (
+        <div class="grid gap-6 md:grid-cols-2">
+          {older.map((article) => (
+            <ArticleCard article={article} locale={locale} />
+          ))}
+        </div>
+      )
+    }
+    {
+      articles.length === 0 && (
+        <p class="rounded-xl border border-dashed border-line px-6 py-16 text-center text-sm text-ink-soft">
+          {ui.articleIndex.empty}
+        </p>
+      )
+    }
+  </section>
+</BaseLayout>

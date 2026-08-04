@@ -1,13 +1,40 @@
 ---
-import type { BedSpec } from '~/data/hotel-schema';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { explorer } from '~/i18n/explorer';
 
-interface Props {
-  specs: BedSpec[];
-  /** Screen-reader caption; name the hotel so the table stands alone. */
-  caption: string;
+/**
+ * One bed the hotel publishes, already in the reader's language. Bed names are
+ * the hotel's own words from its pages in that language, so the caller resolves
+ * them rather than this component translating anything.
+ */
+export interface BedRow {
+  name: string;
+  /** The same bed's name in another script, shown small underneath. */
+  secondary?: string;
+  size: string;
+  capacity: string;
+  note?: string;
 }
 
-const { specs, caption } = Astro.props;
+interface Props {
+  rows: BedRow[];
+  /** Screen-reader caption; name the hotel so the table stands alone. */
+  caption: string;
+  locale?: Locale;
+}
+
+const { rows, caption, locale = DEFAULT_LOCALE } = Astro.props;
+const ex = explorer(locale);
+
+/** The last column is only worth a column when something fills it. */
+const hasNotes = rows.some((row) => row.note);
+
+const FOOTNOTE: Record<Locale, string> = {
+  'zh-hant':
+    '「不佔床孩童」指 11 歲以下、與大人同床且不另計費的兒童。飯店的人數上限同時受床位數與房型定員限制，訂房時系統會擋掉超額的組合。',
+  ja: '「添い寝」は 11 歳以下で大人と同じベッドを使い、追加料金がかからない子どもを指します。定員はベッド数と客室の定員の両方に縛られます。',
+  en: 'Bedsharing applies to children aged 11 and under who share an adult’s bed at no extra charge. Occupancy is capped by both bed count and room capacity, and the booking system blocks combinations that exceed either.',
+};
 ---
 
 <div class="not-prose my-8">
@@ -16,23 +43,29 @@ const { specs, caption } = Astro.props;
       <caption class="sr-only">{caption}</caption>
       <thead>
         <tr class="bg-paper-deep text-left">
-          <th scope="col" class="px-4 py-3 font-bold text-ink">床型</th>
-          <th scope="col" class="px-4 py-3 font-bold text-ink">尺寸（寬 × 長 × 高）</th>
-          <th scope="col" class="px-4 py-3 font-bold text-ink">人數上限</th>
-          <th scope="col" class="px-4 py-3 font-bold text-ink">實際感受</th>
+          <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.name}</th>
+          <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.size}</th>
+          <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.capacity}</th>
+          {hasNotes && <th scope="col" class="px-4 py-3 font-bold text-ink">{ex.beds.note}</th>}
         </tr>
       </thead>
       <tbody class="divide-y divide-line-soft">
         {
-          specs.map((bed) => (
+          rows.map((bed) => (
             <tr class="align-top transition-colors hover:bg-paper-deep/40">
               <th scope="row" class="px-4 py-3.5 text-left font-bold text-ink">
                 {bed.name}
-                <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{bed.nameJa}</span>
+                {bed.secondary && (
+                  <span class="mt-0.5 block text-2xs font-normal text-ink-faint">
+                    {bed.secondary}
+                  </span>
+                )}
               </th>
               <td class="px-4 py-3.5 whitespace-nowrap text-ink-soft tabular-nums">{bed.size}</td>
               <td class="px-4 py-3.5 text-ink-soft">{bed.capacity}</td>
-              <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{bed.note}</td>
+              {hasNotes && (
+                <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{bed.note}</td>
+              )}
             </tr>
           ))
         }
@@ -40,7 +73,6 @@ const { specs, caption } = Astro.props;
     </table>
   </div>
   <p class="mt-3 text-xs leading-relaxed text-ink-faint">
-    「不佔床孩童」指 11
-    歲以下、與大人同床且不另計費的兒童。飯店的人數上限同時受床位數與房型定員限制，訂房時系統會擋掉超額的組合。
+    {FOOTNOTE[locale]}
   </p>
 </div>

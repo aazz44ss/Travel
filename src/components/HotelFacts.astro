@@ -1,6 +1,10 @@
 ---
 import type { HotelFact } from '~/data/hotel-schema';
 
+/**
+ * The six-up summary grid. Each hotel supplies its own facts, already in the
+ * reader's language, because which six numbers matter differs by hotel.
+ */
 interface Props {
   facts: HotelFact[];
 }

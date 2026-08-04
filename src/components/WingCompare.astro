@@ -1,66 +1,176 @@
 ---
 import { HOTEL } from '~/data/fantasy-springs-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 
 /**
  * The one decision that comes before every other decision at this hotel, so it
- * gets its own table. Everything in it is published by the hotel except the two
- * room-count figures' sum, which is arithmetic on two official figures.
+ * gets its own table. Everything in it is published by the hotel except the sum
+ * of the two room counts, which is arithmetic on two official figures.
  */
-const rows = [
-  {
-    label: '客房數',
-    fcu: `${HOTEL.fantasyChateauRooms} 間`,
-    gcu: `${HOTEL.grandChateauRooms} 間`,
-  },
-  { label: '客房面積', fcu: '41／48／50 m²', gcu: '70／100 m²' },
-  { label: '陽台或露台', fcu: '只有泉鄉區的兩種房型', gcu: '全部客房' },
-  { label: '面向園區', fcu: '依所在區域而定，四區只有兩區看得到', gcu: '全部客房' },
-  { label: '園區入口', fcu: '夢幻泉鄉口，每次進出出示住宿證明', gcu: '豪華館通路，本館住客專用通道' },
-  { label: '遊樂設施體驗券', fcu: '無', gcu: '房價含 8 張' },
-  { label: '娛樂表演觀賞券', fcu: '無', gcu: '房價含 4 張' },
-  { label: '住房手續', fcu: '可提前辦理（7:00–13:00），房間 16:30 起', gcu: '在客房內辦理，附迎賓飲料' },
-  { label: '專屬餐廳', fcu: '無', gcu: '法式餐廳 利貝爾' },
-  { label: '客房送餐服務', fcu: '無，改為客房內享用的外帶餐飲', gcu: '有' },
-  { label: '行李遞送', fcu: '送到行李服務櫃檯自取', gcu: '直接送到客房' },
-  { label: '官方公布房價', fcu: '網站上有逐日的最低價日曆', gcu: '網站不公布，導向線上訂房網站' },
-] as const;
+interface Props {
+  locale?: Locale;
+}
 
-const shared = [
-  '專用的園區入口與 21:00（夏季 21:10）回到夢幻泉鄉的規定',
-  '歡樂入園',
-  '在飯店購買園區票券',
-  '全日餐廳 夢幻泉鄉餐廳、大廳咖啡廳 格蘭派拉迪大廳',
-  '住宿遊客限定的迪士尼飯店獨家商品（在園區內的商店販售）',
-  '入住 15:00、退房 12:00',
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+type Row = [label: string, fcu: string, gcu: string];
+
+const COPY: Record<Locale, {
+  caption: string;
+  fcu: string;
+  fcuType: string;
+  gcu: string;
+  gcuType: string;
+  rows: Row[];
+  sharedLabel: string;
+  shared: string[];
+  rooms: (n: number) => string;
+}> = {
+  'zh-hant': {
+    caption: '夢幻館與豪華館的差異對照',
+    fcu: '夢幻館',
+    fcuType: '麗緻型',
+    gcu: '豪華館',
+    gcuType: '奢華型',
+    rooms: (n) => `${n} 間`,
+    rows: [
+      ['客房面積', '41／48／50 m²', '70／100 m²'],
+      ['陽台或露台', '只有泉鄉區的兩種房型', '全部客房'],
+      ['面向園區', '依所在區域而定，四區只有兩區看得到', '全部客房'],
+      ['園區入口', '夢幻泉鄉口，每次進出出示住宿證明', '豪華館通路，本館住客專用通道'],
+      ['遊樂設施體驗券', '無', '房價含 8 張'],
+      ['娛樂表演觀賞券', '無', '房價含 4 張'],
+      ['住房手續', '可提前辦理（7:00–13:00），房間 16:30 起', '在客房內辦理，附迎賓飲料'],
+      ['專屬餐廳', '無', '法式餐廳 利貝爾'],
+      ['客房送餐服務', '無，改為客房內享用的外帶餐飲', '有'],
+      ['行李遞送', '送到行李服務櫃檯自取', '直接送到客房'],
+      ['官方公布房價', '網站上有逐日的最低價日曆', '網站不公布，導向線上訂房網站'],
+    ],
+    sharedLabel: '兩館相同',
+    shared: [
+      '專用的園區入口與 21:00（夏季 21:10）回到夢幻泉鄉的規定',
+      '歡樂入園',
+      '在飯店購買園區票券',
+      '全日餐廳 夢幻泉鄉餐廳、大廳咖啡廳 格蘭派拉迪大廳',
+      '住宿遊客限定的迪士尼飯店獨家商品（在園區內的商店販售）',
+      '入住 15:00、退房 12:00',
+    ],
+  },
+  ja: {
+    caption: 'ファンタジーシャトーとグランドシャトーの違い',
+    fcu: 'ファンタジーシャトー',
+    fcuType: 'デラックスタイプ',
+    gcu: 'グランドシャトー',
+    gcuType: 'ラグジュアリータイプ',
+    rooms: (n) => `${n} 室`,
+    rows: [
+      ['客室面積', '41／48／50 m²', '70／100 m²'],
+      ['バルコニーまたはテラス', 'スプリングスサイドの 2 タイプのみ', '全室'],
+      ['パークに面する', 'サイドによる。4 つのうち 2 つだけ', '全室'],
+      [
+        'パークへの入口',
+        'ファンタジースプリングス・エントランス。出入りのたびに宿泊証明書を提示',
+        'グランドシャトー・ゲートウェイ。宿泊者専用',
+      ],
+      ['アトラクション利用券', 'なし', '客室料金に 8 枚'],
+      ['ショー鑑賞券', 'なし', '客室料金に 4 枚'],
+      [
+        'チェックイン',
+        'プリチェックイン可（7:00〜13:00）、入室は 16:30 から',
+        '客室内で手続き、ウェルカムドリンク付き',
+      ],
+      ['専用レストラン', 'なし', 'フレンチダイニング ラ・リベリュール'],
+      ['ルームサービス', 'なし。客室で食べるテイクアウトに代わる', 'あり'],
+      ['荷物の配送', 'ベルデスクで受け取り', '客室まで届く'],
+      ['公式サイトの料金', '日別の最低料金カレンダーあり', '非掲載。オンライン予約サイトへ'],
+    ],
+    sharedLabel: '両シャトー共通',
+    shared: [
+      '専用の入口と、21:00（夏季 21:10）までにファンタジースプリングスへ戻る決まり',
+      'ハッピーエントリー',
+      'ホテルでのパークチケット購入',
+      'ファンタジースプリングス・レストランとグランパラディ・ラウンジ',
+      '宿泊者限定のディズニーホテルオリジナルグッズ（販売はパーク内）',
+      'チェックイン 15:00、チェックアウト 12:00',
+    ],
+  },
+  en: {
+    caption: 'Fantasy Chateau against Grand Chateau',
+    fcu: 'Fantasy Chateau',
+    fcuType: 'Deluxe type',
+    gcu: 'Grand Chateau',
+    gcuType: 'Luxury type',
+    rooms: (n) => `${n} rooms`,
+    rows: [
+      ['Room size', '41 / 48 / 50 m²', '70 / 100 m²'],
+      ['Balcony or terrace', 'Only two Springs Side types', 'Every room'],
+      ['Faces the park', 'Depends on the side; two of the four', 'Every room'],
+      [
+        'Park entrance',
+        'Fantasy Springs Entrance, showing proof of stay each way',
+        'Grand Chateau Gateway, for this wing’s guests only',
+      ],
+      ['Attraction Tickets', 'None', '8 included in the rate'],
+      ['Show Viewing Tickets', 'None', '4 included in the rate'],
+      [
+        'Checking in',
+        'Pre Check-in 7:00–13:00, room from 16:30',
+        'Done in the room, with a welcome drink',
+      ],
+      ['Own restaurant', 'None', 'French Dining: La Libellule'],
+      ['Room service', 'None; take-out to eat in the room instead', 'Yes'],
+      ['Baggage delivery', 'Collected at the Bell Desk', 'Delivered to the room'],
+      ['Published rates', 'A daily lowest-price calendar on the site', 'Not published; sends you to the booking site'],
+    ],
+    sharedLabel: 'The same in both wings',
+    shared: [
+      'The dedicated park entrance and the 21:00 (21:10 in summer) return rule',
+      'Happy Entry',
+      'Buying park tickets at the hotel',
+      'Fantasy Springs Restaurant and the Grand Paradis Lounge',
+      'Guest-only Disney Hotel Exclusive merchandise, sold inside the park',
+      'Check-in 15:00, check-out 12:00',
+    ],
+  },
+};
+
+const c = COPY[locale];
+const rows: Row[] = [
+  [
+    locale === 'zh-hant' ? '客房數' : locale === 'ja' ? '客室数' : 'Guest rooms',
+    c.rooms(HOTEL.fantasyChateauRooms),
+    c.rooms(HOTEL.grandChateauRooms),
+  ],
+  ...c.rows,
 ];
 ---
 
 <div class="not-prose my-10">
   <div class="table-scroll overflow-hidden rounded-xl border border-line bg-card">
     <table class="w-full min-w-[34rem] text-sm">
-      <caption class="sr-only">夢幻館與豪華館的差異對照</caption>
+      <caption class="sr-only">{c.caption}</caption>
       <thead>
         <tr class="bg-paper-deep text-left">
           <th scope="col" class="px-4 py-3 font-bold text-ink"></th>
           <th scope="col" class="px-4 py-3 font-bold text-ink">
-            夢幻館
-            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">麗緻型</span>
+            {c.fcu}
+            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{c.fcuType}</span>
           </th>
           <th scope="col" class="px-4 py-3 font-bold text-brand-deep">
-            豪華館
-            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">奢華型</span>
+            {c.gcu}
+            <span class="mt-0.5 block text-2xs font-normal text-ink-faint">{c.gcuType}</span>
           </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line-soft">
         {
-          rows.map((row) => (
+          rows.map(([label, fcu, gcu]) => (
             <tr class="align-top transition-colors hover:bg-paper-deep/40">
               <th scope="row" class="px-4 py-3 text-left font-medium whitespace-nowrap text-ink">
-                {row.label}
+                {label}
               </th>
-              <td class="px-4 py-3 leading-relaxed text-ink-soft">{row.fcu}</td>
-              <td class="px-4 py-3 leading-relaxed text-ink">{row.gcu}</td>
+              <td class="px-4 py-3 leading-relaxed text-ink-soft">{fcu}</td>
+              <td class="px-4 py-3 leading-relaxed text-ink">{gcu}</td>
             </tr>
           ))
         }
@@ -68,9 +178,9 @@ const shared = [
     </table>
   </div>
   <div class="mt-4 rounded-xl border border-line bg-paper-deep/50 px-5 py-4">
-    <p class="text-2xs font-bold tracking-[0.12em] text-ink-faint uppercase">兩館相同</p>
+    <p class="text-2xs font-bold tracking-[0.12em] text-ink-faint uppercase">{c.sharedLabel}</p>
     <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.8125rem] text-ink-soft">
-      {shared.map((item) => <li>{item}</li>)}
+      {c.shared.map((item) => <li>{item}</li>)}
     </ul>
   </div>
 </div>

@@ -1,0 +1,95 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { localeParams, localePath } from '~/i18n/config';
+import { t } from '~/i18n/ui';
+import { page } from '~/i18n/pages';
+import { explorer } from '~/i18n/explorer';
+import { hotelCopy } from '~/i18n/hotel';
+import { fshCopy } from '~/i18n/fsh';
+import { ROOMS as TDH_ROOMS } from '~/data/tokyo-disneyland-hotel';
+import { ROOMS as FSH_ROOMS } from '~/data/fantasy-springs-hotel';
+
+export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props;
+const ui = t(locale);
+const ex = explorer(locale);
+const copy = page(locale).home;
+const tdh = hotelCopy(locale);
+const fsh = fshCopy(locale);
+
+const hotels = [
+  {
+    name: fsh.hotelName,
+    nameEn: 'Tokyo DisneySea Fantasy Springs Hotel',
+    href: '/hotels/fantasy-springs-hotel',
+    articleHref: '/articles/fantasy-springs-hotel',
+    summary: fsh.databaseNote,
+    types: FSH_ROOMS.length,
+    accent: 'from-berry to-brand-deep',
+  },
+  {
+    name: tdh.hotelName,
+    nameEn: 'Tokyo Disneyland Hotel',
+    href: '/hotels/tokyo-disneyland-hotel',
+    articleHref: '/articles/tokyo-disneyland-hotel',
+    summary: tdh.databaseNote,
+    types: TDH_ROOMS.length,
+    accent: 'from-brand-deep to-brand',
+  },
+];
+---
+
+<BaseLayout title={copy.databasesHeading} description={copy.databasesIntro} locale={locale}>
+  <header class="border-b border-line bg-paper-deep/60">
+    <div class="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
+      <nav class="flex items-center gap-2 text-xs text-ink-faint" aria-label={ui.common.breadcrumb}>
+        <a href={localePath(locale, '/')} class="transition-colors hover:text-ink">{ui.nav.home}</a>
+        <span aria-hidden="true">/</span>
+        <span>{copy.databasesHeading}</span>
+      </nav>
+      <h1 class="mt-6 font-serif text-3xl leading-tight font-bold text-ink sm:text-[2.5rem]">
+        {copy.databasesHeading}
+      </h1>
+      <p class="mt-5 max-w-2xl text-[0.9375rem] leading-[1.9] text-ink-soft">
+        {copy.databasesIntro}
+      </p>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-16">
+    <ul class="grid gap-6 md:grid-cols-2">
+      {
+        hotels.map((hotel) => (
+          <li class="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-card transition-shadow duration-300 hover:shadow-lg hover:shadow-ink/5">
+            <div class:list={['bg-gradient-to-br px-6 py-8 text-white', hotel.accent]}>
+              <h2 class="font-serif text-xl leading-snug font-bold">{hotel.name}</h2>
+              <p class="mt-1.5 text-xs opacity-80">{hotel.nameEn}</p>
+            </div>
+            <div class="flex flex-1 flex-col p-6">
+              <p class="text-[0.9375rem] leading-[1.9] text-ink-soft">{hotel.summary}</p>
+              <p class="mt-4 w-fit rounded-full bg-paper-deep px-2.5 py-1 text-2xs text-ink-soft">
+                {ex.typeCount(hotel.types)}
+              </p>
+              <div class="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-6">
+                <a
+                  href={localePath(locale, hotel.href)}
+                  class="inline-flex items-center gap-1.5 text-sm font-medium text-brand transition-colors hover:text-gold"
+                >
+                  {copy.ctaDatabase} <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href={localePath(locale, hotel.articleHref)}
+                  class="inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
+                >
+                  {copy.ctaArticle}
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>

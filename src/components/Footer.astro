@@ -1,26 +1,49 @@
 ---
-import { NAV_LINKS, SITE, withBase } from '~/consts';
+import { withBase } from '~/consts';
+import { DEFAULT_LOCALE, localePath, type Locale } from '~/i18n/config';
+import { t } from '~/i18n/ui';
 
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+const ui = t(locale);
 const year = new Date().getFullYear();
+
+const links = [
+  { label: ui.nav.home, href: '/' },
+  { label: ui.nav.articles, href: '/articles' },
+  { label: ui.nav.database, href: '/hotels/tokyo-disneyland-hotel' },
+  { label: ui.nav.about, href: '/about' },
+];
+
+const COPYRIGHT: Record<Locale, string> = {
+  'zh-hant': '內容僅供行前參考，出發前請以官方公告為準。',
+  ja: '内容は下調べ用です。出発前に必ず公式の案内をご確認ください。',
+  en: 'For planning only. Check the official pages before you travel.',
+};
 ---
 
 <footer class="mt-24 border-t border-line bg-paper-deep/60">
   <div class="mx-auto max-w-6xl px-5 py-14 sm:px-8">
     <div class="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
       <div>
-        <p class="font-serif text-lg font-bold text-ink">{SITE.name}</p>
-        <p class="mt-1 text-2xs tracking-[0.18em] text-ink-faint uppercase">{SITE.nameEn}</p>
-        <p class="mt-4 max-w-sm text-sm leading-relaxed text-ink-soft">{SITE.description}</p>
+        <p class="font-serif text-lg font-bold text-ink">{ui.site.name}</p>
+        <p class="mt-1 text-2xs tracking-[0.18em] text-ink-faint uppercase">Trip Homework</p>
+        <p class="mt-4 max-w-sm text-sm leading-relaxed text-ink-soft">{ui.site.description}</p>
       </div>
 
-      <nav aria-label="頁尾導覽">
-        <p class="text-2xs font-medium tracking-[0.18em] text-ink-faint uppercase">網站導覽</p>
+      <nav aria-label={ui.footer.footerNav}>
+        <p class="text-2xs font-medium tracking-[0.18em] text-ink-faint uppercase">
+          {ui.footer.siteNav}
+        </p>
         <ul class="mt-4 space-y-2.5">
           {
-            NAV_LINKS.map((link) => (
+            links.map((link) => (
               <li>
                 <a
-                  href={withBase(link.href)}
+                  href={localePath(locale, link.href)}
                   class="text-sm text-ink-soft transition-colors hover:text-brand"
                 >
                   {link.label}
@@ -29,19 +52,20 @@ const year = new Date().getFullYear();
             ))
           }
           <li>
-            <a href={withBase('/rss.xml')} class="text-sm text-ink-soft transition-colors hover:text-brand"
-              >RSS 訂閱</a
+            <a
+              href={withBase('/rss.xml')}
+              class="text-sm text-ink-soft transition-colors hover:text-brand">{ui.footer.rss}</a
             >
           </li>
         </ul>
       </nav>
 
       <div>
-        <p class="text-2xs font-medium tracking-[0.18em] text-ink-faint uppercase">編輯原則</p>
+        <p class="text-2xs font-medium tracking-[0.18em] text-ink-faint uppercase">
+          {ui.footer.principles}
+        </p>
         <ul class="mt-4 space-y-2.5 text-sm leading-relaxed text-ink-soft">
-          <li>官方資料優先，二手資料標明出處</li>
-          <li>價格與時刻標註查證日期</li>
-          <li>不寫沒查證過的推薦</li>
+          {ui.footer.rules.map((rule) => <li>{rule}</li>)}
         </ul>
       </div>
     </div>
@@ -49,8 +73,8 @@ const year = new Date().getFullYear();
     <div
       class="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-ink-faint sm:flex-row sm:items-center sm:justify-between"
     >
-      <p>© {year} {SITE.name}. 內容僅供行前參考，出發前請以官方公告為準。</p>
-      <p>本站與文中提及的任何飯店、樂園或品牌均無合作或從屬關係。</p>
+      <p>© {year} {ui.site.name}. {COPYRIGHT[locale]}</p>
+      <p>{ui.footer.disclaimer}</p>
     </div>
   </div>
 </footer>
