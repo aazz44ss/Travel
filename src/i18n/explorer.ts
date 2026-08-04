@@ -485,11 +485,12 @@ export interface SeasonCopy {
   flatRatio: string;
   flatSeason: string;
   ratio: (n: string) => string;
-  seasonPair: (cheap: number, dear: number) => string;
-  partial: (from: number, to: number) => string;
+  /** Month labels, so this copy can also travel to the browser as a template. */
+  seasonPair: (cheap: string, dear: string) => string;
+  partial: (from: string, to: string) => string;
   flatNote: string;
   colourNote: string;
-  tooltip: (year: number, month: number, low: string, high: string) => string;
+  tooltip: (year: string, month: string, low: string, high: string) => string;
   source: (unpriced: number) => { before: string; link: string; after: string };
 }
 
@@ -518,11 +519,11 @@ const SEASON: Record<Locale, SeasonCopy> = {
     flatRatio: '全年同價',
     flatSeason: '全年一價',
     ratio: (n) => `${n} 倍`,
-    seasonPair: (cheap, dear) => `${cheap} 月／${dear} 月`,
-    partial: (from, to) => `這個房型的來源只公布 ${from} 到 ${to} 月。`,
+    seasonPair: (cheap, dear) => `${cheap}／${dear}`,
+    partial: (from, to) => `這個房型的來源只公布 ${from} 到 ${to}。`,
     flatNote: '這個房型全年一價，不分日期與季節。',
     colourNote: '深色是最便宜的月份，紅色是最貴的。',
-    tooltip: (year, month, low, high) => `${year} 年 ${month} 月：${low} – ${high}`,
+    tooltip: (year, month, low, high) => `${year} 年 ${month}：${low} – ${high}`,
     source: (unpriced) => ({
       before: '每室每晚、2 位大人。整理自',
       link: 'CASTEL 的逐月費率表',
@@ -553,11 +554,11 @@ const SEASON: Record<Locale, SeasonCopy> = {
     flatRatio: '通年同額',
     flatSeason: '通年一律',
     ratio: (n) => `${n} 倍`,
-    seasonPair: (cheap, dear) => `${cheap} 月／${dear} 月`,
-    partial: (from, to) => `このタイプは出典が ${from}〜${to} 月しか公開していません。`,
+    seasonPair: (cheap, dear) => `${cheap}／${dear}`,
+    partial: (from, to) => `このタイプは出典が ${from}〜${to} しか公開していません。`,
     flatNote: 'このタイプは通年一律で、日付や季節で変わりません。',
     colourNote: '濃い色がもっとも安い月、赤がもっとも高い月です。',
-    tooltip: (year, month, low, high) => `${year} 年 ${month} 月：${low} – ${high}`,
+    tooltip: (year, month, low, high) => `${year} 年 ${month}：${low} – ${high}`,
     source: (unpriced) => ({
       before: '1 室 1 泊・大人 2 名。出典は',
       link: 'CASTEL の月別料金表',
@@ -588,13 +589,11 @@ const SEASON: Record<Locale, SeasonCopy> = {
     flatRatio: 'Flat all year',
     flatSeason: 'One rate all year',
     ratio: (n) => `${n}×`,
-    seasonPair: (cheap, dear) =>
-      `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][cheap - 1]} / ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dear - 1]}`,
-    partial: (from, to) => `The source only publishes months ${from} to ${to} for this type.`,
+    seasonPair: (cheap, dear) => `${cheap} / ${dear}`,
+    partial: (from, to) => `The source only publishes ${from} to ${to} for this type.`,
     flatNote: 'This type charges one rate all year, regardless of date or season.',
     colourNote: 'Dark marks the cheapest month, red the dearest.',
-    tooltip: (year, month, low, high) =>
-      `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1]} ${year}: ${low} – ${high}`,
+    tooltip: (year, month, low, high) => `${month} ${year}: ${low} – ${high}`,
     source: (unpriced) => ({
       before: 'Per room per night for two adults, compiled from',
       link: 'CASTEL’s month-by-month rate tables',

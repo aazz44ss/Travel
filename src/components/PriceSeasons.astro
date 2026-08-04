@@ -250,6 +250,18 @@ const monthLabel = sc.monthLabel;
     currentYearMonths,
     labelCurrent: years.current,
     labelCarried: years.carried,
+    /** Only strings survive the trip, so the formatters travel as templates. */
+    sc: {
+      months: Array.from({ length: 12 }, (_, i) => sc.monthLabel(i + 1)),
+      flatRatio: sc.flatRatio,
+      flatSeason: sc.flatSeason,
+      ratio: sc.ratio('{n}'),
+      pair: sc.seasonPair('{cheap}', '{dear}'),
+      tooltip: sc.tooltip('{year}', '{month}', '{low}', '{high}'),
+      partial: sc.partial('{from}', '{to}'),
+      flatNote: sc.flatNote,
+      colourNote: sc.colourNote,
+    },
   }}
 >
   (() => {
@@ -262,6 +274,9 @@ const monthLabel = sc.monthLabel;
 
     const rooms = new Map(payload.map((room) => [room.id, room]));
     const yen = (n) => `¥${n.toLocaleString('en-US')}`;
+    const month = (m) => sc.months[m - 1];
+    const fill = (template, values) =>
+      Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), template);
     const currentYear = new Set(currentYearMonths);
 
     function render() {
@@ -277,8 +292,15 @@ const monthLabel = sc.monthLabel;
       stat('low', yen(room.low));
       stat('high', yen(room.high));
       const flat = room.low === room.high;
-      stat('ratio', flat ? sc.flatRatio : sc.ratio(room.ratio.toFixed(2)));
-      stat('season', flat ? sc.flatSeason : sc.seasonPair(room.cheapest, room.dearest));
+      stat('ratio', flat ? sc.flatRatio : sc.ratio.replace('{n}', room.ratio.toFixed(2)));
+      stat(
+        'season',
+        flat
+          ? sc.flatSeason
+          : sc.pair
+              .replace('{cheap}', month(room.cheapest))
+              .replace('{dear}', month(room.dearest)),
+      );
 
       const axisMin = root.querySelector('[data-rate-axis-min]');
       const axisMax = root.querySelector('[data-rate-axis-max]');
@@ -294,10 +316,10 @@ const monthLabel = sc.monthLabel;
           const tone = dearest ? '#8c2f4a' : cheapest ? '#0f4c5c' : '#5b93a1';
           const year = currentYear.has(m.month) ? labelCurrent : labelCarried;
           return `<li class="flex items-center gap-2">
-            <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${sc.monthLabel(m.month)}</span>
+            <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${month(m.month)}</span>
             <span class="relative h-5 flex-1 rounded bg-paper-deep/70">
               <span class="absolute inset-y-0 rounded" style="left:${left}%;width:${width}%;background:${tone}"
-                title="${sc.tooltip(Number(year), m.month, yen(m.low), yen(m.high))}"></span>
+                title="${fill(sc.tooltip, { year, month: month(m.month), low: yen(m.low), high: yen(m.high) })}"></span>
             </span>
             <span class="w-40 shrink-0 text-2xs text-ink-soft tabular-nums">${yen(m.low)} – ${yen(m.high)}</span>
           </li>`;
@@ -305,7 +327,10 @@ const monthLabel = sc.monthLabel;
         .join('');
 
       const coverage = room.partial
-        ? sc.partial(room.months[0].month, room.months[room.months.length - 1].month)
+        ? fill(sc.partial, {
+            from: month(room.months[0].month),
+            to: month(room.months[room.months.length - 1].month),
+          })
         : '';
       note.textContent = flat
         ? `${coverage}${sc.flatNote}`
