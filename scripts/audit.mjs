@@ -86,9 +86,21 @@ ok(`${hrefs.size} distinct internal hrefs, all resolve`);
 // heading and legend, so a drift on either side shows up as a disagreement.
 console.log('\nRose Court elevations');
 const fshDb = read('hotels/fantasy-springs-hotel/index.html');
+// Each window carries a category key rather than a localised name, so the names
+// come from the same payload the page's own click handler reads.
+const unescape = (s) =>
+  s
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+const categoryNames = JSON.parse(
+  unescape(fshDb.match(/data-elevation data-strings="([^"]*)"/)[1]),
+).categories;
 const cells = [
-  ...fshDb.matchAll(/data-number="(\d{4})"\s+data-category="([^"]*)"\s+data-park="([^"]*)"/g),
-].map((m) => ({ number: m[1], category: m[2], park: m[3] === 'true' }));
+  ...fshDb.matchAll(/<g class="cell([^"]*)"[^>]*\sdata-n="(\d{4})"[^>]*\sdata-c="([a-z]+)"/g),
+].map((m) => ({ number: m[2], category: categoryNames[m[3]], park: m[1].includes('is-park') }));
 
 const headingTotal = Number(fshDb.match(/玫瑰庭區 (\d+) 間客房的位置/)?.[1]);
 cells.length === headingTotal
@@ -141,7 +153,7 @@ ok(`all ${HOTELS.length} hotels linked from the home page and the index, in ever
 console.log('\nevery locale renders the position map');
 for (const prefix of PREFIXES) {
   const html = read(`${prefix}hotels/fantasy-springs-hotel/index.html`);
-  const n = [...html.matchAll(/data-number="\d{4}"/g)].length;
+  const n = [...html.matchAll(/\sdata-n="\d{4}"/g)].length;
   n === cells.length
     ? ok(`${prefix || 'zh-hant/'} renders ${n} cells`)
     : fail(`${prefix || 'zh-hant/'} renders ${n} cells, expected ${cells.length}`);

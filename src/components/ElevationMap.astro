@@ -37,6 +37,9 @@ const COPY: Record<Locale, {
   faces: Record<string, { label: string; outlook: string }>;
   photo: string;
   method: string;
+  tracedAlt: string;
+  tracedCaption: string;
+  tracedLink: string;
   caveat: (positions: number) => string;
 }> = {
   'zh-hant': {
@@ -76,6 +79,9 @@ const COPY: Record<Locale, {
       },
     },
     photo: '看原始照片',
+    tracedAlt: '飯店官方外觀照，近看夢幻城堡館的客房窗戶：奶油色新藝術風格窗框、三片窗玻璃、窗上的扇形裝飾。',
+    tracedCaption: '立面圖上的窗框、窗台和窗頂那顆扇形裝飾，就是照這張官方照片裡的真窗戶描的。',
+    tracedLink: '官方照片',
     method:
       '這三張立面圖是照著實景照片量出來的。來源的逐間調查在三張中庭照片上逐格標記，把照片校正回正面視角之後，開間與樓高的比例就能直接讀出來——所以窗戶的疏密、樓層的高度、以及朝豪華館那一面在 208 與 209 之間退縮一個開間的落差，都是量到的，不是排出來的。窗框、窗台與窗上的裝飾則照著飯店官方外觀照描。中庭的實景照片版權屬於原作者，各面的「看原始照片」可以連過去看。',
     caveat: (positions) =>
@@ -119,6 +125,11 @@ const COPY: Record<Locale, {
       },
     },
     photo: '元の写真を見る',
+    tracedAlt:
+      'ホテル公式の外観写真。ファンタジーシャトーの客室窓を近くから見たところで、クリーム色のアール・ヌーヴォー調の窓枠、3 枚のガラス、窓上の扇形の装飾が写っています。',
+    tracedCaption:
+      '立面図の窓枠・窓台・窓の上の扇形の装飾は、この公式写真に写っている実物をなぞったものです。',
+    tracedLink: '公式写真',
     method:
       'この 3 面の立面図は実景写真から測って描いています。元になった 1 室ずつの調査は中庭の写真 3 枚に区画を書き込んでおり、その写真を正面向きに補正すると、柱間の幅と階高の比がそのまま読み取れます。窓の粗密も、階の高さも、グランドシャトーに向く面が 208 と 209 の間で 1 スパン分セットバックしていることも、測って出た数字です。窓枠・窓台・窓上の装飾はホテル公式の外観写真をなぞりました。中庭の写真の著作権は原著者にあり、各面の「元の写真を見る」からたどれます。',
     caveat: (positions) =>
@@ -163,6 +174,11 @@ const COPY: Record<Locale, {
       },
     },
     photo: 'See the photograph',
+    tracedAlt:
+      'The hotel’s own exterior photography, close on a Fantasy Chateau guest-room window: a cream Art Nouveau surround, three panes of glass, and a fan-shaped ornament above the head.',
+    tracedCaption:
+      'The window surrounds, sills and the fan above each head in the elevations are traced from the real ones in this official photograph.',
+    tracedLink: 'Official photo',
     method:
       'These three elevations are measured off photographs rather than sketched. The room-by-room survey marked up three photographs of the courtyard, and once a photograph is corrected back to a head-on view its bay widths and storey heights can be read straight off. So the spacing of the windows, the height of the floors, and the one-bay step back between positions 208 and 209 on the Grand Chateau side are all measured, not assumed. The window frames, sills and the ornament above each head are traced from the hotel’s own exterior photography. The courtyard photographs belong to their author; each elevation links to them.',
     caveat: (positions) =>
@@ -210,6 +226,14 @@ const GLASS: Record<RoseCategory, [string, string]> = {
   alcove: ['#7a8d81', '#5d6f66'],
   deluxe: ['#ae8b45', '#8a6a2e'],
   accessible: ['#96718a', '#77516a'],
+};
+
+/** The hotel's own photograph of a guest-room window, served from its CDN. */
+const TRACED_PHOTO = 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/gallery/fcu/fcu_facilities_03.jpg';
+const TRACED_PAGE: Record<Locale, string> = {
+  'zh-hant': 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu/gallery.html',
+  ja: 'https://www.tokyodisneyresort.jp/hotel/fsh/fcu/gallery.html',
+  en: 'https://www.tokyodisneyresort.jp/en/hotel/fsh/fcu/gallery.html',
 };
 
 const WALL_LIGHT = '#f1ddd6';
@@ -694,8 +718,41 @@ const faces = ELEVATIONS.map(layout);
     </div>
   </div>
 
-  <p class="mt-5 text-xs leading-relaxed text-ink-faint">{c.method}</p>
-  <p class="mt-2 text-xs leading-relaxed text-ink-faint">{c.caveat(ROSE_ROOM_COUNT)}</p>
+  <div class="mt-6 gap-5 sm:flex sm:items-start">
+    <figure class="shrink-0 overflow-hidden rounded-xl border border-line bg-card sm:w-72">
+      {/* Cropped to the window group in the photograph's top right corner, which is
+          the detail the elevations trace; the rest of the frame is the rockwork. */}
+      <div class="relative overflow-hidden" style="aspect-ratio:3/2">
+        <img
+          src={TRACED_PHOTO}
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          alt={c.tracedAlt}
+          class="absolute top-0 left-[-233.333%] w-[333.333%] max-w-none"
+        />
+      </div>
+      <figcaption
+        class="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs leading-relaxed text-ink-faint"
+      >
+        <span>{c.tracedCaption}</span>
+        <a
+          href={TRACED_PAGE[locale]}
+          rel="noopener nofollow"
+          target="_blank"
+          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+        >
+          {c.tracedLink}
+        </a>
+      </figcaption>
+    </figure>
+    <div class="mt-4 sm:mt-0">
+      <p class="text-xs leading-relaxed text-ink-faint">{c.method}</p>
+      <p class="mt-2 text-xs leading-relaxed text-ink-faint">{c.caveat(ROSE_ROOM_COUNT)}</p>
+    </div>
+  </div>
 </section>
 
 <style is:global>

@@ -245,6 +245,17 @@ const PUBLISHED_COUNTS: Record<string, number> = {
   'accessible:none': 2,
 };
 
+for (const face of ELEVATIONS) {
+  if (face.bays.length !== face.columns.length) {
+    throw new Error(
+      `fsh-rose-court: ${face.key} has ${face.columns.length} columns but ${face.bays.length} measured bays`,
+    );
+  }
+  if (face.bays.some((bay, i) => i > 0 && bay <= face.bays[i - 1]!)) {
+    throw new Error(`fsh-rose-court: ${face.key} bays are not left to right`);
+  }
+}
+
 for (const [key, expected] of Object.entries(PUBLISHED_COUNTS)) {
   const [category, view] = key.split(':');
   const got = ROSE_ROOMS.filter(
