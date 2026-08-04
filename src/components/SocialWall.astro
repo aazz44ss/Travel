@@ -1,6 +1,21 @@
 ---
 
 import { SOCIAL_INSIGHTS } from '~/data/tokyo-disneyland-hotel';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { SOCIAL_COPY, pick } from '~/i18n/hotel-content';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+const insights = SOCIAL_INSIGHTS.map((item, i) => ({
+  ...item,
+  headline: pick(SOCIAL_COPY[i]?.headline, item.headline, locale),
+  body: pick(SOCIAL_COPY[i]?.body, item.body, locale),
+  verdict: pick(SOCIAL_COPY[i]?.verdict, item.verdict, locale),
+}));
 
 const platformStyle: Record<string, string> = {
   TikTok: 'bg-ink text-white',
@@ -12,7 +27,7 @@ const platformStyle: Record<string, string> = {
 
 <div class="not-prose my-10 grid gap-4 sm:grid-cols-2">
   {
-    SOCIAL_INSIGHTS.map((insight) => (
+    insights.map((insight) => (
       <article class="flex flex-col rounded-xl border border-line bg-card p-5">
         <span
           class:list={[

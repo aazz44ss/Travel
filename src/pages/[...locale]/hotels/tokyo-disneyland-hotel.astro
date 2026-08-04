@@ -14,6 +14,7 @@ import FaqList from '~/components/FaqList.astro';
 import { localeParams, localePath } from '~/i18n/config';
 import { t } from '~/i18n/ui';
 import { hotelCopy } from '~/i18n/hotel';
+import { FAQ_COPY, pick } from '~/i18n/hotel-content';
 import {
   CATEGORY_LABELS,
   CATEGORY_PERKS,
@@ -44,11 +45,7 @@ const hotelName = copy.hotelName;
 const title = `${hotelName}${copy.titleSuffix}`;
 const description = copy.pageDescription(ROOMS.length, PLAN_ROOMS.length);
 
-const sections = copy.sections.filter(
-  (section) =>
-    locale === 'zh-hant' ||
-    !['price-seasons', 'facilities', 'dining', 'benefits', 'faq'].includes(section.id),
-);
+const sections = copy.sections;
 
 const schema = [
   {
@@ -68,20 +65,18 @@ const schema = [
       addressLocality: '浦安市',
     },
   },
-  /* Only claim FAQ structured data where the answers are actually on the page. */
-  ...(locale === 'zh-hant'
-    ? [
-        {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: FAQS.map((faq) => ({
-            '@type': 'Question',
-            name: faq.question,
-            acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-          })),
-        },
-      ]
-    : []),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((faq, i) => ({
+      '@type': 'Question',
+      name: pick(FAQ_COPY[i]?.question, faq.question, locale),
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: pick(FAQ_COPY[i]?.answer, faq.answer, locale),
+      },
+    })),
+  },
 ];
 ---
 
@@ -226,16 +221,9 @@ const schema = [
       <RoomExplorer locale={locale} />
     </section>
 
-    {
-      /* The monthly rate analysis is written prose rather than official data, so
-         it stays in Traditional Chinese; the Japanese and English guides state
-         the same seasonal conclusions in their own text. */
-      locale === 'zh-hant' && (
-        <section class="mt-20">
-          <PriceSeasons locale={locale} />
-        </section>
-      )
-    }
+    <section class="mt-20">
+      <PriceSeasons locale={locale} />
+    </section>
 
     <section id="beds" class="mt-20 scroll-mt-32">
       <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.beds}</h2>
@@ -245,34 +233,25 @@ const schema = [
       <BedTable locale={locale} />
     </section>
 
-    {
-      /* The facility, dining, benefit and FAQ lists are editorial rather than
-         official data, so they exist in Traditional Chinese only. The Japanese
-         and English guides cover the same ground in prose. */
-      locale === 'zh-hant' && (
-        <>
-          <section id="facilities" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
-            <FacilityGrid />
-          </section>
+        <section id="facilities" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.facilities}</h2>
+          <FacilityGrid locale={locale} />
+        </section>
 
-          <section id="dining" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
-            <DiningList />
-          </section>
+        <section id="dining" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.dining}</h2>
+          <DiningList locale={locale} />
+        </section>
 
-          <section id="benefits" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
-            <BenefitList />
-          </section>
+        <section id="benefits" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.benefits}</h2>
+          <BenefitList locale={locale} />
+        </section>
 
-          <section id="faq" class="mt-20 scroll-mt-32">
-            <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
-            <FaqList />
-          </section>
-        </>
-      )
-    }
+        <section id="faq" class="mt-20 scroll-mt-32">
+          <h2 class="font-serif text-2xl font-bold text-ink">{copy.headings.faq}</h2>
+          <FaqList locale={locale} />
+        </section>
 
     {
       article && (

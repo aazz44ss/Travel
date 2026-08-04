@@ -3,6 +3,7 @@ import { BED_SPECS } from '~/data/tokyo-disneyland-hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { explorer } from '~/i18n/explorer';
 import { bedName } from '~/i18n/rooms';
+import { BED_NOTE_COPY, pick } from '~/i18n/hotel-content';
 
 interface Props {
   locale?: Locale;
@@ -56,7 +57,7 @@ const FOOTNOTE: Record<Locale, string> = {
               </th>
               <td class="px-4 py-3.5 whitespace-nowrap text-ink-soft tabular-nums">{bed.size}</td>
               <td class="px-4 py-3.5 text-ink-soft">{capacityText(bed.capacity)}</td>
-              <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{locale === 'zh-hant' ? bed.note : ''}</td>
+              <td class="px-4 py-3.5 leading-relaxed text-ink-soft">{pick(BED_NOTE_COPY[bed.name], bed.note ?? '', locale)}</td>
             </tr>
           ))
         }

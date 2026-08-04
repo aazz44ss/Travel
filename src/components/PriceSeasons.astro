@@ -3,6 +3,7 @@ import { CATEGORIES, ROOMS } from '~/data/tokyo-disneyland-hotel';
 import { MONTHLY_RATES, RATE_YEAR_2026_MONTHS, annualRange } from '~/data/tdh-rates';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
 import { CATEGORY_LABELS, roomName } from '~/i18n/rooms';
+import { season as seasonCopy } from '~/i18n/explorer';
 
 /**
  * Month-by-month rate ranges. Each bar spans that month's lowest to highest
@@ -17,6 +18,7 @@ interface Props {
 
 const { locale = DEFAULT_LOCALE } = Astro.props;
 const categoryLabel = CATEGORY_LABELS[locale];
+const sc = seasonCopy(locale);
 
 const priced = ROOMS.filter((room) => MONTHLY_RATES[room.id]).map((room) => {
   const months = MONTHLY_RATES[room.id]!;
@@ -88,21 +90,20 @@ const swingiestMonth = bySpread[bySpread.length - 1]!;
 const bargainMonths = season.filter(
   (m) => m.floor <= byFloor[0]!.floor + 0.04 && m.ceiling > safestMonth.ceiling,
 );
-const monthLabel = (m: number) => `${m} 月`;
+const monthLabel = sc.monthLabel;
 ---
 
 <section id="price-seasons" class="not-prose scroll-mt-32">
   <div class="rounded-2xl border border-line bg-card p-5 sm:p-7">
-    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">逐月價格區間</h2>
+    <h2 class="font-serif text-xl font-bold text-ink sm:text-2xl">{sc.heading}</h2>
     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-      每一條橫棒是那個月「最便宜的日期」到「最貴的日期」。棒子的位置看淡旺季，棒子的長度看同一個月裡日期的影響有多大。選一個房型看它整年的樣子。
+      {sc.intro}
     </p>
 
     <div class="mt-6 rounded-xl border border-line bg-paper-deep/40 p-5">
-      <h3 class="font-serif text-base font-bold text-ink">淡旺季：光看底價會看錯</h3>
+      <h3 class="font-serif text-base font-bold text-ink">{sc.panelHeading}</h3>
       <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
-        {twelve.length} 種有完整十二個月資料的房型，各自以「自己全年最便宜的那一天」為 100
-        對齊後平均。每條棒子的左端是那個月最便宜的日期、右端是最貴的日期。棒子的高度看貴不貴，長度看挑日子有多重要。
+        {sc.panelIntro(twelve.length)}
       </p>
 
       <ul class="mt-4 space-y-1">
@@ -136,28 +137,20 @@ const monthLabel = (m: number) => `${m} 月`;
 
       <ul class="mt-4 space-y-2 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-ink-soft">
         <li>
-          <span class="font-bold text-ink">
-            {bargainMonths.map((m) => monthLabel(m.month)).join('、')}有全年最便宜的日期，但不是淡季。
-          </span>
-          它們的底價是全年最低，天花板卻比 {monthLabel(safestMonth.month)} 高出不少——暑假就是這個形狀：連假與週末很貴，中間夾著幾個特別便宜的日子。
+          {sc.bargain(bargainMonths.map((m) => monthLabel(m.month)).join('、'), monthLabel(safestMonth.month))}
         </li>
         <li>
-          <span class="font-bold text-ink">真正整月都便宜的是 {monthLabel(safestMonth.month)}</span>
-          ，天花板全年最低（+{pct(safestMonth.ceiling)}%），也就是不太需要挑日子。最該避開的是
-          {monthLabel(worstMonth.month)}，最貴的日期到 +{pct(worstMonth.ceiling)}%。
+          {sc.safest(monthLabel(safestMonth.month), pct(safestMonth.ceiling), monthLabel(worstMonth.month), pct(worstMonth.ceiling))}
         </li>
         <li>
-          <span class="font-bold text-ink">{monthLabel(flattestMonth.month)}是「怎麼選都一樣」的月份</span>
-          ，月內落差全年最小，底價卻已經是 +{pct(flattestMonth.floor)}%，等於沒有便宜的日子可挑；{
-            monthLabel(swingiestMonth.month)
-          }相反，落差全年最大，值得為了日期調整行程。
+          {sc.flattest(monthLabel(flattestMonth.month), pct(flattestMonth.floor), monthLabel(swingiestMonth.month))}
         </li>
       </ul>
     </div>
 
     <div class="mt-6">
       <label class="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-        房型
+        {sc.roomLabel}
         <select
           data-rate-room
           class="max-w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -182,10 +175,10 @@ const monthLabel = (m: number) => `${m} 月`;
     <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4">
       {
         [
-          { key: 'low', label: '全年最低', sub: '最便宜的日期' },
-          { key: 'high', label: '全年最高', sub: '最貴的日期' },
-          { key: 'ratio', label: '最高／最低', sub: '同一間房的倍數' },
-          { key: 'season', label: '最便宜／最貴', sub: '以月份看' },
+          { key: 'low', label: sc.stats.low[0], sub: sc.stats.low[1] },
+          { key: 'high', label: sc.stats.high[0], sub: sc.stats.high[1] },
+          { key: 'ratio', label: sc.stats.ratio[0], sub: sc.stats.ratio[1] },
+          { key: 'season', label: sc.stats.season[0], sub: sc.stats.season[1] },
         ].map((item) => (
           <div class="bg-card px-4 py-4">
             <dt class="text-2xs tracking-[0.12em] text-ink-faint uppercase">{item.label}</dt>
@@ -210,22 +203,20 @@ const monthLabel = (m: number) => `${m} 月`;
 
     <div class="mt-6 border-t border-line-soft pt-5 text-xs leading-relaxed text-ink-faint">
       <p>
-        每室每晚、2 位大人。整理自
+        {sc.source(unpriced.length).before}
         <a
           href="https://castel.jp/p/4155"
           rel="noopener nofollow"
           target="_blank"
           class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
-          >CASTEL 的逐月費率表</a
-        >，是二手來源；官方只逐日標價，沒有發布月費率。10 到 12 月為 2025 年價格。另有 {
-          unpriced.length
-        } 種房型只公布起價。
+          >{sc.source(unpriced.length).link}</a
+        >{sc.source(unpriced.length).after}
       </p>
     </div>
   </div>
 </section>
 
-<script is:inline define:vars={{ payload, months2026: RATE_YEAR_2026_MONTHS }}>
+<script is:inline define:vars={{ payload, months2026: RATE_YEAR_2026_MONTHS, sc }}>
   (() => {
     const root = document.querySelector('#price-seasons');
     if (!root) return;
@@ -251,8 +242,8 @@ const monthLabel = (m: number) => `${m} 月`;
       stat('low', yen(room.low));
       stat('high', yen(room.high));
       const flat = room.low === room.high;
-      stat('ratio', flat ? '全年同價' : `${room.ratio.toFixed(2)} 倍`);
-      stat('season', flat ? '全年一價' : `${room.cheapest} 月／${room.dearest} 月`);
+      stat('ratio', flat ? sc.flatRatio : sc.ratio(room.ratio.toFixed(2)));
+      stat('season', flat ? sc.flatSeason : sc.seasonPair(room.cheapest, room.dearest));
 
       const axisMin = root.querySelector('[data-rate-axis-min]');
       const axisMax = root.querySelector('[data-rate-axis-max]');
@@ -268,10 +259,10 @@ const monthLabel = (m: number) => `${m} 月`;
           const tone = dearest ? '#8c2f4a' : cheapest ? '#0f4c5c' : '#5b93a1';
           const year = set2026.has(m.month) ? '2026' : '2025';
           return `<li class="flex items-center gap-2">
-            <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${m.month} 月</span>
+            <span class="w-9 shrink-0 text-right text-2xs text-ink-faint tabular-nums">${sc.monthLabel(m.month)}</span>
             <span class="relative h-5 flex-1 rounded bg-paper-deep/70">
               <span class="absolute inset-y-0 rounded" style="left:${left}%;width:${width}%;background:${tone}"
-                title="${year} 年 ${m.month} 月：${yen(m.low)} – ${yen(m.high)}"></span>
+                title="${sc.tooltip(year, m.month, yen(m.low), yen(m.high))}"></span>
             </span>
             <span class="w-40 shrink-0 text-2xs text-ink-soft tabular-nums">${yen(m.low)} – ${yen(m.high)}</span>
           </li>`;
@@ -279,11 +270,11 @@ const monthLabel = (m: number) => `${m} 月`;
         .join('');
 
       const coverage = room.partial
-        ? `這個房型的來源只公布 ${room.months[0].month} 到 ${room.months[room.months.length - 1].month} 月。`
+        ? sc.partial(room.months[0].month, room.months[room.months.length - 1].month)
         : '';
       note.textContent = flat
-        ? `${coverage}這個房型全年一價，不分日期與季節。`
-        : `${coverage}深色是最便宜的月份，紅色是最貴的。`;
+        ? `${coverage}${sc.flatNote}`
+        : `${coverage}${sc.colourNote}`;
     }
 
     select.addEventListener('change', render);
