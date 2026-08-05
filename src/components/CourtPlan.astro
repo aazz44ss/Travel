@@ -1,0 +1,343 @@
+---
+import { COURT_PLAN } from '~/data/fsh-rose-court';
+
+interface Props {
+  /** Draw one face only, small, for repeating beside its own elevation. */
+  only?: string;
+  /** Face names and number bands, keyed by face. Full plan only. */
+  labels?: Record<string, string>;
+  bands?: Record<string, string>;
+  /** Words on the full plan. */
+  court?: string;
+  springs?: string;
+  toPark?: string;
+  sights?: Record<string, string>;
+  north?: string;
+  scaleBar?: string;
+  label?: string;
+  class?: string;
+}
+
+const {
+  only,
+  labels = {},
+  bands = {},
+  court = '',
+  springs = '',
+  toPark = '',
+  sights = {},
+  north = 'N',
+  scaleBar = '20 m',
+  label = '',
+  class: className = '',
+} = Astro.props;
+
+/**
+ * A key plan of the Rose Court, drawn from the measured footprint.
+ *
+ * The three faces are called things like "the side facing the Grand Chateau",
+ * which means nothing until you can see which wall that is. The source survey
+ * answers it by ringing a wing on the hotel's illustrated map; a plan does
+ * better, because it also carries the two things a ring cannot — which end of
+ * each wall the numbering starts at, and where the courtyard opens.
+ *
+ * Two sizes off one set of coordinates. The full plan runs once above the
+ * elevations; the small one repeats in each elevation's caption with only that
+ * wall picked out and an eye where its photograph was taken from, so the answer
+ * travels with the drawing that raises the question.
+ */
+
+const small = !!only;
+
+/**
+ * Metres, x east and y south, origin at the courtyard's centre. The small plan
+ * crops in, because at thumbnail size the courtyard has to be most of the frame
+ * to be recognisable at all.
+ */
+const VIEW = small
+  ? { x0: -44, y0: -38, x1: 44, y1: 32 }
+  : { x0: -56, y0: -42, x1: 52, y1: 40 };
+const W = VIEW.x1 - VIEW.x0;
+const H = VIEW.y1 - VIEW.y0;
+const X = (p: readonly number[]) => +(p[0]! - VIEW.x0).toFixed(1);
+const Y = (p: readonly number[]) => +(p[1]! - VIEW.y0).toFixed(1);
+const shape = (points: readonly (readonly number[])[]) =>
+  `M${points.map((p) => `${X(p)},${Y(p)}`).join(' L')} Z`;
+
+const mid = (a: readonly number[], b: readonly number[]) => [(a[0]! + b[0]!) / 2, (a[1]! + b[1]!) / 2];
+
+/** A point pushed off `from` along a compass bearing, for placing labels clear of walls. */
+function along(from: readonly number[], distance: number, bearing: number) {
+  const r = (bearing * Math.PI) / 180;
+  return [from[0]! + Math.sin(r) * distance, from[1]! - Math.cos(r) * distance];
+}
+
+const walls = COURT_PLAN.walls
+  .filter((wall) => !only || wall.key === only)
+  .map((wall) => {
+    const centre = mid(wall.from, wall.to);
+    const back = (wall.faces + 180) % 360;
+    const stand = along(centre, 16, wall.faces);
+    return {
+      ...wall,
+      // Labels sit on the wing they name, not in the courtyard, which is too
+      // small to hold three of them without collisions.
+      label: along(centre, 13, back),
+      from: along(wall.from, 5, back),
+      to: along(wall.to, 5, back),
+      wall,
+      // Where the surveyed photograph was taken from, and what it looks at.
+      stand,
+      look: along(stand, 8, back),
+    };
+  });
+
+/**
+ * Both landmarks drawn from the middle of the courtyard, which is what makes
+ * the pair worth drawing: Mount Prometheus leaves through the opening and
+ * Arendelle Castle does not, so the castle's line runs into the back of the 2xx
+ * wing. That is the whole difference between the three faces' outlooks.
+ */
+const sightRays = COURT_PLAN.sights.map((sight) => {
+  const to = along([0, 0], 38, sight.bearing);
+  return {
+    ...sight,
+    from: along([0, 0], 13, sight.bearing),
+    to,
+    // Offset square to the ray, which is the only direction with room left.
+    label: along(to, 5.5, (sight.bearing + (sight.bearing > 100 ? 90 : -90)) % 360),
+  };
+});
+
+const ACCENT = '#0f4c5c';
+const INK = '#6b6257';
+const BUILDING = '#e7dbc6';
+const BUILDING_EDGE = '#c2b299';
+const GROUND = '#f6f3ec';
+const COURT = '#d9e4c6';
+const ROCK = '#c6c3ac';
+---
+
+<svg
+  class:list={['court-plan block h-auto w-full', className]}
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label={label}
+>
+  <rect width={W} height={H} fill={GROUND} />
+  <path d={shape(COURT_PLAN.outline)} fill={BUILDING} stroke={BUILDING_EDGE} stroke-width="0.6" />
+  <path d={shape(COURT_PLAN.court)} fill={COURT} stroke="none" />
+
+  {/* The rockwork and its spring, which is what the courtyard is. Left out of the
+      small plan, where it would only crowd the arrow. */}
+  {
+    !small && (
+      <g>
+        <ellipse cx={X([-3, 1])} cy={Y([-3, 1])} rx="8" ry="5.5" fill={ROCK} opacity="0.6" />
+        <ellipse cx={X([-2, 0])} cy={Y([-2, 0])} rx="3.2" ry="2.2" fill="#a3bbd6" opacity="0.85" />
+      </g>
+    )
+  }
+
+  {/* The courtyard is open on one side. Drawn as a broken line so it reads as a
+      gap in the enclosure rather than a fourth wall. */}
+  <line
+    x1={X(COURT_PLAN.mouth.from)}
+    y1={Y(COURT_PLAN.mouth.from)}
+    x2={X(COURT_PLAN.mouth.to)}
+    y2={Y(COURT_PLAN.mouth.to)}
+    stroke={BUILDING_EDGE}
+    stroke-width="0.7"
+    stroke-dasharray="2.6 2.6"
+  />
+
+  {
+    walls.map((w) => (
+      <line
+        x1={X(w.wall.from)}
+        y1={Y(w.wall.from)}
+        x2={X(w.wall.to)}
+        y2={Y(w.wall.to)}
+        stroke={ACCENT}
+        stroke-width={small ? 4 : 3.2}
+        stroke-linecap="round"
+      />
+    ))
+  }
+
+  {
+    !small &&
+      walls.map((w) => (
+        <g>
+          <text class="band" x={X(w.label)} y={Y(w.label)}>
+            {bands[w.key]}
+          </text>
+          <text class="face" x={X(w.label)} y={Y(w.label) + 3.4}>
+            {labels[w.key]}
+          </text>
+          <text class="end" x={X(w.from)} y={Y(w.from)}>
+            {w.fromPosition}
+          </text>
+          <text class="end" x={X(w.to)} y={Y(w.to)}>
+            {w.toPosition}
+          </text>
+        </g>
+      ))
+  }
+
+  {
+    small && (
+      <g>
+        <circle cx={X(walls[0]!.stand)} cy={Y(walls[0]!.stand)} r="2.2" fill={INK} />
+        <line
+          x1={X(walls[0]!.stand)}
+          y1={Y(walls[0]!.stand)}
+          x2={X(walls[0]!.look)}
+          y2={Y(walls[0]!.look)}
+          stroke={INK}
+          stroke-width="1.6"
+          marker-end="url(#court-plan-tip)"
+        />
+      </g>
+    )
+  }
+
+  {
+    !small && (
+      <g>
+        {sightRays.map((ray) => (
+          <line
+            x1={X(ray.from)}
+            y1={Y(ray.from)}
+            x2={X(ray.to)}
+            y2={Y(ray.to)}
+            stroke={INK}
+            stroke-width="0.8"
+            stroke-dasharray="2.4 2"
+            marker-end="url(#court-plan-tip)"
+          />
+        ))}
+        {sightRays.map((ray) => (
+          <text class="sight" x={X(ray.label)} y={Y(ray.label)}>
+            {sights[ray.key]}
+          </text>
+        ))}
+        <text class="open" x={X([12, 16])} y={Y([12, 16])}>
+          {toPark}
+        </text>
+        <text class="court-name" x={X([-3, 11])} y={Y([-3, 11])}>
+          {court}
+        </text>
+        {springs && (
+          <g>
+            <line
+              x1={X(along(COURT_PLAN.walls[2]!.to, 3, 136))}
+              y1={Y(along(COURT_PLAN.walls[2]!.to, 3, 136))}
+              x2={X(along(COURT_PLAN.walls[2]!.to, 8.5, 136))}
+              y2={Y(along(COURT_PLAN.walls[2]!.to, 8.5, 136))}
+              stroke="#8b7c96"
+              stroke-width="0.9"
+              marker-end="url(#court-plan-tip-springs)"
+            />
+            <text class="springs" x={X([-4.5, 33])} y={Y([-4.5, 33])}>
+              {springs}
+            </text>
+          </g>
+        )}
+        <g transform={`translate(${W - 9},9)`}>
+          <path
+            d="M0,6 L0,-6 M-2.6,-3 L0,-6 L2.6,-3"
+            stroke={INK}
+            stroke-width="1.1"
+            fill="none"
+            stroke-linecap="round"
+          />
+          <text class="compass" y="11.4">{north}</text>
+        </g>
+        <g transform={`translate(6,${H - 6})`}>
+          <path d="M0,0 L20,0 M0,-2 L0,2 M20,-2 L20,2" stroke={INK} stroke-width="0.9" />
+          <text class="scale" x="22.5" y="1.4">{scaleBar}</text>
+        </g>
+      </g>
+    )
+  }
+
+  <defs>
+    <marker id="court-plan-tip" viewBox="0 0 8 8" refX="6.6" refY="4" markerWidth="4.6" markerHeight="4.6" orient="auto">
+      <path d="M0,0.9 L7,4 L0,7.1 Z" fill={INK}></path>
+    </marker>
+    <marker
+      id="court-plan-tip-springs"
+      viewBox="0 0 8 8"
+      refX="6.6"
+      refY="4"
+      markerWidth="4.6"
+      markerHeight="4.6"
+      orient="auto"
+    >
+      <path d="M0,0.9 L7,4 L0,7.1 Z" fill="#8b7c96"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style is:global>
+  .court-plan text {
+    fill: #6b6257;
+    font-size: 2.4px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  .court-plan .band {
+    font-size: 3px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    fill: #0f4c5c;
+  }
+
+  .court-plan .face {
+    font-size: 2.3px;
+    font-weight: 600;
+    fill: #40382e;
+  }
+
+  .court-plan .end {
+    font-size: 2.2px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    fill: #0f4c5c;
+  }
+
+  .court-plan .court-name {
+    font-size: 2.6px;
+    font-weight: 600;
+    fill: #6f7d55;
+  }
+
+  .court-plan .springs {
+    font-size: 2.5px;
+    font-weight: 600;
+    fill: #7d6d8a;
+  }
+
+  .court-plan .open,
+  .court-plan .sight {
+    font-size: 2.3px;
+  }
+
+  .court-plan .open {
+    font-weight: 600;
+    fill: #6f7d55;
+  }
+
+
+  .court-plan .compass {
+    font-size: 2.8px;
+    font-weight: 700;
+  }
+
+  .court-plan .scale {
+    font-size: 2.3px;
+    text-anchor: start;
+  }
+</style>

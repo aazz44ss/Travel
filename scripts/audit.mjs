@@ -107,7 +107,9 @@ new Set(cells.map((c) => c.number)).size === cells.length
   : fail('duplicate room numbers');
 
 const sectionStart = fshDb.indexOf('id="rose-court"');
-const legendHtml = fshDb.slice(sectionStart, fshDb.indexOf('<figure', sectionStart));
+// Up to the first elevation rather than the first figure: the key plan that says
+// which wall each face is comes before the legend and is a figure too.
+const legendHtml = fshDb.slice(sectionStart, fshDb.indexOf('class="elevation', sectionStart));
 const legend = [
   ...legendHtml.matchAll(
     /style="background:(#[0-9a-f]{6})[^"]*"[^>]*><\/span><span class="text-ink">([^<]+)<\/span><span[^>]*>(\d+) 間/g,

@@ -138,6 +138,78 @@ export const ELEVATIONS: ElevationFace[] = [
   },
 ];
 
+/**
+ * A key plan of the courtyard, so the three faces can be pointed at instead of
+ * only described. Names like "the side facing the Grand Chateau" only mean
+ * something once you can see which wall they are.
+ *
+ * Metres, x east and y south, origin at the centre of the courtyard. Taken from
+ * the hotel's OpenStreetMap footprint (way 1259623365), which lands on the Esri
+ * aerial to within half a metre, and confirmed against the hotel's own floor
+ * map: fitting the three courtyard corners below onto the Rose Court shown on
+ * `fsh_floormap.jpg` puts the rest of the 146-node outline on the building the
+ * plan draws, with the corners themselves off by about two metres.
+ *
+ * Which wall is which face is not in either source; it comes from the survey's
+ * own photographs and reconciles four separate ways:
+ *
+ *  - The 11 positions of the 2xx face need the 52.9 m wall. Nothing else fits.
+ *  - Park View on the 1xx face runs 101–111 and fades by 113, and only from the
+ *    6th floor up. From the 101 end of the 40.7 m wall the volcano clears the
+ *    courtyard mouth; walking towards 117 swings the 2xx wing across it, and
+ *    the wing's last three positions stop a storey lower, which is what the
+ *    6th-floor cut-off is.
+ *  - The 3xx face reports the park diagonally to the right and Arendelle Castle
+ *    at the left of it, which is what the 29.6 m wall sees: it looks at 46°,
+ *    with the castle at 88° and Mount Prometheus at 120°.
+ *  - A guest who walked every corridor drew 201 next to 117 and 301 next to
+ *    101, which is where the two shared corners below put them.
+ */
+export interface CourtWall {
+  key: string;
+  /** Wall ends, at the lower and higher position number. */
+  from: [number, number];
+  to: [number, number];
+  fromPosition: number;
+  toPosition: number;
+  /** Compass bearing the windows look along. */
+  faces: number;
+}
+
+export const COURT_PLAN: {
+  /** Building around the courtyard, cropped wide so the drawing can run off its frame. */
+  outline: [number, number][];
+  court: [number, number][];
+  walls: CourtWall[];
+  /** The gap the courtyard opens through, towards the park. */
+  mouth: { from: [number, number]; to: [number, number] };
+  /** Landmarks worth naming, as bearing and metres from the courtyard's centre. */
+  sights: { key: string; bearing: number; metres: number }[];
+} = {
+  outline: [
+    [-51.3, 16.5], [-48.2, 16.4], [-25.3, 39.9], [-28.2, 42.5], [-17.6, 53.5], [-17.7, 56.0],
+    [19.8, 56.0], [20.2, 49.2], [23.1, 49.0], [24.1, 29.9], [21.0, 28.0], [20.9, 24.3],
+    [15.8, 24.2], [15.8, 22.2], [-11.0, 21.7], [-31.5, 0.4], [-31.3, -2.9], [-2.2, -31.5],
+    [34.0, 7.1], [41.5, 1.2], [43.3, 3.3], [47.7, -0.8], [37.0, -11.5], [38.1, -12.5],
+    [34.5, -16.4], [33.4, -15.4], [-3.8, -54.7], [-5.6, -52.7], [-8.6, -55.7], [-13.9, -49.2],
+    [-15.8, -51.3], [-52.6, -16.0], [-54.6, -17.9], [-63.8, -9.4], [-61.7, -7.1], [-74.0, 4.2],
+    [-74.0, 35.9],
+  ],
+  court: [
+    [34.0, 7.1], [-2.2, -31.5], [-31.3, -2.9], [-31.5, 0.4], [-11.0, 21.7], [15.8, 22.2],
+  ],
+  walls: [
+    { key: 'park', from: [-31.3, -2.9], to: [-2.2, -31.5], fromPosition: 101, toPosition: 117, faces: 135.5 },
+    { key: 'chateau', from: [-2.2, -31.5], to: [34.0, 7.1], fromPosition: 201, toPosition: 211, faces: 226.8 },
+    { key: 'diagonal', from: [-31.5, 0.4], to: [-11.0, 21.7], fromPosition: 301, toPosition: 315, faces: 46.0 },
+  ],
+  mouth: { from: [15.8, 22.2], to: [34.0, 7.1] },
+  sights: [
+    { key: 'prometheus', bearing: 120.0, metres: 850 },
+    { key: 'arendelle', bearing: 87.5, metres: 173 },
+  ],
+};
+
 export const ROSE_CATEGORY_LABEL: Record<RoseCategory, string> = {
   superior: '精緻客房',
   alcove: '附凹室精緻客房',
@@ -254,6 +326,45 @@ for (const face of ELEVATIONS) {
   if (face.bays.some((bay, i) => i > 0 && bay <= face.bays[i - 1]!)) {
     throw new Error(`fsh-rose-court: ${face.key} bays are not left to right`);
   }
+}
+
+// The key plan and the elevations describe the same three walls, so a face
+// renamed or a position range edited in one has to move in the other. The bay
+// pitch is the cross-check that the plan is pointing at the right wall at all:
+// each face's windows have to fit the wall the plan gives it.
+for (const wall of COURT_PLAN.walls) {
+  const face = ELEVATIONS.find((f) => f.key === wall.key);
+  if (!face) throw new Error(`fsh-rose-court: key plan has a wall for no face, ${wall.key}`);
+  const positions = face.columns.map((column) => column.position);
+  const ends = [Math.min(...positions), Math.max(...positions)];
+  if (wall.fromPosition !== ends[0] || wall.toPosition !== ends[1]) {
+    throw new Error(
+      `fsh-rose-court: ${wall.key} runs ${ends[0]}–${ends[1]}, key plan says ${wall.fromPosition}–${wall.toPosition}`,
+    );
+  }
+}
+
+// A face with more windows has to be on a longer wall. This is the check that
+// would catch two faces swapped, which is the mistake worth guarding against;
+// the exact pitch is not, because the walls are not all measurable to the same
+// standard. The 1xx and 2xx faces work out at 4.5 m a room, the 3xx face at
+// 3.7 m, and that face is also the one whose block starts on the 5th floor and
+// stands on a podium, so its wall need not follow the outline at ground level.
+const byWall = [...COURT_PLAN.walls].sort(
+  (a, b) =>
+    Math.hypot(a.to[0] - a.from[0], a.to[1] - a.from[1]) -
+    Math.hypot(b.to[0] - b.from[0], b.to[1] - b.from[1]),
+);
+const byWindows = [...COURT_PLAN.walls].sort(
+  (a, b) =>
+    ELEVATIONS.find((f) => f.key === a.key)!.columns.length -
+    ELEVATIONS.find((f) => f.key === b.key)!.columns.length,
+);
+if (byWall.some((wall, i) => wall.key !== byWindows[i]!.key)) {
+  throw new Error(
+    `fsh-rose-court: walls ordered ${byWall.map((w) => w.key).join(',')} by length but ` +
+      `${byWindows.map((w) => w.key).join(',')} by window count`,
+  );
 }
 
 for (const [key, expected] of Object.entries(PUBLISHED_COUNTS)) {

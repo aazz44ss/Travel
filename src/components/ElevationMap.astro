@@ -1,4 +1,5 @@
 ---
+import CourtPlan from '~/components/CourtPlan.astro';
 import {
   ELEVATIONS,
   ROSE_ROOMS,
@@ -30,6 +31,19 @@ const COPY: Record<Locale, {
   tableCaption: (face: string) => string;
   roomHeader: string;
   typeHeader: string;
+  plan: {
+    alt: string;
+    miniAlt: (face: string) => string;
+    /** Short tags for the walls. The full face names are too long for a plan. */
+    faces: Record<string, string>;
+    court: string;
+    springs: string;
+    toPark: string;
+    sights: Record<string, string>;
+    north: string;
+    scaleBar: string;
+    note: string;
+  };
   faces: Record<string, { label: string; outlook: string }>;
   photo: string;
   method: string;
@@ -53,19 +67,34 @@ const COPY: Record<Locale, {
     tableCaption: (face) => `${face}的客房房號與對應房型`,
     roomHeader: '房號',
     typeHeader: '訂房時的房型',
+    plan: {
+      alt: '玫瑰庭的平面圖，三道牆分別標上 1xx、2xx、3xx 三組房號，並標出中庭朝樂園開口的方向。',
+      miniAlt: (face) => `平面小圖，標出${face}是中庭的哪一道牆，以及照片是從哪裡往哪邊拍的。`,
+      faces: { park: '正對樂園', chateau: '朝豪華館', diagonal: '斜看樂園' },
+      court: '玫瑰庭',
+      springs: '泉鄉區在這頭',
+      toPark: '開口',
+      sights: { prometheus: '普羅米修斯火山', arendelle: '艾倫戴爾城堡' },
+      north: '北',
+      scaleBar: '20 m',
+      note:
+        '這張平面圖是用飯店的建築輪廓量出來的，對得上飯店自己的樓層圖。三個面的名字光看文字不好懂，圖上直接指出是哪一道牆、房號從哪一頭開始數。兩條虛線是從中庭中央拉出來的方位：普羅米修斯火山（120°）正好穿過開口，艾倫戴爾城堡（88°）被 2xx 那道翼樓擋住——這就是為什麼樂園景觀在 1xx，看得到城堡的卻是 3xx。',
+    },
     faces: {
       park: {
         label: '朝夢幻泉鄉的一面',
-        outlook: '隔著中庭正對園區，普羅米修斯火山在正中間。越往右，豪華館的外牆越擠進畫面。',
+        outlook:
+          '正對中庭的開口，普羅米修斯火山幾乎在正前方。從 101 往 117 走，對面 2xx 那道翼樓會慢慢橫過視線；樂園景觀停在 113、而且只給 6 樓以上，就是因為要越過那道翼樓比較矮的那一段。',
       },
       chateau: {
         label: '朝豪華館的一面',
-        outlook: '窗外主要是豪華館的建築。這一面沒有任何樂園景觀客房。',
+        outlook:
+          '正對面是斜看樂園的那一面；往左越過中庭南側的低矮量體，遠處是豪華館，調查者說這一面「景觀主要是豪華館」。沒有任何樂園景觀客房。',
       },
       diagonal: {
         label: '斜看樂園的一面',
         outlook:
-          '正前方是對面的客房，但站到窗邊往斜向看得到樂園，而且看得到樂園景觀客房看不到的艾倫戴爾城堡。這一面只有 5 樓以上。',
+          '正前方是對面 2xx 的客房，但站到窗邊往右斜看得到樂園，而且看得到樂園景觀客房看不到的艾倫戴爾城堡。越靠近開口的 315 那頭越好，這一面也只有 5 樓以上。',
       },
     },
     photo: '看原始照片',
@@ -92,20 +121,34 @@ const COPY: Record<Locale, {
     tableCaption: (face) => `${face}の部屋番号と対応する客室タイプ`,
     roomHeader: '部屋番号',
     typeHeader: '予約時の客室タイプ',
+    plan: {
+      alt: 'ローズコートの平面図。3 つの壁に 1xx・2xx・3xx の番号系列を振り、中庭がパーク側へ開く向きを示しています。',
+      miniAlt: (face) => `小さな平面図。${face}が中庭のどの壁かと、写真をどこからどちらへ向けて撮ったかを示しています。`,
+      faces: { park: 'パーク正面', chateau: 'グランドシャトー', diagonal: '斜めにパーク' },
+      court: 'ローズコート',
+      springs: 'この先がスプリングスサイド',
+      toPark: '開口',
+      sights: { prometheus: 'プロメテウス火山', arendelle: 'アレンデール城' },
+      north: '北',
+      scaleBar: '20 m',
+      note:
+        'この平面図はホテルの建物外形から測ったもので、ホテル自身のフロアマップとも一致します。3 つの面は名前だけでは分かりにくいので、どの壁なのか、部屋番号がどちら端から始まるのかを図に入れました。破線は中庭の中央から引いた方位で、プロメテウス火山（120°）は開口をそのまま抜け、アレンデール城（88°）は 2xx の翼に遮られます。パークビューが 1xx にあり、城が見えるのは 3xx という違いはここから来ています。',
+    },
     faces: {
       park: {
         label: 'ファンタジースプリングスに向く面',
         outlook:
-          '中庭越しにパークへ正対し、プロメテウス火山が正面に来ます。右へ行くほどグランドシャトーの外壁が画面に入ってきます。',
+          '中庭の開口に正対し、プロメテウス火山がほぼ正面に来ます。101 から 117 へ進むほど向かいの 2xx の翼が視線を横切っていき、パークビューが 113 で止まるのも 6 階以上だけなのも、その翼の低い側をどれだけ越えられるかで決まります。',
       },
       chateau: {
         label: 'グランドシャトーに向く面',
-        outlook: '窓の外は主にグランドシャトーの建物。この面にパークビューの客室はありません。',
+        outlook:
+          '真向かいはパークを斜めに見る面。左手、中庭南側の低い棟の向こうにグランドシャトーが見え、調査者はこの面の眺望を「主にグランドシャトー」と書いています。パークビューの客室はありません。',
       },
       diagonal: {
         label: 'パークを斜めに見る面',
         outlook:
-          '真正面は向かいの客室ですが、窓際に立てば斜めにパークが見え、しかもパークビューの客室からは見えないアレンデール城が見えます。この面は 5 階以上だけです。',
+          '真正面は向かいの 2xx の客室ですが、窓際に立って右斜めを見るとパークが、しかもパークビューの客室からは見えないアレンデール城が見えます。開口に近い 315 側ほど有利で、この面は 5 階以上だけです。',
       },
     },
     photo: '元の写真を見る',
@@ -136,20 +179,35 @@ const COPY: Record<Locale, {
     tableCaption: (face) => `Room numbers on ${face} and the type each is sold as`,
     roomHeader: 'Room',
     typeHeader: 'Sold as',
+    plan: {
+      alt: 'Plan of the Rose Court, with each of its three walls marked by its run of room numbers — 1xx, 2xx, 3xx — and the side the courtyard opens towards the park.',
+      miniAlt: (face) =>
+        `Small plan showing which wall of the courtyard ${face} is, and where its photograph was taken from.`,
+      faces: { park: 'park, head on', chateau: 'Grand Chateau', diagonal: 'park, at an angle' },
+      court: 'Rose Court',
+      springs: 'Springs Side is past here',
+      toPark: 'open',
+      sights: { prometheus: 'Mount Prometheus', arendelle: 'Arendelle Castle' },
+      north: 'N',
+      scaleBar: '20 m',
+      note:
+        'The plan is measured off the hotel’s building outline and agrees with the hotel’s own floor map. The three face names mean little on their own, so the plan says which wall each one is and which end its numbering starts at. The dashed lines are bearings taken from the middle of the courtyard: Mount Prometheus, at 120°, goes straight out through the opening, while Arendelle Castle, at 88°, runs into the back of the 2xx wing. That is why Park View is on the 1xx side and the castle belongs to the 3xx side.',
+    },
     faces: {
       park: {
         label: 'the side facing Fantasy Springs',
         outlook:
-          'Faces the park across the courtyard, with Mount Prometheus in the middle. The further right, the more of the Grand Chateau’s wall pushes into the frame.',
+          'Squares up to the courtyard’s opening, with Mount Prometheus almost straight ahead. Walk from 101 towards 117 and the 2xx wing opposite swings across the view; Park View stopping at 113, and only from the 6th floor up, is a question of how much of that wing’s lower end you can see over.',
       },
       chateau: {
         label: 'the side facing the Grand Chateau',
-        outlook: 'Looks mainly at the Grand Chateau building. No Park View rooms on this side at all.',
+        outlook:
+          'Directly opposite is the side that sees the park at an angle. To the left, over the low block closing the courtyard, stands the Grand Chateau — the survey calls the outlook here “mainly the Grand Chateau”. No Park View rooms at all.',
       },
       diagonal: {
         label: 'the side that sees the park at an angle',
         outlook:
-          'Straight ahead are the rooms opposite, but stand at the window and the park appears at an angle — including Arendelle Castle, which the Park View rooms cannot see. This side starts on the 5th floor.',
+          'Straight ahead are the 2xx rooms opposite, but stand at the window and look right and the park appears — including Arendelle Castle, which the Park View rooms cannot see. The nearer the opening, at the 315 end, the better, and this side starts on the 5th floor.',
       },
     },
     photo: 'See the photograph',
@@ -460,6 +518,26 @@ const faces = ELEVATIONS.map(layout);
     <p class="mt-3 max-w-3xl text-[0.875rem] leading-[1.85] text-ink-soft">{c.viewNote}</p>
   </div>
 
+  {/* Which wall each face name refers to, before any of them is drawn. */}
+  <figure class="mt-6 overflow-hidden rounded-2xl border border-line bg-card">
+    <div class="mx-auto max-w-[33rem] p-3 sm:p-4">
+      <CourtPlan
+        labels={c.plan.faces}
+        bands={Object.fromEntries(ELEVATIONS.map((face) => [face.key, face.numberBand]))}
+        court={c.plan.court}
+        springs={c.plan.springs}
+        toPark={c.plan.toPark}
+        sights={c.plan.sights}
+        north={c.plan.north}
+        scaleBar={c.plan.scaleBar}
+        label={c.plan.alt}
+      />
+    </div>
+    <figcaption class="border-t border-line-soft px-4 py-3 text-xs leading-relaxed text-ink-faint sm:px-5">
+      {c.plan.note}
+    </figcaption>
+  </figure>
+
   {/* Column-major, so reading down a column follows the tier order rather than
       jumping between categories the way row-major filling would. Six rows puts the
       two Superior categories, which are 142 of the 147 windows, in the first
@@ -530,24 +608,33 @@ const faces = ELEVATIONS.map(layout);
     {
       faces.map((face) => (
         <figure class="overflow-hidden rounded-2xl border border-line bg-card">
-          <figcaption class="border-b border-line bg-paper-deep/50 px-4 py-3 sm:px-5">
-            <h3 class="flex flex-wrap items-baseline gap-x-2.5 font-serif text-base font-bold text-ink">
-              {c.faces[face.key]!.label}
-              <span class="font-sans text-2xs font-medium tracking-wider text-ink-faint">
-                {c.numberBand(face.numberBand)}
-              </span>
-            </h3>
-            <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
-              {c.faces[face.key]!.outlook}
-              <a
-                href={face.source}
-                rel="nofollow noopener"
-                target="_blank"
-                class="ml-1.5 whitespace-nowrap text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
-              >
-                {c.photo}
-              </a>
-            </p>
+          <figcaption class="flex items-start gap-3 border-b border-line bg-paper-deep/50 px-4 py-3 sm:gap-4 sm:px-5">
+            {/* The same plan again, this wall only, so the reader never has to
+                scroll back up to place the drawing underneath. */}
+            <CourtPlan
+              only={face.key}
+              class="w-20 shrink-0 rounded-md ring-1 ring-line sm:w-28"
+              label={c.plan.miniAlt(c.faces[face.key]!.label)}
+            />
+            <div class="min-w-0">
+              <h3 class="flex flex-wrap items-baseline gap-x-2.5 font-serif text-base font-bold text-ink">
+                {c.faces[face.key]!.label}
+                <span class="font-sans text-2xs font-medium tracking-wider text-ink-faint">
+                  {c.numberBand(face.numberBand)}
+                </span>
+              </h3>
+              <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+                {c.faces[face.key]!.outlook}
+                <a
+                  href={face.source}
+                  rel="nofollow noopener"
+                  target="_blank"
+                  class="ml-1.5 whitespace-nowrap text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
+                >
+                  {c.photo}
+                </a>
+              </p>
+            </div>
           </figcaption>
 
           <div class="table-scroll">
