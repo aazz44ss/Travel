@@ -1,17 +1,14 @@
 ---
 import {
   ELEVATIONS,
-  ROSE_CATEGORY_LABEL,
   ROSE_ROOMS,
   ROSE_ROOM_COUNT,
-  categoryAt,
-  roseCourtTally,
   type ElevationFace,
   type RoseCategory,
 } from '~/data/fsh-rose-court';
 import { ROOMS } from '~/data/fantasy-springs-hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { roomName } from '~/i18n/rooms';
+import { categoryLabel, roomName } from '~/i18n/rooms';
 
 interface Props {
   locale?: Locale;
@@ -22,18 +19,17 @@ const { locale = DEFAULT_LOCALE } = Astro.props;
 const COPY: Record<Locale, {
   heading: (n: number) => string;
   intro: string;
-  categories: Record<RoseCategory, string>;
-  parkView: string;
+  /** Why the only view tier here is Park View, when the hotel publishes two. */
+  viewNote: string;
   count: (n: number) => string;
   numberBand: (band: string) => string;
   floor: (n: number) => string;
   figureAlt: (face: string, n: number) => string;
-  empty: string;
-  roomLabel: (n: string) => string;
-  ariaCell: (n: string, category: string, park: boolean) => string;
-  noView: string;
-  bookedAs: (name: string) => string;
-  unassigned: string;
+  unlisted: string;
+  unlistedWhy: string;
+  tableCaption: (face: string) => string;
+  roomHeader: string;
+  typeHeader: string;
   faces: Record<string, { label: string; outlook: string }>;
   photo: string;
   method: string;
@@ -45,24 +41,18 @@ const COPY: Record<Locale, {
   'zh-hant': {
     heading: (n) => `玫瑰庭區 ${n} 間客房的位置`,
     intro:
-      '玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以 9103 和 3103 是同一個窗戶，差七層樓。點任何一扇窗看它的房型。',
-    categories: {
-      superior: '精緻客房',
-      alcove: '附凹室精緻客房',
-      deluxe: '尊爵客房',
-      accessible: '尊爵無障礙客房',
-    },
-    parkView: '樂園景觀',
+      '玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以 9103 和 3103 是同一個窗戶，差七層樓。每扇窗的顏色就是它訂房時的房型。',
+    viewNote:
+      '這一側的景觀等級只有「樂園景觀」一種。官方確實還有一級「樂園全景觀」，但那是泉鄉區的等級——泉鄉區是正面對著園區的那一側，房間是 50 m² 的尊爵客房，和這裡的玫瑰庭區是不同的一面牆，所以下面不會出現。',
     count: (n) => `${n} 間`,
     numberBand: (band) => `房號 ${band}`,
     floor: (n) => `${n}F`,
-    figureAlt: (face, n) => `${face}的立面圖，${n} 扇窗各標上房號與客房分類。`,
-    empty: '點上面任何一扇窗，這裡會顯示它的房型。',
-    roomLabel: (n) => `${n} 號房`,
-    ariaCell: (n, category, park) => `${n} 號房，${category}${park ? '，樂園景觀' : ''}`,
-    noView: '無景觀指定',
-    bookedAs: (name) => `訂房時的分類：${name}`,
-    unassigned: '官方公布的樓層區間沒有涵蓋這個位置。',
+    figureAlt: (face, n) => `${face}的立面圖，${n} 扇窗各標上房號，並依訂房房型上色。`,
+    unlisted: '官方未分級',
+    unlistedWhy: '精緻客房的樓層區間只到 7 樓，沒有說明 8 樓的 8301 怎麼賣',
+    tableCaption: (face) => `${face}的客房房號與對應房型`,
+    roomHeader: '房號',
+    typeHeader: '訂房時的房型',
     faces: {
       park: {
         label: '朝夢幻泉鄉的一面',
@@ -90,24 +80,18 @@ const COPY: Record<Locale, {
   ja: {
     heading: (n) => `ローズコートサイド ${n} 室の位置`,
     intro:
-      'ローズコートサイドは中庭をコの字に囲み、3 つの面それぞれに部屋番号の系列があります。先頭が階、下 3 桁が位置なので、9103 と 3103 は 7 階違いの同じ窓です。どの窓でも押すと客室タイプが出ます。',
-    categories: {
-      superior: 'スーペリアルーム',
-      alcove: 'スーペリア・アルコーヴルーム',
-      deluxe: 'デラックスルーム',
-      accessible: 'デラックス・アクセシブルルーム',
-    },
-    parkView: 'パークビュー',
+      'ローズコートサイドは中庭をコの字に囲み、3 つの面それぞれに部屋番号の系列があります。先頭が階、下 3 桁が位置なので、9103 と 3103 は 7 階違いの同じ窓です。窓の色がそのまま予約時の客室タイプです。',
+    viewNote:
+      'この面にある眺望の区分は「パークビュー」だけです。公式にはもう一段上の「パークグランドビュー」もありますが、それはスプリングスサイド——パークに正対する側——の区分で、客室は 50 m² のデラックスルーム。ローズコートサイドとは別の壁なので、下の図には出てきません。',
     count: (n) => `${n} 室`,
     numberBand: (band) => `部屋番号 ${band}`,
     floor: (n) => `${n}F`,
-    figureAlt: (face, n) => `${face}の立面図。${n} 枚の窓に部屋番号と客室区分を入れています。`,
-    empty: '上のどれかの窓を押すと、その客室タイプがここに出ます。',
-    roomLabel: (n) => `${n} 号室`,
-    ariaCell: (n, category, park) => `${n} 号室、${category}${park ? '、パークビュー' : ''}`,
-    noView: '眺望指定なし',
-    bookedAs: (name) => `予約時の区分：${name}`,
-    unassigned: '公式が公表している階層の区分に、この位置は含まれていません。',
+    figureAlt: (face, n) => `${face}の立面図。${n} 枚の窓に部屋番号を入れ、予約時の客室タイプで色分けしています。`,
+    unlisted: '区分の記載なし',
+    unlistedWhy: 'スーペリアルームの階層区分は 7 階までで、8 階の 8301 をどう売るのかは書かれていない',
+    tableCaption: (face) => `${face}の部屋番号と対応する客室タイプ`,
+    roomHeader: '部屋番号',
+    typeHeader: '予約時の客室タイプ',
     faces: {
       park: {
         label: 'ファンタジースプリングスに向く面',
@@ -138,25 +122,20 @@ const COPY: Record<Locale, {
   en: {
     heading: (n) => `Where the Rose Court Side’s ${n} rooms are`,
     intro:
-      'The Rose Court Side wraps three sides of the courtyard, and each side has its own run of room numbers. The first digit is the floor and the last three fix the position, so 9103 and 3103 are the same window seven floors apart. Select any window to see its room type.',
-    categories: {
-      superior: 'Superior Room',
-      alcove: 'Superior Alcove Room',
-      deluxe: 'Deluxe Room',
-      accessible: 'Deluxe Accessible Room',
-    },
-    parkView: 'Park View',
-    count: (n) => `${n} rooms`,
+      'The Rose Court Side wraps three sides of the courtyard, and each side has its own run of room numbers. The first digit is the floor and the last three fix the position, so 9103 and 3103 are the same window seven floors apart. The colour of each window is the room type it is sold as.',
+    viewNote:
+      'Park View is the only view tier on this side. The hotel does publish a higher one — Park Grand View — but that belongs to the Springs Side, the side that faces the park head on, where the rooms are 50 m² Deluxe Rooms. It is a different wall from the Rose Court, so it does not appear below.',
+    count: (n) => `${n} room${n === 1 ? '' : 's'}`,
     numberBand: (band) => `Numbers ${band}`,
     floor: (n) => `${n}F`,
     figureAlt: (face, n) =>
-      `Elevation of ${face}, with all ${n} windows labelled by room number and category.`,
-    empty: 'Select any window above to see its room type.',
-    roomLabel: (n) => `Room ${n}`,
-    ariaCell: (n, category, park) => `Room ${n}, ${category}${park ? ', Park View' : ''}`,
-    noView: 'No view designation',
-    bookedAs: (name) => `Booked as: ${name}`,
-    unassigned: 'No published floor band covers this position.',
+      `Elevation of ${face}, with all ${n} windows labelled by room number and coloured by room type.`,
+    unlisted: 'No tier published',
+    unlistedWhy:
+      'the Superior floor bands stop at the 7th floor, and nothing says how 8301 on the 8th is sold',
+    tableCaption: (face) => `Room numbers on ${face} and the type each is sold as`,
+    roomHeader: 'Room',
+    typeHeader: 'Sold as',
     faces: {
       park: {
         label: 'the side facing Fantasy Springs',
@@ -202,7 +181,18 @@ const c = COPY[locale];
  */
 
 const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room, 'fsh', locale)]));
-const tally = roseCourtTally();
+
+/**
+ * The room type's name without the side it is on. Every official name starts with
+ * the side — 玫瑰庭區, ローズコートサイド, Rose Court Side — and this whole section is
+ * that one side, so repeating it ten times down the legend earns nothing. Taken
+ * off the front rather than retyped, so the legend cannot drift from the data.
+ */
+const SIDE = categoryLabel('fsh', locale, 'rose');
+const shortName = (id: string) => {
+  const full = displayName.get(id)!;
+  return full.startsWith(SIDE) ? full.slice(SIDE.length).trim() : full;
+};
 
 /** Drawing units. One unit is one CSS pixel at the elevation's natural size. */
 const BAY = 54; // horizontal pitch between window centres
@@ -216,17 +206,24 @@ const TOP = 74; // headroom for the parapet and its crest
 const BASE = 28; // the courtyard rockwork
 
 /**
- * Glass tints, dark enough for the room number to sit on them in white. The
- * measured colour of the real glazing is a mid sage, which the alcove rooms keep
- * because they are 118 of the 147 windows; the three rarer categories shift hue
- * from it far enough to separate at a glance.
+ * Glass tints: one hue per room category, and within a hue one shade per tier,
+ * darkest first. So the colour of a window is the room type it is sold as, and
+ * the reader never has to click anything to find that out — Park View reads as
+ * the deepest block on its facade because Park View is the top tier.
+ *
+ * Ramps are as long as the category has tiers; a tenth room type appearing in the
+ * data would fail the build rather than quietly borrow a neighbour's colour. All
+ * shades stay light enough to carry the room number in dark ink.
  */
-const GLASS: Record<RoseCategory, [string, string]> = {
-  superior: ['#6d97b2', '#4f7791'],
-  alcove: ['#7a8d81', '#5d6f66'],
-  deluxe: ['#ae8b45', '#8a6a2e'],
-  accessible: ['#96718a', '#77516a'],
+const RAMPS: Record<RoseCategory, string[]> = {
+  superior: ['#74a8c6', '#a3c8de', '#d6e8f2'],
+  alcove: ['#8aa585', '#b5c8ae', '#e0e8da'],
+  deluxe: ['#d9bd77'],
+  accessible: ['#b08aa6', '#d8c4d2'],
 };
+
+/** The one position no published floor band covers, drawn as unlisted. */
+const UNLISTED_GLASS = '#dedad2';
 
 /** The hotel's own photograph of a guest-room window, served from its CDN. */
 const TRACED_PHOTO = 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/gallery/fcu/fcu_facilities_03.jpg';
@@ -308,26 +305,57 @@ function boulders(width: number, y: number, seed: number) {
 
 interface Cell {
   number: string;
-  category: RoseCategory;
-  parkView: boolean;
-  /** Index into `TYPE_NAMES`; the click handler resolves it. Room type names are
-   *  long and there are 147 windows, so they are not repeated into the markup. */
-  type?: number;
+  /** Room type the position is sold as, or undefined for the one that has none. */
+  type?: string;
+  glass: string;
+  typeName?: string;
   x: number;
   y: number;
   hasAbove: boolean;
 }
 
-const TYPE_NAMES = [
-  ...new Set(
-    ROSE_ROOMS.map((room) => room.roomType).filter((id): id is string => !!id),
-  ),
-].map((id) => displayName.get(id)!);
-const typeIndex = new Map(
-  [...new Set(ROSE_ROOMS.map((room) => room.roomType).filter((id): id is string => !!id))].map(
-    (id, i) => [id, i],
-  ),
-);
+/**
+ * The bookable types on this side, each with the colour that stands for it.
+ *
+ * Derived from the positions rather than listed by hand, so a change to the
+ * published floor bands moves the legend with it. Order is the order the legend
+ * reads in and the order the ramps assume: category first, then tier, with Park
+ * View ahead of the upper floors and the upper floors ahead of the lower.
+ */
+const CATEGORY_ORDER: RoseCategory[] = ['superior', 'alcove', 'deluxe', 'accessible'];
+
+const TYPES = [...new Set(ROSE_ROOMS.map((room) => room.roomType))]
+  .filter((id): id is string => !!id)
+  .map((id) => {
+    const rooms = ROSE_ROOMS.filter((room) => room.roomType === id);
+    return {
+      id,
+      category: rooms[0]!.category,
+      parkView: rooms[0]!.parkView,
+      lowestFloor: Math.min(...rooms.map((room) => room.floor)),
+      count: rooms.length,
+      name: shortName(id),
+    };
+  })
+  .sort(
+    (a, b) =>
+      CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) ||
+      Number(b.parkView) - Number(a.parkView) ||
+      b.lowestFloor - a.lowestFloor,
+  )
+  .map((type, _, all) => {
+    const rank = all.filter((other) => other.category === type.category).indexOf(type);
+    const ramp = RAMPS[type.category];
+    if (rank >= ramp.length) {
+      throw new Error(
+        `ElevationMap: ${type.category} has more room types than shades (${type.id})`,
+      );
+    }
+    return { ...type, glass: ramp[rank]! };
+  });
+
+const glassFor = new Map(TYPES.map((type) => [type.id, type.glass]));
+const UNLISTED_COUNT = ROSE_ROOMS.filter((room) => !room.roomType).length;
 
 function layout(face: ElevationFace) {
   const floors = [...new Set(face.columns.flatMap((col) => col.floors))].sort((a, b) => b - a);
@@ -391,9 +419,10 @@ function layout(face: ElevationFace) {
       )!;
       cells.push({
         number: room.number,
-        category: categoryAt(column, floor),
-        parkView: room.parkView,
-        ...(room.roomType ? { type: typeIndex.get(room.roomType) } : {}),
+        ...(room.roomType
+          ? { type: room.roomType, typeName: shortName(room.roomType) }
+          : {}),
+        glass: room.roomType ? glassFor.get(room.roomType)! : UNLISTED_GLASS,
         x: centreX(i),
         y: centreY(floor),
         hasAbove: column.floors.includes(floor + 1),
@@ -424,51 +453,40 @@ function layout(face: ElevationFace) {
 const faces = ELEVATIONS.map(layout);
 ---
 
-<section
-  id="rose-court"
-  class="not-prose scroll-mt-32"
-  data-elevation
-  data-strings={JSON.stringify({
-    roomLabel: c.roomLabel('{n}'),
-    noView: c.noView,
-    parkView: c.parkView,
-    bookedAs: c.bookedAs('{name}'),
-    unassigned: c.unassigned,
-    separator: locale === 'en' ? ', ' : '・',
-    categories: c.categories,
-    types: TYPE_NAMES,
-  })}
->
+<section id="rose-court" class="not-prose scroll-mt-32">
   <div>
     <h2 class="font-serif text-2xl font-bold text-ink">{c.heading(ROSE_ROOM_COUNT)}</h2>
     <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{c.intro}</p>
+    <p class="mt-3 max-w-3xl text-[0.875rem] leading-[1.85] text-ink-soft">{c.viewNote}</p>
   </div>
 
-  <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+  {/* Column-major, so reading down a column follows the tier order rather than
+      jumping between categories the way row-major filling would. Six rows puts the
+      two Superior categories, which are 142 of the 147 windows, in the first
+      column and the rare types in the second. */}
+  <ul class="mt-6 grid grid-flow-row gap-x-8 gap-y-2 text-xs sm:grid-flow-col sm:grid-rows-6">
     {
-      (Object.keys(ROSE_CATEGORY_LABEL) as RoseCategory[]).map((key) => (
-        <li class="flex items-center gap-1.5">
+      TYPES.map((type) => (
+        <li class="flex items-baseline gap-2">
           <span
-            class="h-3.5 w-3.5 rounded-[2px] ring-1 ring-black/10"
-            style={`background:${GLASS[key][1]}`}
+            class="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[2px] ring-1 ring-black/10"
+            style={`background:${type.glass}`}
           />
-          <span class="text-ink-soft">{c.categories[key]}</span>
-          <span class="text-ink-faint">
-            {c.count(tally.filter((t) => t.category === key).reduce((n, t) => n + t.count, 0))}
-          </span>
+          <span class="text-ink">{type.name}</span>
+          <span class="ml-auto shrink-0 tabular-nums text-ink-faint">{c.count(type.count)}</span>
         </li>
       ))
     }
-    <li class="flex items-center gap-1.5">
+    <li class="flex items-baseline gap-2">
       <span
-        class="h-3.5 w-3.5 rounded-[2px] bg-berry/20 ring-1.5 ring-berry ring-inset"
+        class="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[2px] ring-1 ring-ink-faint ring-inset"
+        style={`background:${UNLISTED_GLASS};border:1px dashed var(--color-ink-faint)`}
         aria-hidden="true"></span>
-      <span class="text-ink-soft">{c.parkView}</span>
-      <span class="text-ink-faint">
-        {c.count(tally.filter((t) => t.parkView).reduce((n, t) => n + t.count, 0))}
-      </span>
+      <span class="text-ink">{c.unlisted}</span>
+      <span class="ml-auto shrink-0 tabular-nums text-ink-faint">{c.count(UNLISTED_COUNT)}</span>
     </li>
   </ul>
+  <p class="mt-2 text-2xs leading-relaxed text-ink-faint">{c.unlistedWhy}</p>
 
   <svg class="absolute h-0 w-0 overflow-hidden" aria-hidden="true" focusable="false">
     <defs>
@@ -497,7 +515,6 @@ const faces = ELEVATIONS.map(layout);
         <use href="#fsh-sill"></use>
         <path d={CORBEL} transform={`translate(0,${-WIN_H / 2 - 7})`}></path>
       </g>
-      <rect id="fsh-hit" x={-BAY / 2} y={-STOREY / 2} width={BAY} height={STOREY}></rect>
       <linearGradient id="fsh-wall" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color={WALL_LIGHT}></stop>
         <stop offset="1" stop-color={WALL_DARK}></stop>
@@ -506,14 +523,6 @@ const faces = ELEVATIONS.map(layout);
         <stop offset="0" stop-color="#dce9f2"></stop>
         <stop offset="1" stop-color="#f4f1ea"></stop>
       </linearGradient>
-      {
-        (Object.keys(GLASS) as RoseCategory[]).map((key) => (
-          <linearGradient id={`fsh-glass-${key}`} x1="0" y1="0" x2="0.35" y2="1">
-            <stop offset="0" stop-color={GLASS[key][0]} />
-            <stop offset="1" stop-color={GLASS[key][1]} />
-          </linearGradient>
-        ))
-      }
     </defs>
   </svg>
 
@@ -633,35 +642,14 @@ const faces = ELEVATIONS.map(layout);
                 </g>
               ))}
 
-              {face.cells
-                .filter((cell) => cell.parkView)
-                .map((cell) => (
-                  <rect
-                    x={cell.x - BAY / 2}
-                    y={cell.y - STOREY / 2}
-                    width={BAY}
-                    height={STOREY}
-                    fill="#8c2f4a"
-                    opacity="0.22"
-                  />
-                ))}
-
               {face.cells.map((cell) => (
-                <g
-                  class:list={['cell', cell.parkView && 'is-park']}
-                  data-cell
-                  data-n={cell.number}
-                  data-c={cell.category}
-                  data-t={cell.type}
-                  role="button"
-                  tabindex="0"
-                  aria-label={c.ariaCell(cell.number, c.categories[cell.category], cell.parkView)}
-                  transform={`translate(${cell.x},${cell.y})`}
-                >
+                <g transform={`translate(${cell.x},${cell.y})`}>
                   <use class="orn" href={cell.hasAbove ? '#fsh-sill-corbel' : '#fsh-sill'} />
-                  <use class="frame" href="#fsh-frame" />
-                  <use class:list={['glass', `g-${cell.category}`]} href="#fsh-glass" />
-                  <use class="hit" href="#fsh-hit" />
+                  <use
+                    class:list={['frame', !cell.type && 'is-unlisted']}
+                    href="#fsh-frame"
+                  />
+                  <use href="#fsh-glass" fill={cell.glass} />
                   <text class="num" y="0.5">
                     {cell.number}
                   </text>
@@ -700,22 +688,33 @@ const faces = ELEVATIONS.map(layout);
               ))}
             </svg>
           </div>
+
+          {/* The drawing is one image to a screen reader, so the numbers and the
+              types it colours them by are also given as a table. The wrapper takes
+              the hiding: a table ignores the 1px box `sr-only` sets on it and keeps
+              its own layout width, which then reaches past the page. */}
+          <div class="sr-only">
+            <table>
+              <caption>{c.tableCaption(c.faces[face.key]!.label)}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{c.roomHeader}</th>
+                  <th scope="col">{c.typeHeader}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {face.cells.map((cell) => (
+                  <tr>
+                    <th scope="row">{cell.number}</th>
+                    <td>{cell.typeName ?? c.unlisted}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </figure>
       ))
     }
-  </div>
-
-  <div
-    class="mt-6 rounded-xl border border-brand/30 bg-brand-soft/40 px-5 py-4"
-    data-detail
-    aria-live="polite"
-  >
-    <p class="text-sm text-ink-soft" data-detail-empty>{c.empty}</p>
-    <div class="hidden" data-detail-body>
-      <p class="font-serif text-lg font-bold text-ink" data-detail-number></p>
-      <p class="mt-1 text-sm text-ink-soft" data-detail-meta></p>
-      <p class="mt-2 text-sm text-brand-deep" data-detail-type></p>
-    </div>
   </div>
 
   <div class="mt-6 gap-5 sm:flex sm:items-start">
@@ -764,34 +763,27 @@ const faces = ELEVATIONS.map(layout);
     stroke-width: 0.8;
   }
 
-  .elevation .hit {
-    fill: transparent;
+  .elevation .frame {
+    fill: #fdf8f0;
+    stroke: #e7d2c4;
+    stroke-width: 0.8;
   }
 
-  .elevation .g-superior {
-    fill: url(#fsh-glass-superior);
-  }
-
-  .elevation .g-alcove {
-    fill: url(#fsh-glass-alcove);
-  }
-
-  .elevation .g-deluxe {
-    fill: url(#fsh-glass-deluxe);
-  }
-
-  .elevation .g-accessible {
-    fill: url(#fsh-glass-accessible);
+  /* The position no published floor band covers, drawn as unlisted rather than
+     as though it were sold like its neighbours. */
+  .elevation .frame.is-unlisted {
+    stroke: #8b8f99;
+    stroke-width: 1.4;
+    stroke-dasharray: 2.4 1.8;
   }
 
   .elevation .num {
     font-size: 10px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    fill: #ffffff;
+    fill: #1f2a33;
     text-anchor: middle;
     dominant-baseline: middle;
-    pointer-events: none;
   }
 
   .elevation .floor {
@@ -801,88 +793,4 @@ const faces = ELEVATIONS.map(layout);
     text-anchor: end;
     dominant-baseline: middle;
   }
-
-  .elevation .frame {
-    fill: #fdf8f0;
-    stroke: #e7d2c4;
-    stroke-width: 0.8;
-  }
-
-  .elevation .cell {
-    cursor: pointer;
-  }
-
-  .elevation .is-park .frame {
-    stroke: #8c2f4a;
-    stroke-width: 1.6;
-  }
-
-  .elevation .cell:hover .frame,
-  .elevation .cell:focus-visible .frame {
-    stroke: #0f4c5c;
-    stroke-width: 2;
-  }
-
-  .elevation .cell:focus-visible {
-    outline: none;
-  }
-
-  .elevation .cell.is-active .frame {
-    stroke: #0f4c5c;
-    stroke-width: 2.4;
-  }
-
-  .elevation .cell.is-active .frame {
-    fill: #ffffff;
-  }
 </style>
-
-<script>
-  function initElevation(root: HTMLElement) {
-    const strings = JSON.parse(root.dataset.strings!) as {
-      roomLabel: string;
-      noView: string;
-      parkView: string;
-      bookedAs: string;
-      unassigned: string;
-      separator: string;
-      categories: Record<string, string>;
-      types: string[];
-    };
-    const empty = root.querySelector<HTMLElement>('[data-detail-empty]');
-    const body = root.querySelector<HTMLElement>('[data-detail-body]');
-    const number = root.querySelector<HTMLElement>('[data-detail-number]');
-    const meta = root.querySelector<HTMLElement>('[data-detail-meta]');
-    const type = root.querySelector<HTMLElement>('[data-detail-type]');
-    if (!empty || !body || !number || !meta || !type) return;
-
-    const cells = root.querySelectorAll<SVGGElement>('[data-cell]');
-
-    const select = (cell: SVGGElement) => {
-      cells.forEach((other) => other.classList.toggle('is-active', other === cell));
-      const parkView = cell.classList.contains('is-park');
-      const typeName = cell.dataset.t ? strings.types[Number(cell.dataset.t)] : undefined;
-      number.textContent = strings.roomLabel.replace('{n}', cell.dataset.n!);
-      meta.textContent = [
-        strings.categories[cell.dataset.c!],
-        parkView ? strings.parkView : strings.noView,
-      ].join(strings.separator);
-      type.textContent = typeName
-        ? strings.bookedAs.replace('{name}', typeName)
-        : strings.unassigned;
-      empty.classList.add('hidden');
-      body.classList.remove('hidden');
-    };
-
-    cells.forEach((cell) => {
-      cell.addEventListener('click', () => select(cell));
-      cell.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        select(cell);
-      });
-    });
-  }
-
-  document.querySelectorAll<HTMLElement>('[data-elevation]').forEach((root) => initElevation(root));
-</script>
