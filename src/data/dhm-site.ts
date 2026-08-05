@@ -7,29 +7,21 @@
  * The footprint is 294 by 235 m over about 20,100 m²; the harbour it faces is
  * about 178,000 m².
  *
- * This is the one figure on the page that carries a distance. Google's maps could
- * not be used for it: measuring their imagery to build geometry is not something
- * their terms allow, and no key is available here either. The room-by-room plan
- * below stays schematic, because what it needs — which window sits where along a
- * corridor — is in the hand-drawn floor plans and not in any survey.
+ * This is what gives the plan its size and its bearing. The room plan itself is the
+ * hand-drawn one traced in `./dhm-drawing`, and what a hand drawing cannot say is how
+ * many metres across the building is or which way it points; the survey says both. Ten
+ * corners named by the drawing and by the outline below are the ones the drawing's fit
+ * was made on, and afterwards the outline is the check on it — every one of the 515
+ * cells drawn has its centre inside this footprint.
+ *
+ * Google's maps could not be used for any of it: measuring their imagery to build
+ * geometry is not something their terms allow, and no key is available here either.
  */
 
 /** Metres about the hotel centre, y south-positive, as a plan is read. */
 export type Point = readonly [number, number];
 
 export const SITE_VIEW = { x0: -330.0, y0: -170.0, x1: 150.0, y1: 190.0 } as const;
-
-/**
- * Two points on the measured frontage that also exist on the schematic room plan:
- * the top of the harbour-facing spine, and the south-western tip. Matching this
- * pair fixes the scale and the rotation for laying the measured water over that
- * plan, and the fit is self-checking — it puts the plan's 17-unit room pitch at
- * 4.37 m, which is what a 37 m² room's frontage actually is.
- */
-export const ANCHORS: readonly [Point, Point] = [
-  [-24.8, -24.1],
-  [-70.8, 88.2],
-];
 
 /** 100 m, for the scale bar. */
 export const SITE_SCALE_BAR = 100;
@@ -394,33 +386,50 @@ export const HARBOUR: Point[] = [[37.2, 56.4],
   [18.1, 60.9]];
 
 /**
- * The two stretches of footprint whose rooms look at the harbour basin, taken as
- * the outline vertices that are nearer the basin than the canals and within 70 m
- * of it. The southern arm runs 108 m at 5 to 25 m from the water; the
- * north-western one runs 112 m at 24 to 68 m, and the difference between them is
- * the depth of Piazza Topolino.
+ * The Porto Paradiso frontage — the one face of the building whose rooms the plans
+ * number — as one straight wall for each face of it.
+ *
+ * It is the stretch of outline from the north-west wing round to the south-western
+ * tip of the harbour arm: 31 vertices over 294 m, reduced to the walls those
+ * vertices lie on. Reducing it matters because most of them are balconies and bays
+ * two to nine metres deep, and because it is the corners that are wanted here: the
+ * first eight points below are eight of the ten the drawing was fitted on.
+ *
+ * Which vertices belong to which wall is decided by their segments' bearings, not
+ * by fitting a fixed number of lines to the whole run. Six lines fitted over the
+ * whole frontage put two of the north-west wing's vertices on the north spine's
+ * line, which dragged the corner between them six metres west. Grouping by bearing
+ * first puts every corner where the drawing turns one. Each group then gets a least
+ * squares line, consecutive lines are intersected for the corner, and no vertex ends
+ * up more than 2.5 m from its wall.
+ *
+ * The last wall is the tip. The harbour arm does not end where it stops bearing away
+ * from the water: it turns back and runs 19 m south-south-east to the point of the
+ * tip, and the drawing draws that turn — the wing's last rooms, 4373 and 4375, are on
+ * it, set at an angle to the rest.
+ *
+ * Walked in this order the building is always on the left, which is the side both
+ * rows of every corridor's rooms are on.
  */
-export const FRONTAGE: Point[][] = [[[-46.9, 90.3],
-  [-38.9, 99.7],
-  [-53.9, 113.6],
-  [-57.5, 114.0],
-  [-66.1, 106.3],
-  [-70.8, 88.2],
-  [-60.6, 62.7],
-  [-51.4, 54.4],
-  [-52.6, 53.2]],
-  [[-35.6, -26.3],
-  [-34.9, -24.3],
-  [-51.6, -20.3],
-  [-50.5, -17.2],
-  [-66.4, -11.6],
-  [-68.3, -14.9],
-  [-76.1, -12.0],
-  [-84.1, -15.5],
-  [-85.5, -12.3],
-  [-100.8, -19.3],
-  [-99.4, -22.4],
-  [-125.1, -34.6]]];
+export const FRONTAGE_WALL: Point[] = [[-125.5, -33.8],
+  [-77.1, -10.7],
+  [-30.0, -25.4],
+  [-6.7, 29.7],
+  [-31.5, 37.1],
+  [-60.0, 61.3],
+  [-70.9, 88.3],
+  [-66.2, 106.5]];
+
+/**
+ * The wall the south-eastern tail stands on: outline vertices 77 and 76, and the
+ * last two corners the drawing was fitted on.
+ *
+ * It is the only wall off the frontage the outline gives cleanly: 40 m running
+ * parallel to the south spine, which is 4.0 m for each of the ten rooms the drawing
+ * puts there. Nothing else of that length or bearing lies anywhere near where the
+ * drawing puts the tail.
+ */
+export const TAIL_WALL: Point[] = [[52.5, 58.5], [64.8, 96.9]];
 
 /** The lagoon east of the harbour, out of the cropped view but kept for reference. */
 export const LAGOON: Point[] = [[-427.5, 264.5],
@@ -437,3 +446,17 @@ export const LAGOON: Point[] = [[-427.5, 264.5],
   [-386.5, 240.1],
   [-394.9, 248.1],
   [-424.3, 244.2]];
+
+
+/** Whether a point is within the measured building, which is how the cells are checked. */
+export function inFootprint(p: Point): boolean {
+  let hit = false;
+  for (let i = 0, j = HOTEL_FOOTPRINT.length - 1; i < HOTEL_FOOTPRINT.length; j = i, i += 1) {
+    const a = HOTEL_FOOTPRINT[i]!;
+    const b = HOTEL_FOOTPRINT[j]!;
+    if (a[1] > p[1] !== b[1] > p[1] && p[0] < a[0] + ((p[1] - a[1]) / (b[1] - a[1])) * (b[0] - a[0])) {
+      hit = !hit;
+    }
+  }
+  return hit;
+}

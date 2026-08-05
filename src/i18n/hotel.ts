@@ -769,7 +769,7 @@ const INDEX_COPY: Record<Locale, HotelIndexCopy> = {
         kicker: 'A minute from the Tokyo Disneyland gate',
         description:
           'Standard, character, concierge and suite rooms broken into filterable specifications, plus a floor plan of 116 positions drawn to true proportions.',
-        facts: ['Three view grades', 'True-proportion floor plan', 'Room-number lookup', 'Official layouts'],
+        facts: ['Three view grades', 'True-proportion floor plan', 'Room numbers matched', 'Official layouts'],
       },
     },
   },

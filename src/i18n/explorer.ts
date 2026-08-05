@@ -64,6 +64,8 @@ export interface ExplorerCopy {
     lagoon: string;
     frontage: string;
     hotel: string;
+    /** Credit for the aerial photography, which its licence requires. */
+    credit: string;
     scaleBar: (metres: number) => string;
     caption: string;
   };
@@ -73,11 +75,6 @@ export interface ExplorerCopy {
     intro: (rooms: number, harbour: number) => string;
     floors: string;
     floorLabel: (floor: number) => string;
-    lookupLabel: string;
-    lookupPlaceholder: string;
-    lookupSubmit: string;
-    lookupIncomplete: string;
-    lookupMissing: string;
     tapHint: string;
     readTitle: string;
     readBody: string;
@@ -163,6 +160,7 @@ const zhHant: ExplorerCopy = {
     title: '東京迪士尼海洋觀海景大飯店與地中海港灣的實測位置',
     desc:
       '依實際比例的基地圖。飯店輪廓呈馬蹄形環抱地中海港灣，港灣在西南側，東南另有一片水域。',
+    credit: '底圖航照：',
     harbour: '地中海港灣',
     lagoon: '宮殿運河',
     frontage: '客房面向港灣的一段',
@@ -177,11 +175,6 @@ const zhHant: ExplorerCopy = {
       `${rooms} 間客房畫在 2 到 5 樓的平面上，其中 ${harbour} 間的窗戶朝地中海港灣那一側。點任一間房，看它看得到什麼、看不看得到水上表演。`,
     floors: '樓層',
     floorLabel: (floor) => `${floor} 樓`,
-    lookupLabel: '查房號',
-    lookupPlaceholder: '例如 5353',
-    lookupSubmit: '找房間',
-    lookupIncomplete: '請輸入完整 4 位房號。',
-    lookupMissing: '這張圖上找不到這個號碼。請確認第一碼是 2 到 5 的樓層。',
     tapHint: '點圖上任一間房',
     readTitle: '第一碼樓層，後三碼位置',
     readBody:
@@ -191,7 +184,7 @@ const zhHant: ExplorerCopy = {
     svgDesc:
       '飯店像一個環抱地中海港灣的馬蹄形。左上翼與上方走廊面向米老鼠廣場，中央直廊與左下翼面向港灣，右側與右下翼背對水面。每個多邊形是一間客房。',
     note: (rooms, enumerated) =>
-      `底圖是實測的：飯店輪廓與地中海港灣取自 OpenStreetMap，套在同一個比例上（比例尺 100 公尺），所以水面到客房立面的距離是量出來的——南段只有 5 到 25 公尺，西北段隔著米老鼠廣場是 24 到 68 公尺。面向港灣的兩段——中央直廊與西南翼——的房間直接排在實測立面上（把立面長度除以房間數得到 3.9 與 4.4 公尺，正是 37 平方公尺客房的面寬，所以對得起來）；其餘各段的格子仍是示意的：走廊走向與每間房的順序、朝向依來源手繪平面圖描繪、房號逐格核對，其中 ${enumerated} 間能對到官方房型；每格寬度一律 4.37 公尺（同一節距，所以同一位置在各樓層上下對齊，佔兩格的房型會畫成兩倍寬），不反映實際面寬與面積，也不代表真實輪廓內的每一寸都是客房。全圖 ${rooms} 格，手機請左右滑動。`,
+      `底圖是實景航照圖（縮放層級 19，1 像素 0.24 公尺，比例尺 100 公尺，是浦安一帶目前最清晰的公開影像），不是手繪的形狀，所以海港、廣場、街屋都是照片本身。上面每一間房的形狀來自來源的手繪平面圖：每一面客房外牆都從 4 樓那張圖描下來——用圖上墨線自己圍出的輪廓，不是用眼睛量的——然後整張圖用一次相似變換放到實測座標上，只縮放、旋轉、平移，不拉伸，所以來源圖的比例完整保留，要遷就的是底下的照片，不是反過來。之前是反過來的：牆取自實測輪廓，來源圖只提供「這一段有幾間房」，再把牆按房間數均分。只要房間數少於圖上實際的開間數，這種做法就會錯，而港灣臂正好少了六格——4369 與 4371 是三格寬的觀海景套房，另外兩格是轉折處的純牆楔形。用 21 而不是 27 去除，那一臂每間房就寬了四分之一，誤差一路累積，末端的 4373、4375 最後畫到建物尖端之外將近 20 公尺。實測輪廓現在負責的是尺度與方位，也是事後的檢查。來源圖與 OpenStreetMap 輪廓共同指認的十個轉角上，這次的變換平均差 2.4 公尺、最大 5.4 公尺，而建物有 210 公尺長。換算下來，七面帶走廊的牆上每間房的面寬是 3.85 到 4.34 公尺，兩處只放一間與三間房的轉角短牆是 4.9 公尺，對照 37 平方公尺客房在 9.8 公尺深時的 4.3 公尺——八個各自獨立的判讀同時對上一份它們沒有被校準過的實測資料，而且沒有為了對上而調整任何數字。第二道檢查是逐格對：來源圖的墨線是封閉的，每一格客房都是墨線圍起來的一塊白，可以完全不參照上述任何步驟直接取出來；把 4 樓那 165 格各自配上這張圖畫得最近的一格，中位數差 0.9 公尺、九成在 2.2 公尺以內，差得更多的都是圖上的走廊、樓梯與教堂，本來就沒有對應的客房格。房深也是量圖得到的：橫切九個翼，每次都在 53 像素處遇到這一排的背牆、再過 12 像素遇到走廊另一側，換算成 9.8 公尺與 2.2 公尺，整個翼 21.8 公尺寬。逐格重讀來源圖也改正了四筆開間數：港灣臂 27 格而不是 21；南向走廊 16 格，其中 4101 這間套房佔兩格、上方兩組電梯廳佔四格，這是 4306 正對 4305 的原因；西北翼 18 格，折角的楔形跨兩格、轉角的 4125 佔兩格；北向走廊的房間從第二格才開始，第一格屬於西北翼自己的楔形。東南翼原本還站錯了牆：來源圖把它的十二格畫在東北面、4402 在最前面，另一排的十格與兩組電梯廳在後面。從南向走廊轉出來的 4330 到 4334 三間，改成站在來源圖給它們的那一小段南向外牆上，不再沿港灣臂的牆往回延伸——建物在那裡退了一階，原本差了 7 公尺。一條走廊兩側的房間共用同一組開間，那本來就是同一批結構開間從走廊兩邊看；電梯廳、樓梯間或酒廊就寫成空格。走廊內側那一排離牆較遠，牆往它轉的時候可站的長度就短一截，來源圖畫的是它就地收攏、不留缺口：4344 之後直接是 4348、4358 之後直接是 4362。還不忠實的地方：內側那一排自己的背牆沒有描，統一畫成一間標準房的深度；來源圖把翼畫成 21.8 公尺寬、實測是 24.4 公尺，這裡以來源圖為準，所以格子會比照片上的屋頂略窄一圈。全圖 ${rooms} 格互不重疊，每一格的中心都落在實測輪廓內，其中 ${enumerated} 間能對到官方房型。手機請左右滑動。`,
     zones: { harbour: '這一側是地中海港灣', piazza: '這一側是米老鼠廣場', chapel: '教堂' },
     facing: { inland: '朝內側（看不到水面）', canal: '宮殿運河側', entrance: '園區入口側' },
     shows: {
@@ -283,6 +276,7 @@ const ja: ExplorerCopy = {
     title: '東京ディズニーシー・ホテルミラコスタとメディテレーニアンハーバーの実測配置',
     desc:
       '実際の縮尺による敷地図。ホテルの輪郭は馬蹄形にメディテレーニアンハーバーを抱き、ハーバーは南西側、南東にもう一つの水面があります。',
+    credit: '航空写真の出典：',
     harbour: 'メディテレーニアンハーバー',
     lagoon: 'パラッツォ・カナル',
     frontage: 'ハーバーに面する客室の立面',
@@ -297,11 +291,6 @@ const ja: ExplorerCopy = {
       `2〜5 階の平面に ${rooms} 室を配置しています。うち ${harbour} 室はメディテレーニアンハーバー側。どの部屋をタップしても、窓の外と水上ショーが見えるかが分かります。`,
     floors: '階',
     floorLabel: (floor) => `${floor} 階`,
-    lookupLabel: '部屋番号を調べる',
-    lookupPlaceholder: '例：5353',
-    lookupSubmit: '調べる',
-    lookupIncomplete: '4 桁の部屋番号を入力してください。',
-    lookupMissing: 'この図に該当がありません。1 桁目が 2〜5 の階かご確認ください。',
     tapHint: '図の客室をタップ',
     readTitle: '1 桁目が階、下 3 桁が位置',
     readBody:
@@ -311,7 +300,7 @@ const ja: ExplorerCopy = {
     svgDesc:
       'ホテルはメディテレーニアンハーバーを抱くような馬蹄形です。左上の翼と上の廊下はミッキー広場に面し、中央の縦廊下と左下の翼はハーバーに面し、右側と右下の翼は水面に背を向けます。多角形 1 つが 1 室です。',
     note: (rooms, enumerated) =>
-      `下地は実測です。ホテルの輪郭とメディテレーニアンハーバーは OpenStreetMap から取り、同じ縮尺に重ねています（スケールバー 100 m）。したがって水面から客室立面までの距離は測った値で、南側は 5〜25 m、北西側はミッキー広場を挟んで 24〜68 m です。ハーバーに面する 2 区間（中央の縦廊下と南西翼）の客室は実測立面の上に並べています（立面長を室数で割ると 3.9 m と 4.4 m で、37 m² の客室の間口に一致するため採用）。ほかの区間のマスは模式的で、廊下の向きと各室の順序・向きは出典の手描き配置図をなぞり、部屋番号は 1 マスずつ照合、うち ${enumerated} 室が公式の客室タイプに対応します。マス幅は一律 4.37 m（同じピッチなので各階で上下に重なり、2 マス分を占めるタイプは倍幅）で、実際の間口や面積は表しません。全 ${rooms} マス。スマートフォンでは横にスクロールしてください。`,
+      `下地は実際の航空写真です（ズーム 19、1 px が 0.24 m、スケールバー 100 m。浦安周辺で公開されている最も精細な写真です）。ハーバー・広場・街並みは描いたものではなく写真そのものです。その上の客室の形は出典の手描き図から取っています。客室が面する外壁はすべて 4 階の図から写し取り、目分量ではなく図のインクが囲む輪郭そのものを使いました。そして図全体を一つの相似変換で実測座標に載せます。拡大・回転・平行移動だけで引き伸ばしはしないので、出典図の比率はそのまま残り、合わせに行くのは下の写真の側です。以前は逆でした。壁は実測の輪郭から取り、出典図は「この区間に何室あるか」だけを提供して、壁を室数で等分していました。室数が図の実際の開口数より少なければこの方法は必ず狂います。ハーバー側の翼はちょうど 6 区画ぶん足りませんでした。4369 と 4371 は 3 区画ぶんの幅があるミラコスタスイートで、ほかの 2 区画は折れ曲がりが残す壁だけの楔形です。27 ではなく 21 で割ったために、その翼の客室はどれも 4 分の 1 広くなり、誤差が積み上がって、末端の 4373 と 4375 は建物の先端から 20 m 近く外へ出ていました。実測の輪郭が受け持つのは寸法と方位、そして後からの検算です。出典図と OpenStreetMap の輪郭がともに示す 10 か所の角で、今回の変換の差は平均 2.4 m・最大 5.4 m。建物は 210 m あります。その縮尺で、廊下を持つ 7 面の壁の 1 室あたり間口は 3.85〜4.34 m、1 室と 3 室だけを載せる角の短い壁 2 面は 4.9 m となり、37 m² の客室が奥行き 9.8 m のときの 4.3 m と合います。互いに独立した 8 つの読み取りが、それに合わせて調整していない実測と一致したということです。検算はもう一つあります。出典図のインクは閉じているので、客室の区画はどれもインクが囲む白い領域として、ここまでの手順を一切参照せずに取り出せます。4 階のその 165 区画を、この図が描く最も近い区画とそれぞれ対応させると、差は中央値 0.9 m、9 割が 2.2 m 以内。それより離れるのは図の廊下・階段・チャペルで、対応する客室の区画がもともと存在しないものです。奥行きも図の実測から取りました。9 つの翼を横断すると、いずれも 53 px でその列の背面の壁、さらに 12 px 先で廊下の反対側に達します。縮尺に直すと 9.8 m と 2.2 m、翼の幅は 21.8 m です。区画を一つずつ読み直したことで、開口数の誤りも 4 か所直りました。ハーバー側の翼は 21 ではなく 27 区画。南側廊下は 16 区画で、スイートの 4101 が 2 区画、上のエレベーターホール 2 組が 4 区画を占めます。これが 4306 が 4305 の正面に来る理由です。北西の翼は 18 区画で、折れ曲がりの楔形が 2 区画にまたがり、角の 4125 が 2 区画を占めます。北側廊下の客室は 2 区画目から始まり、1 区画目は北西の翼自身の楔形です。南東の翼は立っている壁そのものが違っていました。出典図はその 12 区画を北東側の面に、4402 を先頭にして描き、もう一方の列の 10 区画とエレベーターホール 2 組はその後ろにあります。南側廊下から角を回る 4330〜4334 の 3 室は、ハーバー側の壁を逆にたどるのをやめ、出典図がそこに与えている短い南向きの面に立たせました。建物はそこで一段下がっており、以前は 7 m ずれていました。一つの廊下の両側の客室は同じ区画を共有します。もともと同じ構造開口を廊下の両側から見たものだからです。エレベーターホール・階段室・ラウンジは空欄として書き出します。廊下の内側の列は壁から遠いので、壁がそちらへ曲がるぶん立てる長さが短くなり、出典図はそれをその場で詰めて隙間を作りません。4344 の次は 4348、4358 の次は 4362 です。まだ忠実でないところ。内側の列自身の背面の壁は写し取っておらず、標準的な客室の奥行きで描いています。出典図は翼を 21.8 m 幅で描き、実測は 24.4 m ですが、ここでは出典図を採るので、区画は写真の屋根よりわずかに内側に収まります。図の ${rooms} 区画はどれも重ならず、中心はすべて実測の輪郭の内側にあり、そのうち ${enumerated} 室が公式の客室タイプに対応します。スマートフォンでは横にスクロールしてください。`,
     zones: { harbour: 'この側がメディテレーニアンハーバー', piazza: 'この側がミッキー広場', chapel: 'チャペル' },
     facing: { inland: '内側向き（水面は見えない）', canal: 'パラッツォ・カナル側', entrance: 'パーク入口側' },
     shows: {
@@ -406,6 +395,7 @@ const en: ExplorerCopy = {
     title: 'Tokyo DisneySea Hotel MiraCosta and Mediterranean Harbor, measured',
     desc:
       'A site plan at true scale. The hotel’s footprint curls around Mediterranean Harbor, which lies to the south-west, with a second body of water to the south-east.',
+    credit: 'Imagery: ',
     harbour: 'Mediterranean Harbor',
     lagoon: 'Palazzo Canals',
     frontage: 'Harbour-facing guest-room frontage',
@@ -420,11 +410,6 @@ const en: ExplorerCopy = {
       `${rooms} rooms drawn on the plans of floors 2 to 5, ${harbour} of them with windows on the Mediterranean Harbor side. Tap any room to see what it looks at and whether a water show is visible from it.`,
     floors: 'Floor',
     floorLabel: (floor) => `Floor ${floor}`,
-    lookupLabel: 'Look up a room number',
-    lookupPlaceholder: 'e.g. 5353',
-    lookupSubmit: 'Find it',
-    lookupIncomplete: 'Enter all four digits.',
-    lookupMissing: 'Not on this plan. Check that the first digit is a floor from 2 to 5.',
     tapHint: 'Tap a room on the plan',
     readTitle: 'First digit the floor, last three the position',
     readBody:
@@ -434,7 +419,7 @@ const en: ExplorerCopy = {
     svgDesc:
       'The hotel is a horseshoe wrapped around Mediterranean Harbor. The north-west wing and the upper corridor face Piazza Topolino, the central spine and the south-west wing face the harbour, and the eastern and south-eastern wings turn their backs to the water. Each polygon is one guest room.',
     note: (rooms, enumerated) =>
-      `The base is measured: the footprint and Mediterranean Harbor come from OpenStreetMap, laid on one scale with a 100 m bar, so the distance from the water to the guest-room frontage is a measurement — 5 to 25 m along the southern arm, 24 to 68 m on the north-west where Piazza Topolino sits in between. The two stretches that face the harbour — the central spine and the south-west wing — have their rooms laid on the measured facade, adopted because dividing those facades by their room counts gives 3.9 and 4.4 m, which is a 37 m² room's frontage. The cells elsewhere are schematic: corridor directions and each room's order and orientation are traced from the source's hand-drawn plans with every number checked cell by cell, ${enumerated} of them mapping to an official room type, and every cell is 4.37 m wide — one pitch, so positions stack across floors and a room covering two positions is drawn twice as wide — which represents neither true frontage nor floor area, and does not mean every part of the real outline is guest rooms. ${rooms} cells in total; scroll sideways on a phone.`,
+      `The base is aerial photography (zoom 19, one pixel to 0.24 m, with a 100 m bar — the sharpest imagery published over Urayasu) rather than shapes drawn by hand, so the harbour, the square and the streets are the photograph itself. The shape of every room on it is the source’s hand-drawn plan: each wall the rooms face is traced off the fourth-floor sheet, taken from the outline the drawing’s own ink encloses rather than read off it by eye, and the whole drawing is then placed on the surveyed frame by one similarity — scaled, turned and moved, never stretched — so it keeps its own proportions and the photograph underneath is what has to be met. It used to be the other way about. The walls came from the surveyed outline and the drawing gave only how many rooms stood on each, the wall then divided by that count. That is wrong wherever the count is short of the bays the drawing draws, and on the harbour arm it was short by six: 4369 and 4371 are MiraCosta Suites three bays wide apiece, and two more bays are the wedges of plain wall its bends leave. Divided by twenty-one instead of twenty-seven, every room on that arm came out a quarter too wide, and the error accumulated until 4373 and 4375 stood almost twenty metres beyond the point of the building. The survey now carries the size and the bearing, and it is the check afterwards. Over the ten corners the drawing and the OpenStreetMap outline both name, the fit is out by 2.4 m on average and 5.4 m at worst, on a building 210 m across. At that scale a room has 3.85 to 4.34 m of frontage on each of the seven walls that carry a corridor, and 4.9 m on the two corner stubs that carry one room and three, against the 4.3 m a 37 m² room 9.8 m deep has — nine independent readings agreeing with a survey none of them was calibrated against, and nothing fitted to make them. The second check is cell by cell. The drawing’s own cells can be had without reference to any of that — its ink is closed, so each cell is a white region shut in by it — and paired with the nearest cell this figure draws, the fourth floor’s 165 of them come out 0.9 m apart at the median and 2.2 m at the ninth decile; the few further out are the drawing’s corridors, stairs and chapel, which have no cell of the figure to pair with at all. The depth is measured off the drawing too: a line cast across each of nine wings meets the row’s back wall at 53 px and the far side of the corridor 12 px later, which the fit makes 9.8 m and 2.2 m, for a wing 21.8 m across. Reading the sheet’s bays one by one also settled four counts that were out. The harbour arm has twenty-seven bays, not twenty-one. The south spine has sixteen, the suite 4101 taking two of them and the two lift lobbies above it four, which is what puts 4306 opposite 4305. The north-west wing has eighteen, the wedge at its dog-leg spanning two and 4125 at the corner taking two. The north spine’s rooms begin at its second bay, the first belonging to that wing’s own wedge. The south-eastern wing was also standing on the wrong wall: the drawing puts its twelve bays on the north-eastern face with 4402 at the head of them, and the other row’s ten bays and two lift lobbies behind. And the three rooms that turn the corner out of the south spine, 4330 to 4334, now stand on the short south face the drawing gives them instead of being carried back along the arm’s wall, which had them seven metres out — the building steps there. Both sides of a corridor share the same bays, because they are the same structural bays seen from either side of it, and a lift lobby, a stair core or a lounge is written out as a gap. The row set back from the wall has less wall to stand on wherever the wall turns towards it, and the drawing closes it up rather than leaving a hole: 4344 is followed by 4348 and 4358 by 4362. What is still not faithful: that inner row’s own back wall is not traced, so it is drawn a standard room deep; and the drawing makes a wing 21.8 m across where the survey measures 24.4, and the drawing wins here, so the cells sit a little inside the roofs in the photograph. All ${rooms} cells overlap none of their neighbours and every one has its centre inside the surveyed outline; ${enumerated} of them match an official room type. On a phone, scroll sideways.`,
     zones: { harbour: 'Mediterranean Harbor is on this side', piazza: 'Piazza Topolino is on this side', chapel: 'Chapel' },
     facing: { inland: 'Faces inland (no water)', canal: 'Palazzo Canals side', entrance: 'Park entrance side' },
     shows: {
