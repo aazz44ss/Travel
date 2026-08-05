@@ -17,6 +17,9 @@ function visibleText(html) {
     .replace(/<header[\s\S]*?<\/header>/g, ' ')
     .replace(/<footer[\s\S]*?<\/footer>/g, ' ')
     .replace(/<nav[\s\S]*?<\/nav>/g, ' ')
+    // Text alternatives to figures are read instead of the figure, not as well as
+    // it, so counting them would double-count and inflate every length below.
+    .replace(/<div class="sr-only">[\s\S]*?<\/div>/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&[a-z]+;/g, ' ')
     .replace(/\s+/g, ' ')
@@ -86,42 +89,53 @@ ok(`${hrefs.size} distinct internal hrefs, all resolve`);
 // heading and legend, so a drift on either side shows up as a disagreement.
 console.log('\nRose Court elevations');
 const fshDb = read('hotels/fantasy-springs-hotel/index.html');
+// The room type is now carried by the colour of the window, with no interaction to
+// reveal it, so what has to hold is that the colour a reader looks up in the legend
+// covers exactly as many windows as the legend says it does.
 const cells = [
-  ...fshDb.matchAll(/data-number="(\d{4})"\s+data-category="([^"]*)"\s+data-park="([^"]*)"/g),
-].map((m) => ({ number: m[1], category: m[2], park: m[3] === 'true' }));
+  ...fshDb.matchAll(
+    /<use href="#fsh-glass" fill="(#[0-9a-f]{6})"><\/use><text class="num" y="0\.5">(\d{4})</g,
+  ),
+].map((m) => ({ glass: m[1], number: m[2] }));
 
 const headingTotal = Number(fshDb.match(/玫瑰庭區 (\d+) 間客房的位置/)?.[1]);
 cells.length === headingTotal
-  ? ok(`heading says ${headingTotal} rooms and ${cells.length} cells are rendered`)
-  : fail(`heading says ${headingTotal} rooms but ${cells.length} cells are rendered`);
+  ? ok(`heading says ${headingTotal} rooms and ${cells.length} windows are drawn`)
+  : fail(`heading says ${headingTotal} rooms but ${cells.length} windows are drawn`);
 new Set(cells.map((c) => c.number)).size === cells.length
   ? ok('no duplicate room numbers')
   : fail('duplicate room numbers');
 
 const sectionStart = fshDb.indexOf('id="rose-court"');
 const legendHtml = fshDb.slice(sectionStart, fshDb.indexOf('<figure', sectionStart));
-const legend = [...visibleText(legendHtml).matchAll(
-  /(精緻客房|附凹室精緻客房|尊爵客房|尊爵無障礙客房|樂園景觀)\s+(\d+) 間/g,
-)].map((m) => [m[1], Number(m[2])]);
-legend.length === 5 ? ok('legend has all five tallies') : fail(`legend has ${legend.length} tallies`);
-for (const [label, stated] of legend) {
-  const counted =
-    label === '樂園景觀'
-      ? cells.filter((c) => c.park).length
-      : cells.filter((c) => c.category === label).length;
+const legend = [
+  ...legendHtml.matchAll(
+    /style="background:(#[0-9a-f]{6})[^"]*"[^>]*><\/span><span class="text-ink">([^<]+)<\/span><span[^>]*>(\d+) 間/g,
+  ),
+].map((m) => ({ glass: m[1], label: m[2], stated: Number(m[3]) }));
+
+legend.length >= 2 ? ok(`legend names ${legend.length} room types`) : fail('legend is missing');
+new Set(legend.map((l) => l.glass)).size === legend.length
+  ? ok('every room type has its own colour')
+  : fail('two room types share a colour, so the drawing cannot be read');
+for (const { glass, label, stated } of legend) {
+  const counted = cells.filter((c) => c.glass === glass).length;
   counted === stated
-    ? ok(`legend ${label} ${stated} matches ${counted} cells`)
-    : fail(`legend ${label} says ${stated} but ${counted} cells carry it`);
+    ? ok(`legend ${label} ${stated} matches ${counted} windows`)
+    : fail(`legend ${label} says ${stated} but ${counted} windows carry ${glass}`);
 }
-const legendSum = legend
-  .filter(([l]) => l !== '樂園景觀')
-  .reduce((n, [, v]) => n + v, 0);
+const legendSum = legend.reduce((n, l) => n + l.stated, 0);
 legendSum === cells.length
-  ? ok(`category tallies sum to ${legendSum}`)
-  : fail(`category tallies sum to ${legendSum}, not ${cells.length}`);
-fshDb.includes('官方公布的樓層區間沒有涵蓋這個位置')
-  ? ok('the position no published band covers is disclosed')
+  ? ok(`room type tallies sum to ${legendSum}`)
+  : fail(`room type tallies sum to ${legendSum}, not ${cells.length}`);
+legendHtml.includes('官方未分級') && fshDb.includes('is-unlisted')
+  ? ok('the position no published band covers is drawn and named as such')
   : fail('unassigned position not disclosed');
+// The drawing is one image to a screen reader, so the numbers must also exist as text.
+[...fshDb.matchAll(/<div class="sr-only"><table>/g)].length === 3 &&
+[...fshDb.matchAll(/<th scope="row">\d{4}<\/th>/g)].length === cells.length
+  ? ok(`all ${cells.length} numbers also given as a table for screen readers`)
+  : fail('the elevations have no text alternative carrying the room numbers');
 
 // A hotel with a page nobody links to is a hotel nobody finds. Both listing pages
 // enumerate the same registry, so the check is that every hotel appears on both.
@@ -141,7 +155,7 @@ ok(`all ${HOTELS.length} hotels linked from the home page and the index, in ever
 console.log('\nevery locale renders the position map');
 for (const prefix of PREFIXES) {
   const html = read(`${prefix}hotels/fantasy-springs-hotel/index.html`);
-  const n = [...html.matchAll(/data-number="\d{4}"/g)].length;
+  const n = [...html.matchAll(/<text class="num" y="0\.5">\d{4}</g)].length;
   n === cells.length
     ? ok(`${prefix || 'zh-hant/'} renders ${n} cells`)
     : fail(`${prefix || 'zh-hant/'} renders ${n} cells, expected ${cells.length}`);

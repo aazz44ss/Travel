@@ -45,6 +45,22 @@ export interface ElevationFace {
   outlook: string;
   /** Left-to-right in the same order as the source photograph. */
   columns: ElevationColumn[];
+  /**
+   * Where each column sits across the facade, in bay widths, parallel to
+   * `columns`. Recovered from the survey photographs: the markers form a
+   * projected image of a rectangular grid, so fitting a line through each floor
+   * and each column gives two vanishing points, and sending the line joining
+   * them to infinity rectifies the facade far enough to read off ratios.
+   *
+   * Two of the three faces came back regular to within 3%, which is measurement
+   * noise, so they are recorded as evenly spaced. The third did not — see its
+   * own note.
+   */
+  bays: number[];
+  /** Centre of the roofline's ornamental crest, in the same bay units. */
+  crest: number;
+  /** Link to the photograph the face was surveyed on. */
+  source: string;
 }
 
 export const ELEVATIONS: ElevationFace[] = [
@@ -64,6 +80,9 @@ export const ELEVATIONS: ElevationFace[] = [
       { position: 115, floors: [9, 8, 7, 6, 5, 4, 3], category: 'alcove' },
       { position: 117, floors: [9, 8, 7, 6, 5, 4, 3], category: 'alcove' },
     ],
+    bays: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    crest: 4.5,
+    source: 'https://ameblo.jp/fukufukusatoka/entry-12881620128.html',
   },
   {
     key: 'chateau',
@@ -83,6 +102,15 @@ export const ELEVATIONS: ElevationFace[] = [
       { position: 210, floors: [6, 5, 4, 3], category: 'alcove' },
       { position: 211, floors: [6, 5, 4, 3], category: 'superior' },
     ],
+    // This face is the one that did not come back regular. Ten of its bays are
+    // even to within 4%, but the eleventh — between 208 and 209 — measures 1.9
+    // times the rest, which is a step in the building rather than noise. The
+    // photograph agrees: the last three positions sit on a block set back
+    // behind the corner, and it stops a storey lower, which is why 209 to 211
+    // reach only the 6th floor.
+    bays: [0, 1, 2, 3, 4, 5, 6, 7, 8.9, 9.9, 10.9],
+    crest: 4.5,
+    source: 'https://ameblo.jp/fukufukusatoka/entry-12881620128.html',
   },
   {
     key: 'diagonal',
@@ -104,6 +132,9 @@ export const ELEVATIONS: ElevationFace[] = [
       { position: 303, floors: [8, 7, 6, 5], category: 'alcove' },
       { position: 301, floors: [8, 7, 6, 5], category: 'superior' },
     ],
+    bays: [0, 1, 2, 3, 4, 5, 6, 7],
+    crest: 5.5,
+    source: 'https://ameblo.jp/fukufukusatoka/entry-12881620128.html',
   },
 ];
 
@@ -213,6 +244,17 @@ const PUBLISHED_COUNTS: Record<string, number> = {
   'deluxe:none': 2,
   'accessible:none': 2,
 };
+
+for (const face of ELEVATIONS) {
+  if (face.bays.length !== face.columns.length) {
+    throw new Error(
+      `fsh-rose-court: ${face.key} has ${face.columns.length} columns but ${face.bays.length} measured bays`,
+    );
+  }
+  if (face.bays.some((bay, i) => i > 0 && bay <= face.bays[i - 1]!)) {
+    throw new Error(`fsh-rose-court: ${face.key} bays are not left to right`);
+  }
+}
 
 for (const [key, expected] of Object.entries(PUBLISHED_COUNTS)) {
   const [category, view] = key.split(':');

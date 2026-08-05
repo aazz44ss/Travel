@@ -1,16 +1,14 @@
 ---
 import {
   ELEVATIONS,
-  ROSE_CATEGORY_LABEL,
   ROSE_ROOMS,
   ROSE_ROOM_COUNT,
-  categoryAt,
-  roseCourtTally,
+  type ElevationFace,
   type RoseCategory,
 } from '~/data/fsh-rose-court';
 import { ROOMS } from '~/data/fantasy-springs-hotel';
 import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
-import { roomName } from '~/i18n/rooms';
+import { categoryLabel, roomName } from '~/i18n/rooms';
 
 interface Props {
   locale?: Locale;
@@ -21,44 +19,40 @@ const { locale = DEFAULT_LOCALE } = Astro.props;
 const COPY: Record<Locale, {
   heading: (n: number) => string;
   intro: string;
-  categories: Record<RoseCategory, string>;
-  parkView: string;
+  /** Why the only view tier here is Park View, when the hotel publishes two. */
+  viewNote: string;
   count: (n: number) => string;
   numberBand: (band: string) => string;
   floor: (n: number) => string;
+  figureAlt: (face: string, n: number) => string;
+  unlisted: string;
+  unlistedWhy: string;
   tableCaption: (face: string) => string;
-  floorHeader: string;
-  empty: string;
-  roomLabel: (n: string) => string;
-  ariaCell: (n: string, category: string, park: boolean) => string;
-  noView: string;
-  bookedAs: (name: string) => string;
-  unassigned: string;
+  roomHeader: string;
+  typeHeader: string;
   faces: Record<string, { label: string; outlook: string }>;
+  photo: string;
+  method: string;
+  tracedAlt: string;
+  tracedCaption: string;
+  tracedLink: string;
   caveat: (positions: number) => string;
 }> = {
   'zh-hant': {
     heading: (n) => `玫瑰庭區 ${n} 間客房的位置`,
     intro:
-      '玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以 9103 和 3103 是同一個窗戶，差七層樓。點任何一格看它的房型。',
-    categories: {
-      superior: '精緻客房',
-      alcove: '附凹室精緻客房',
-      deluxe: '尊爵客房',
-      accessible: '尊爵無障礙客房',
-    },
-    parkView: '樂園景觀',
+      '玫瑰庭區以「ㄇ」字形圍住中庭，三個面各有一組房號。房號的第一位是樓層，後三位是位置——所以 9103 和 3103 是同一個窗戶，差七層樓。每扇窗的顏色就是它訂房時的房型。',
+    viewNote:
+      '這一側的景觀等級只有「樂園景觀」一種。官方確實還有一級「樂園全景觀」，但那是泉鄉區的等級——泉鄉區是正面對著園區的那一側，房間是 50 m² 的尊爵客房，和這裡的玫瑰庭區是不同的一面牆，所以下面不會出現。',
     count: (n) => `${n} 間`,
     numberBand: (band) => `房號 ${band}`,
-    floor: (n) => `${n} 樓`,
-    tableCaption: (face) => `${face}的客房位置，橫向是房號位置、縱向是樓層`,
-    floorHeader: '樓層',
-    empty: '點上面任何一格房號，這裡會顯示它的房型。',
-    roomLabel: (n) => `${n} 號房`,
-    ariaCell: (n, category, park) => `${n} 號房，${category}${park ? '，樂園景觀' : ''}`,
-    noView: '無景觀指定',
-    bookedAs: (name) => `訂房時的分類：${name}`,
-    unassigned: '官方公布的樓層區間沒有涵蓋這個位置。',
+    floor: (n) => `${n}F`,
+    figureAlt: (face, n) => `${face}的立面圖，${n} 扇窗各標上房號，並依訂房房型上色。`,
+    unlisted: '官方未分級',
+    unlistedWhy: '精緻客房的樓層區間只到 7 樓，沒有說明 8 樓的 8301 怎麼賣',
+    tableCaption: (face) => `${face}的客房房號與對應房型`,
+    roomHeader: '房號',
+    typeHeader: '訂房時的房型',
     faces: {
       park: {
         label: '朝夢幻泉鄉的一面',
@@ -74,31 +68,30 @@ const COPY: Record<Locale, {
           '正前方是對面的客房，但站到窗邊往斜向看得到樂園，而且看得到樂園景觀客房看不到的艾倫戴爾城堡。這一面只有 5 樓以上。',
       },
     },
+    photo: '看原始照片',
+    tracedAlt: '飯店官方外觀照，近看夢幻城堡館的客房窗戶：奶油色新藝術風格窗框、三片窗玻璃、窗上的扇形裝飾。',
+    tracedCaption: '立面圖上的窗框、窗台和窗頂那顆扇形裝飾，就是照這張官方照片裡的真窗戶描的。',
+    tracedLink: '官方照片',
+    method:
+      '這三張立面圖是照著實景照片量出來的。來源的逐間調查在三張中庭照片上逐格標記，把照片校正回正面視角之後，開間與樓高的比例就能直接讀出來——所以窗戶的疏密、樓層的高度、以及朝豪華館那一面在 208 與 209 之間退縮一個開間的落差，都是量到的，不是排出來的。窗框、窗台與窗上的裝飾則照著飯店官方外觀照描。中庭的實景照片版權屬於原作者，各面的「看原始照片」可以連過去看。',
     caveat: (positions) =>
       `位置與分類來自 fukufukusatoka 的逐間調查，該文說明其中包含作者的推測。可以信任的理由是它對得起來：上面 ${positions} 個位置拆成六種分類的間數，和飯店公布的間數完全一致，任何一格標錯都會讓總數對不上。唯一沒有歸屬的是 8301——官方的精緻客房樓層區間只到 7 樓，沒有說明 8 樓的那一間怎麼賣。`,
   },
   ja: {
     heading: (n) => `ローズコートサイド ${n} 室の位置`,
     intro:
-      'ローズコートサイドは中庭をコの字に囲み、3 つの面それぞれに部屋番号の系列があります。先頭が階、下 3 桁が位置なので、9103 と 3103 は 7 階違いの同じ窓です。どの区画でも押すと客室タイプが出ます。',
-    categories: {
-      superior: 'スーペリアルーム',
-      alcove: 'スーペリア・アルコーヴルーム',
-      deluxe: 'デラックスルーム',
-      accessible: 'デラックス・アクセシブルルーム',
-    },
-    parkView: 'パークビュー',
+      'ローズコートサイドは中庭をコの字に囲み、3 つの面それぞれに部屋番号の系列があります。先頭が階、下 3 桁が位置なので、9103 と 3103 は 7 階違いの同じ窓です。窓の色がそのまま予約時の客室タイプです。',
+    viewNote:
+      'この面にある眺望の区分は「パークビュー」だけです。公式にはもう一段上の「パークグランドビュー」もありますが、それはスプリングスサイド——パークに正対する側——の区分で、客室は 50 m² のデラックスルーム。ローズコートサイドとは別の壁なので、下の図には出てきません。',
     count: (n) => `${n} 室`,
     numberBand: (band) => `部屋番号 ${band}`,
-    floor: (n) => `${n} 階`,
-    tableCaption: (face) => `${face}の客室位置。横が部屋番号の位置、縦が階です`,
-    floorHeader: '階',
-    empty: '上のどれかを押すと、その客室タイプがここに出ます。',
-    roomLabel: (n) => `${n} 号室`,
-    ariaCell: (n, category, park) => `${n} 号室、${category}${park ? '、パークビュー' : ''}`,
-    noView: '眺望指定なし',
-    bookedAs: (name) => `予約時の区分：${name}`,
-    unassigned: '公式が公表している階層の区分に、この位置は含まれていません。',
+    floor: (n) => `${n}F`,
+    figureAlt: (face, n) => `${face}の立面図。${n} 枚の窓に部屋番号を入れ、予約時の客室タイプで色分けしています。`,
+    unlisted: '区分の記載なし',
+    unlistedWhy: 'スーペリアルームの階層区分は 7 階までで、8 階の 8301 をどう売るのかは書かれていない',
+    tableCaption: (face) => `${face}の部屋番号と対応する客室タイプ`,
+    roomHeader: '部屋番号',
+    typeHeader: '予約時の客室タイプ',
     faces: {
       park: {
         label: 'ファンタジースプリングスに向く面',
@@ -115,31 +108,34 @@ const COPY: Record<Locale, {
           '真正面は向かいの客室ですが、窓際に立てば斜めにパークが見え、しかもパークビューの客室からは見えないアレンデール城が見えます。この面は 5 階以上だけです。',
       },
     },
+    photo: '元の写真を見る',
+    tracedAlt:
+      'ホテル公式の外観写真。ファンタジーシャトーの客室窓を近くから見たところで、クリーム色のアール・ヌーヴォー調の窓枠、3 枚のガラス、窓上の扇形の装飾が写っています。',
+    tracedCaption:
+      '立面図の窓枠・窓台・窓の上の扇形の装飾は、この公式写真に写っている実物をなぞったものです。',
+    tracedLink: '公式写真',
+    method:
+      'この 3 面の立面図は実景写真から測って描いています。元になった 1 室ずつの調査は中庭の写真 3 枚に区画を書き込んでおり、その写真を正面向きに補正すると、柱間の幅と階高の比がそのまま読み取れます。窓の粗密も、階の高さも、グランドシャトーに向く面が 208 と 209 の間で 1 スパン分セットバックしていることも、測って出た数字です。窓枠・窓台・窓上の装飾はホテル公式の外観写真をなぞりました。中庭の写真の著作権は原著者にあり、各面の「元の写真を見る」からたどれます。',
     caveat: (positions) =>
       `位置と区分は fukufukusatoka による 1 室ずつの調査で、同記事は著者の推測を含むと明記しています。それでも信頼できる理由は数が合うことです。上の ${positions} 区画を 6 つの区分に分けた室数が、ホテルの公表値と完全に一致します。1 区画でも取り違えれば合計が崩れます。唯一どこにも属さないのが 8301 で、公式のスーペリアルームの階層区分は 7 階までしかなく、8 階のこの 1 室をどう売るのかは書かれていません。`,
   },
   en: {
     heading: (n) => `Where the Rose Court Side’s ${n} rooms are`,
     intro:
-      'The Rose Court Side wraps three sides of the courtyard, and each side has its own run of room numbers. The first digit is the floor and the last three fix the position, so 9103 and 3103 are the same window seven floors apart. Select any cell to see its room type.',
-    categories: {
-      superior: 'Superior Room',
-      alcove: 'Superior Alcove Room',
-      deluxe: 'Deluxe Room',
-      accessible: 'Deluxe Accessible Room',
-    },
-    parkView: 'Park View',
-    count: (n) => `${n} rooms`,
+      'The Rose Court Side wraps three sides of the courtyard, and each side has its own run of room numbers. The first digit is the floor and the last three fix the position, so 9103 and 3103 are the same window seven floors apart. The colour of each window is the room type it is sold as.',
+    viewNote:
+      'Park View is the only view tier on this side. The hotel does publish a higher one — Park Grand View — but that belongs to the Springs Side, the side that faces the park head on, where the rooms are 50 m² Deluxe Rooms. It is a different wall from the Rose Court, so it does not appear below.',
+    count: (n) => `${n} room${n === 1 ? '' : 's'}`,
     numberBand: (band) => `Numbers ${band}`,
     floor: (n) => `${n}F`,
-    tableCaption: (face) => `Room positions on the ${face}; columns are positions, rows are floors`,
-    floorHeader: 'Floor',
-    empty: 'Select any room number above to see its room type.',
-    roomLabel: (n) => `Room ${n}`,
-    ariaCell: (n, category, park) => `Room ${n}, ${category}${park ? ', Park View' : ''}`,
-    noView: 'No view designation',
-    bookedAs: (name) => `Booked as: ${name}`,
-    unassigned: 'No published floor band covers this position.',
+    figureAlt: (face, n) =>
+      `Elevation of ${face}, with all ${n} windows labelled by room number and coloured by room type.`,
+    unlisted: 'No tier published',
+    unlistedWhy:
+      'the Superior floor bands stop at the 7th floor, and nothing says how 8301 on the 8th is sold',
+    tableCaption: (face) => `Room numbers on ${face} and the type each is sold as`,
+    roomHeader: 'Room',
+    typeHeader: 'Sold as',
     faces: {
       park: {
         label: 'the side facing Fantasy Springs',
@@ -156,6 +152,14 @@ const COPY: Record<Locale, {
           'Straight ahead are the rooms opposite, but stand at the window and the park appears at an angle — including Arendelle Castle, which the Park View rooms cannot see. This side starts on the 5th floor.',
       },
     },
+    photo: 'See the photograph',
+    tracedAlt:
+      'The hotel’s own exterior photography, close on a Fantasy Chateau guest-room window: a cream Art Nouveau surround, three panes of glass, and a fan-shaped ornament above the head.',
+    tracedCaption:
+      'The window surrounds, sills and the fan above each head in the elevations are traced from the real ones in this official photograph.',
+    tracedLink: 'Official photo',
+    method:
+      'These three elevations are measured off photographs rather than sketched. The room-by-room survey marked up three photographs of the courtyard, and once a photograph is corrected back to a head-on view its bay widths and storey heights can be read straight off. So the spacing of the windows, the height of the floors, and the one-bay step back between positions 208 and 209 on the Grand Chateau side are all measured, not assumed. The window frames, sills and the ornament above each head are traced from the hotel’s own exterior photography. The courtyard photographs belong to their author; each elevation links to them.',
     caveat: (positions) =>
       `Positions and categories come from fukufukusatoka’s room-by-room survey, which states that it contains the author’s inference. The reason to trust it anyway is that it reconciles: the ${positions} positions above split into exactly the six category totals the hotel publishes, and a single mislabelled cell would break that arithmetic. One position belongs nowhere — 8301, because the published Superior floor bands stop at the 7th floor and nothing says how the 8th-floor room is sold.`,
   },
@@ -164,101 +168,363 @@ const COPY: Record<Locale, {
 const c = COPY[locale];
 
 /**
- * The Rose Court Side drawn the way its source records it: three elevations, one
- * cell per window. An elevation is the honest shape here — the source marked up
- * photographs of the three facades, not floor plans — and it happens to be the
- * shape the reader needs, because on this side the room number is a coordinate:
- * the leading digit is the floor and the last three fix the column.
+ * The Rose Court Side drawn as what its source actually is: three elevations of
+ * the courtyard, one window per room. The elevation is the honest shape here —
+ * the survey marked up photographs of the three facades, not floor plans — and
+ * it is also the shape the reader needs, because on this side the room number is
+ * a coordinate: the leading digit is the floor and the last three fix the column.
  *
- * Every cell keeps its real column and its real floor. Columns that stop lower
- * than their neighbours are drawn stopping there, because that is a fact about
- * the building rather than a gap in the data.
+ * The proportions are measured (see `bays` in the data), so the drawing carries
+ * information a uniform grid throws away: the Grand Chateau side really does
+ * step back by a bay between 208 and 209, and the three positions beyond that
+ * step really do stop a storey lower.
  */
 
 const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room, 'fsh', locale)]));
 
-const tally = roseCourtTally();
-
 /**
- * The alcove room is 118 of the 147 positions, so it gets the quietest fill and
- * the three rarer categories get tints that separate from it at a glance — the
- * `-soft` gold token is too close to `paper-deep` to tell apart in a grid.
+ * The room type's name without the side it is on. Every official name starts with
+ * the side — 玫瑰庭區, ローズコートサイド, Rose Court Side — and this whole section is
+ * that one side, so repeating it ten times down the legend earns nothing. Taken
+ * off the front rather than retyped, so the legend cannot drift from the data.
  */
-const CATEGORY_TONE: Record<RoseCategory, string> = {
-  superior: 'bg-brand-soft text-brand-deep',
-  alcove: 'bg-paper-deep text-ink-soft',
-  deluxe: 'bg-gold/25 text-gold',
-  accessible: 'bg-berry/20 text-berry',
+const SIDE = categoryLabel('fsh', locale, 'rose');
+const shortName = (id: string) => {
+  const full = displayName.get(id)!;
+  return full.startsWith(SIDE) ? full.slice(SIDE.length).trim() : full;
 };
 
-const faces = ELEVATIONS.map((face) => {
-  const floors = [...new Set(face.columns.flatMap((c) => c.floors))].sort((a, b) => b - a);
+/** Drawing units. One unit is one CSS pixel at the elevation's natural size. */
+const BAY = 54; // horizontal pitch between window centres
+const STOREY = 50; // vertical pitch between window centres
+const WIN_W = 38;
+const WIN_H = 30;
+const FRAME = 4; // thickness of the window surround
+const GUTTER = 30; // left margin holding the floor labels
+const EDGE = 18; // wall that runs off the frame, because the facade turns a corner
+const TOP = 74; // headroom for the parapet and its crest
+const BASE = 28; // the courtyard rockwork
+
+/**
+ * Glass tints: one hue per room category, and within a hue one shade per tier,
+ * darkest first. So the colour of a window is the room type it is sold as, and
+ * the reader never has to click anything to find that out — Park View reads as
+ * the deepest block on its facade because Park View is the top tier.
+ *
+ * Ramps are as long as the category has tiers; a tenth room type appearing in the
+ * data would fail the build rather than quietly borrow a neighbour's colour. All
+ * shades stay light enough to carry the room number in dark ink.
+ */
+const RAMPS: Record<RoseCategory, string[]> = {
+  superior: ['#74a8c6', '#a3c8de', '#d6e8f2'],
+  alcove: ['#8aa585', '#b5c8ae', '#e0e8da'],
+  deluxe: ['#d9bd77'],
+  accessible: ['#b08aa6', '#d8c4d2'],
+};
+
+/** The one position no published floor band covers, drawn as unlisted. */
+const UNLISTED_GLASS = '#dedad2';
+
+/** The hotel's own photograph of a guest-room window, served from its CDN. */
+const TRACED_PHOTO = 'https://media2.tokyodisneyresort.jp/home/hotel/fsh/gallery/fcu/fcu_facilities_03.jpg';
+const TRACED_PAGE: Record<Locale, string> = {
+  'zh-hant': 'https://www.tokyodisneyresort.jp/tc/hotel/fsh/fcu/gallery.html',
+  ja: 'https://www.tokyodisneyresort.jp/hotel/fsh/fcu/gallery.html',
+  en: 'https://www.tokyodisneyresort.jp/en/hotel/fsh/fcu/gallery.html',
+};
+
+const WALL_LIGHT = '#f1ddd6';
+const WALL_DARK = '#e3c6bd';
+const TRIM = '#fdf8f0';
+const TRIM_LINE = '#d8bdae';
+
+/** The window surround, traced from the hotel's own exterior photography: a soft
+ *  Art Nouveau frame, wider on the upper left, with a gently domed head. */
+function windowShape(w: number, h: number): string {
+  const rl = w * 0.24;
+  const rr = w * 0.13;
+  const rb = 1.5;
+  return [
+    `M0,${h - rb}`,
+    `Q0,${h} ${rb},${h}`,
+    `L${w - rb},${h}`,
+    `Q${w},${h} ${w},${h - rb}`,
+    `L${w},${rr}`,
+    `C${w},${rr * 0.35} ${w - rr * 0.35},0 ${w - rr},0`,
+    `Q${w / 2},${-h * 0.03} ${rl},0`,
+    `C${rl * 0.35},0 0,${rl * 0.35} 0,${rl}`,
+    'Z',
+  ].join(' ');
+}
+
+/** The little fan-topped corbel that hangs above every window head. */
+const CORBEL =
+  'M-7,0 Q-7,-4 -3.6,-4.6 L3.6,-4.6 Q7,-4 7,0 C3.8,0.2 2.2,1.4 1.7,5 L-1.7,5 C-2.2,1.4 -3.8,0.2 -7,0 Z';
+
+/** The volute at the centre of the roofline, drawn as a spiral rather than an arc. */
+function spiral(cx: number, cy: number, turns: number, outer: number, inner: number): string {
+  const steps = 44;
+  let d = '';
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const angle = t * turns * Math.PI * 2;
+    const r = outer + (inner - outer) * t;
+    d += `${i ? 'L' : 'M'}${(cx + Math.cos(angle) * r).toFixed(1)},${(cy + Math.sin(angle) * r).toFixed(1)}`;
+  }
+  return d;
+}
+
+/** Deterministic pseudo-randomness, so the drawing is identical every build. */
+function jitter(i: number, seed: number): number {
+  const n = Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453;
+  return n - Math.floor(n);
+}
+
+/**
+ * The courtyard rockwork, as overlapping boulders rather than one silhouette.
+ * It is kept low enough that it never reaches a room number.
+ */
+function boulders(width: number, y: number, seed: number) {
+  return Array.from({ length: Math.round(width / 38) + 1 }, (_, i) => {
+    const r = jitter(i, seed);
+    const rw = 18 + r * 30;
+    const rh = 8 + r * 14;
+    const cx = i * 38 + r * 26 - 12;
+    const cy = y + 18 - rh * 0.15;
+    return {
+      d: `M${cx - rw},${cy + rh}
+          Q${cx - rw},${cy - rh * 0.35} ${cx - rw * 0.5},${cy - rh * 0.8}
+          Q${cx - rw * 0.05},${cy - rh * 1.2} ${cx + rw * 0.45},${cy - rh * 0.7}
+          Q${cx + rw},${cy - rh * 0.2} ${cx + rw},${cy + rh} Z`,
+      facet: `M${cx - rw * 0.75},${cy + rh * 0.2}
+              Q${cx - rw * 0.6},${cy - rh * 0.6} ${cx - rw * 0.1},${cy - rh * 0.85}`,
+      tone: ['#dccbb6', '#cdb9a2', '#e4d7c6'][i % 3]!,
+    };
+  });
+}
+
+interface Cell {
+  number: string;
+  /** Room type the position is sold as, or undefined for the one that has none. */
+  type?: string;
+  glass: string;
+  typeName?: string;
+  x: number;
+  y: number;
+  hasAbove: boolean;
+}
+
+/**
+ * The bookable types on this side, each with the colour that stands for it.
+ *
+ * Derived from the positions rather than listed by hand, so a change to the
+ * published floor bands moves the legend with it. Order is the order the legend
+ * reads in and the order the ramps assume: category first, then tier, with Park
+ * View ahead of the upper floors and the upper floors ahead of the lower.
+ */
+const CATEGORY_ORDER: RoseCategory[] = ['superior', 'alcove', 'deluxe', 'accessible'];
+
+const TYPES = [...new Set(ROSE_ROOMS.map((room) => room.roomType))]
+  .filter((id): id is string => !!id)
+  .map((id) => {
+    const rooms = ROSE_ROOMS.filter((room) => room.roomType === id);
+    return {
+      id,
+      category: rooms[0]!.category,
+      parkView: rooms[0]!.parkView,
+      lowestFloor: Math.min(...rooms.map((room) => room.floor)),
+      count: rooms.length,
+      name: shortName(id),
+    };
+  })
+  .sort(
+    (a, b) =>
+      CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) ||
+      Number(b.parkView) - Number(a.parkView) ||
+      b.lowestFloor - a.lowestFloor,
+  )
+  .map((type, _, all) => {
+    const rank = all.filter((other) => other.category === type.category).indexOf(type);
+    const ramp = RAMPS[type.category];
+    if (rank >= ramp.length) {
+      throw new Error(
+        `ElevationMap: ${type.category} has more room types than shades (${type.id})`,
+      );
+    }
+    return { ...type, glass: ramp[rank]! };
+  });
+
+const glassFor = new Map(TYPES.map((type) => [type.id, type.glass]));
+const UNLISTED_COUNT = ROSE_ROOMS.filter((room) => !room.roomType).length;
+
+function layout(face: ElevationFace) {
+  const floors = [...new Set(face.columns.flatMap((col) => col.floors))].sort((a, b) => b - a);
+  const rowOf = (floor: number) => floors.indexOf(floor);
+  const originX = GUTTER + EDGE;
+  const centreX = (i: number) => originX + face.bays[i]! * BAY + BAY / 2;
+  const centreY = (floor: number) => TOP + rowOf(floor) * STOREY + STOREY / 2;
+
+  // Columns whose bays touch belong to the same block of wall; a wider gap is a
+  // step in the building, and each block carries its own roofline.
+  const blocks: { first: number; last: number }[] = [];
+  face.columns.forEach((_, i) => {
+    const previous = blocks[blocks.length - 1];
+    if (previous && face.bays[i]! - face.bays[i - 1]! <= 1.2) previous.last = i;
+    else blocks.push({ first: i, last: i });
+  });
+
+  const walls = blocks.map((block, bi) => {
+    const cols = face.columns.slice(block.first, block.last + 1);
+    const topFloor = Math.max(...cols.flatMap((col) => col.floors));
+    return {
+      x0: originX + face.bays[block.first]! * BAY - (bi === 0 ? EDGE : 0),
+      x1:
+        originX +
+        face.bays[block.last]! * BAY +
+        BAY +
+        (bi === blocks.length - 1 ? EDGE : 0),
+      roofY: TOP + rowOf(topFloor) * STOREY,
+      crest:
+        face.crest >= face.bays[block.first]! && face.crest <= face.bays[block.last]! + 1
+          ? originX + face.crest * BAY
+          : null,
+    };
+  });
+
+  // Where the facade steps back, the wall does not stop — it turns and carries on
+  // behind, so the gap is drawn as wall in shadow rather than as sky.
+  const returns = walls.slice(0, -1).map((wall, i) => ({
+    x0: wall.x1,
+    x1: walls[i + 1]!.x0,
+    roofY: Math.max(wall.roofY, walls[i + 1]!.roofY),
+  }));
+
+  // Each column of windows sits on a shallow pilaster strip, the way the bays do
+  // on the building; without it the wall reads as one flat plane.
+  const strips = face.columns.map((_, i) => {
+    const block = blocks.findIndex((b) => i >= b.first && i <= b.last);
+    return {
+      x: centreX(i) - (BAY - 10) / 2,
+      y: walls[block]!.roofY,
+      width: BAY - 10,
+      height: TOP + floors.length * STOREY - walls[block]!.roofY,
+    };
+  });
+
+  const cells: Cell[] = [];
+  face.columns.forEach((column, i) => {
+    for (const floor of column.floors) {
+      const room = ROSE_ROOMS.find(
+        (r) => r.face === face.key && r.position === column.position && r.floor === floor,
+      )!;
+      cells.push({
+        number: room.number,
+        ...(room.roomType
+          ? { type: room.roomType, typeName: shortName(room.roomType) }
+          : {}),
+        glass: room.roomType ? glassFor.get(room.roomType)! : UNLISTED_GLASS,
+        x: centreX(i),
+        y: centreY(floor),
+        hasAbove: column.floors.includes(floor + 1),
+      });
+    }
+  });
+
+  const groundY = TOP + floors.length * STOREY;
+  const width = Math.round(originX + (Math.max(...face.bays) + 1) * BAY + EDGE);
   return {
     ...face,
-    floors,
-    grid: floors.map((floor) => ({
-      floor,
-      cells: face.columns.map((column) => {
-        if (!column.floors.includes(floor)) return null;
-        const room = ROSE_ROOMS.find(
-          (r) => r.face === face.key && r.position === column.position && r.floor === floor,
-        )!;
-        return {
-          number: room.number,
-          category: categoryAt(column, floor),
-          parkView: room.parkView,
-          typeName: room.roomType ? displayName.get(room.roomType) : undefined,
-        };
-      }),
-    })),
+    cells,
+    walls,
+    returns,
+    strips,
+    groundY,
+    width,
+    height: groundY + BASE,
+    rows: floors.map((floor) => ({ floor, y: centreY(floor) })),
+    rocks: boulders(width, groundY, face.key.length),
+    tufts: Array.from({ length: Math.round(width / 58) }, (_, i) => {
+      const r = jitter(i, 5);
+      return { x: 16 + i * 58 + r * 24, w: 10 + r * 5, h: 8 + r * 6, base: 24 + r * 4 };
+    }),
   };
-});
+}
+
+const faces = ELEVATIONS.map(layout);
 ---
 
-<section
-  id="rose-court"
-  class="not-prose scroll-mt-32"
-  data-elevation
-  data-strings={JSON.stringify({
-    roomLabel: c.roomLabel('{n}'),
-    noView: c.noView,
-    parkView: c.parkView,
-    bookedAs: c.bookedAs('{name}'),
-    unassigned: c.unassigned,
-    separator: locale === 'en' ? ', ' : '・',
-  })}
->
-  <div class="flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <h2 class="font-serif text-2xl font-bold text-ink">{c.heading(ROSE_ROOM_COUNT)}</h2>
-      <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">
-        {c.intro}
-      </p>
-    </div>
+<section id="rose-court" class="not-prose scroll-mt-32">
+  <div>
+    <h2 class="font-serif text-2xl font-bold text-ink">{c.heading(ROSE_ROOM_COUNT)}</h2>
+    <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{c.intro}</p>
+    <p class="mt-3 max-w-3xl text-[0.875rem] leading-[1.85] text-ink-soft">{c.viewNote}</p>
   </div>
 
-  <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+  {/* Column-major, so reading down a column follows the tier order rather than
+      jumping between categories the way row-major filling would. Six rows puts the
+      two Superior categories, which are 142 of the 147 windows, in the first
+      column and the rare types in the second. */}
+  <ul class="mt-6 grid grid-flow-row gap-x-8 gap-y-2 text-xs sm:grid-flow-col sm:grid-rows-6">
     {
-      (Object.keys(ROSE_CATEGORY_LABEL) as RoseCategory[]).map((key) => (
-        <li class="flex items-center gap-1.5">
-          <span class:list={['h-3.5 w-3.5 rounded-sm', CATEGORY_TONE[key].split(' ')[0]]} />
-          <span class="text-ink-soft">{c.categories[key]}</span>
-          <span class="text-ink-faint">
-            {c.count(tally.filter((t) => t.category === key).reduce((n, t) => n + t.count, 0))}
-          </span>
+      TYPES.map((type) => (
+        <li class="flex items-baseline gap-2">
+          <span
+            class="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[2px] ring-1 ring-black/10"
+            style={`background:${type.glass}`}
+          />
+          <span class="text-ink">{type.name}</span>
+          <span class="ml-auto shrink-0 tabular-nums text-ink-faint">{c.count(type.count)}</span>
         </li>
       ))
     }
-    <li class="flex items-center gap-1.5">
+    <li class="flex items-baseline gap-2">
       <span
-        class="h-3.5 w-3.5 rounded-sm bg-paper-deep ring-2 ring-brand ring-inset"
+        class="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[2px] ring-1 ring-ink-faint ring-inset"
+        style={`background:${UNLISTED_GLASS};border:1px dashed var(--color-ink-faint)`}
         aria-hidden="true"></span>
-      <span class="text-ink-soft">{c.parkView}</span>
-      <span class="text-ink-faint">
-        {c.count(tally.filter((t) => t.parkView).reduce((n, t) => n + t.count, 0))}
-      </span>
+      <span class="text-ink">{c.unlisted}</span>
+      <span class="ml-auto shrink-0 tabular-nums text-ink-faint">{c.count(UNLISTED_COUNT)}</span>
     </li>
   </ul>
+  <p class="mt-2 text-2xs leading-relaxed text-ink-faint">{c.unlistedWhy}</p>
+
+  <svg class="absolute h-0 w-0 overflow-hidden" aria-hidden="true" focusable="false">
+    <defs>
+      {/* Everything a window is made of, centred on its own origin, so each of the
+          147 cells is a transform and a handful of references rather than a fresh
+          copy of the geometry. Fills and strokes are left to CSS so they inherit. */}
+      <g id="fsh-frame">
+        <path
+          d={windowShape(WIN_W, WIN_H)}
+          transform={`translate(${-WIN_W / 2},${-WIN_H / 2})`}></path>
+      </g>
+      <g id="fsh-glass">
+        <path
+          d={windowShape(WIN_W - FRAME * 2, WIN_H - FRAME * 2)}
+          transform={`translate(${-WIN_W / 2 + FRAME},${-WIN_H / 2 + FRAME})`}></path>
+      </g>
+      <g id="fsh-sill">
+        <rect
+          x={-WIN_W / 2 - 4}
+          y={WIN_H / 2}
+          width={WIN_W + 8}
+          height="3.5"
+          rx="1.4"></rect>
+      </g>
+      <g id="fsh-sill-corbel">
+        <use href="#fsh-sill"></use>
+        <path d={CORBEL} transform={`translate(0,${-WIN_H / 2 - 7})`}></path>
+      </g>
+      <linearGradient id="fsh-wall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color={WALL_LIGHT}></stop>
+        <stop offset="1" stop-color={WALL_DARK}></stop>
+      </linearGradient>
+      <linearGradient id="fsh-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#dce9f2"></stop>
+        <stop offset="1" stop-color="#f4f1ea"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
 
   <div class="mt-7 space-y-8">
     {
@@ -271,66 +537,176 @@ const faces = ELEVATIONS.map((face) => {
                 {c.numberBand(face.numberBand)}
               </span>
             </h3>
-            <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">{c.faces[face.key]!.outlook}</p>
+            <p class="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+              {c.faces[face.key]!.outlook}
+              <a
+                href={face.source}
+                rel="nofollow noopener"
+                target="_blank"
+                class="ml-1.5 whitespace-nowrap text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
+              >
+                {c.photo}
+              </a>
+            </p>
           </figcaption>
 
-          <div class="table-scroll px-4 py-5 sm:px-5">
-            <table class="w-full min-w-max border-separate border-spacing-1 text-center">
-              <caption class="sr-only">
-                {c.tableCaption(c.faces[face.key]!.label)}
-              </caption>
+          <div class="table-scroll">
+            <svg
+              class="elevation block h-auto w-full"
+              style={`min-width:${face.width}px`}
+              viewBox={`0 0 ${face.width} ${face.height}`}
+              role="img"
+              aria-label={c.figureAlt(c.faces[face.key]!.label, face.cells.length)}
+            >
+              <rect width={face.width} height={face.height} fill="url(#fsh-sky)" />
+
+              {face.returns.map((ret) => (
+                <rect
+                  x={ret.x0}
+                  y={ret.roofY}
+                  width={ret.x1 - ret.x0}
+                  height={face.groundY - ret.roofY}
+                  fill="#cdb2ac"
+                />
+              ))}
+
+              {face.walls.map((wall) => (
+                <g>
+                  <rect
+                    x={wall.x0}
+                    y={wall.roofY}
+                    width={wall.x1 - wall.x0}
+                    height={face.groundY - wall.roofY}
+                    fill="url(#fsh-wall)"
+                  />
+                  {face.strips
+                    .filter((strip) => strip.x >= wall.x0 && strip.x < wall.x1)
+                    .map((strip) => (
+                      <rect
+                        x={strip.x}
+                        y={strip.y}
+                        width={strip.width}
+                        height={strip.height}
+                        fill="#ffffff"
+                        opacity="0.22"
+                      />
+                    ))}
+                  <path
+                    d={`M${wall.x0},${wall.roofY} L${wall.x0},${wall.roofY - 8}
+                        Q${wall.x0 + 10},${wall.roofY - 15} ${wall.x0 + 26},${wall.roofY - 15}
+                        L${wall.x1 - 26},${wall.roofY - 15}
+                        Q${wall.x1 - 10},${wall.roofY - 15} ${wall.x1},${wall.roofY - 8}
+                        L${wall.x1},${wall.roofY} Z`}
+                    fill={TRIM}
+                    stroke={TRIM_LINE}
+                    stroke-width="1"
+                  />
+                  <rect
+                    x={wall.x0}
+                    y={wall.roofY - 2}
+                    width={wall.x1 - wall.x0}
+                    height="4"
+                    fill={TRIM}
+                    stroke={TRIM_LINE}
+                    stroke-width="0.9"
+                  />
+                  {wall.crest !== null && (
+                    <g transform={`translate(${wall.crest},${wall.roofY - 14})`}>
+                      <path
+                        d="M-52,0 C-52,-16 -50,-26 -40,-33 C-28,-42 -16,-45 0,-45
+                           C16,-45 28,-42 40,-33 C50,-26 52,-16 52,0 Z"
+                        fill={WALL_LIGHT}
+                        stroke={TRIM}
+                        stroke-width="3.6"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M-40,-14 C-36,-28 -22,-33 -6,-29"
+                        fill="none"
+                        stroke={TRIM}
+                        stroke-width="2.8"
+                        stroke-linecap="round"
+                      />
+                      <path
+                        d={spiral(14, -27, 1.7, 17, 2)}
+                        fill="none"
+                        stroke={TRIM}
+                        stroke-width="2.8"
+                        stroke-linecap="round"
+                      />
+                      <path d="M-5,-22 q-4.5,12 2.5,26 q7,-14 2.5,-26 z" fill={TRIM} />
+                      <circle cx="-52" cy="-3" r="4" fill={TRIM} stroke={TRIM_LINE} stroke-width="0.8" />
+                      <circle cx="52" cy="-3" r="4" fill={TRIM} stroke={TRIM_LINE} stroke-width="0.8" />
+                    </g>
+                  )}
+                </g>
+              ))}
+
+              {face.cells.map((cell) => (
+                <g transform={`translate(${cell.x},${cell.y})`}>
+                  <use class="orn" href={cell.hasAbove ? '#fsh-sill-corbel' : '#fsh-sill'} />
+                  <use
+                    class:list={['frame', !cell.type && 'is-unlisted']}
+                    href="#fsh-frame"
+                  />
+                  <use href="#fsh-glass" fill={cell.glass} />
+                  <text class="num" y="0.5">
+                    {cell.number}
+                  </text>
+                </g>
+              ))}
+
+              <rect
+                x="0"
+                y={face.groundY + 12}
+                width={face.width}
+                height={BASE - 12}
+                fill="#cdb9a2"
+              />
+              {face.rocks.map((rock) => (
+                <g>
+                  <path d={rock.d} fill={rock.tone} />
+                  <path d={rock.facet} fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.3" />
+                </g>
+              ))}
+              {face.tufts.map((tuft) => (
+                <path
+                  d={`M${tuft.x},${face.groundY + tuft.base}
+                      q${-tuft.w * 0.5},${-tuft.h * 0.7} ${-tuft.w * 0.1},${-tuft.h}
+                      q${tuft.w * 0.3},${tuft.h * 0.35} ${tuft.w * 0.55},${-tuft.h * 0.8}
+                      q${tuft.w * 0.1},${tuft.h * 0.6} ${tuft.w * 0.55},${tuft.h * 0.15}
+                      q${-tuft.w * 0.3},${tuft.h * 0.5} ${-tuft.w},${tuft.h * 0.65} z`}
+                  fill="#87995f"
+                  opacity="0.6"
+                />
+              ))}
+
+              {face.rows.map((row) => (
+                <text class="floor" x={GUTTER - 8} y={row.y}>
+                  {c.floor(row.floor)}
+                </text>
+              ))}
+            </svg>
+          </div>
+
+          {/* The drawing is one image to a screen reader, so the numbers and the
+              types it colours them by are also given as a table. The wrapper takes
+              the hiding: a table ignores the 1px box `sr-only` sets on it and keeps
+              its own layout width, which then reaches past the page. */}
+          <div class="sr-only">
+            <table>
+              <caption>{c.tableCaption(c.faces[face.key]!.label)}</caption>
               <thead>
                 <tr>
-                  <th scope="col" class="sr-only">
-                    {c.floorHeader}
-                  </th>
-                  {face.columns.map((column) => (
-                    <th
-                      scope="col"
-                      class="px-1 pb-1 text-2xs font-medium text-ink-faint tabular-nums"
-                    >
-                      {column.position}
-                    </th>
-                  ))}
+                  <th scope="col">{c.roomHeader}</th>
+                  <th scope="col">{c.typeHeader}</th>
                 </tr>
               </thead>
               <tbody>
-                {face.grid.map((row) => (
+                {face.cells.map((cell) => (
                   <tr>
-                    <th
-                      scope="row"
-                      class="pr-2 text-right text-2xs font-medium whitespace-nowrap text-ink-faint"
-                    >
-                      {c.floor(row.floor)}
-                    </th>
-                    {row.cells.map((cell) =>
-                      cell ? (
-                        <td class="p-0">
-                          <button
-                            type="button"
-                            data-cell
-                            data-number={cell.number}
-                            data-category={c.categories[cell.category]}
-                            data-park={String(cell.parkView)}
-                            data-type={cell.typeName ?? ''}
-                            class:list={[
-                              'block w-11 rounded-sm px-1 py-1.5 text-2xs tabular-nums transition-shadow duration-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-12',
-                              CATEGORY_TONE[cell.category],
-                              cell.parkView && 'ring-2 ring-brand ring-inset font-bold',
-                            ]}
-                            aria-label={c.ariaCell(cell.number, c.categories[cell.category], cell.parkView)}
-                          >
-                            {cell.number}
-                          </button>
-                        </td>
-                      ) : (
-                        <td class="p-0">
-                          <span class="block w-11 py-1.5 text-2xs text-line sm:w-12" aria-hidden="true">
-                            ·
-                          </span>
-                        </td>
-                      ),
-                    )}
+                    <th scope="row">{cell.number}</th>
+                    <td>{cell.typeName ?? c.unlisted}</td>
                   </tr>
                 ))}
               </tbody>
@@ -341,55 +717,80 @@ const faces = ELEVATIONS.map((face) => {
     }
   </div>
 
-  <div
-    class="mt-6 rounded-xl border border-brand/30 bg-brand-soft/40 px-5 py-4"
-    data-detail
-    aria-live="polite"
-  >
-    <p class="text-sm text-ink-soft" data-detail-empty>{c.empty}</p>
-    <div class="hidden" data-detail-body>
-      <p class="font-serif text-lg font-bold text-ink" data-detail-number></p>
-      <p class="mt-1 text-sm text-ink-soft" data-detail-meta></p>
-      <p class="mt-2 text-sm text-brand-deep" data-detail-type></p>
+  <div class="mt-6 gap-5 sm:flex sm:items-start">
+    <figure class="shrink-0 overflow-hidden rounded-xl border border-line bg-card sm:w-72">
+      {/* Cropped to the window group in the photograph's top right corner, which is
+          the detail the elevations trace; the rest of the frame is the rockwork. */}
+      <div class="relative overflow-hidden" style="aspect-ratio:3/2">
+        <img
+          src={TRACED_PHOTO}
+          width="800"
+          height="450"
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          alt={c.tracedAlt}
+          class="absolute top-0 left-[-233.333%] w-[333.333%] max-w-none"
+        />
+      </div>
+      <figcaption
+        class="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-line-soft px-3 py-2 text-2xs leading-relaxed text-ink-faint"
+      >
+        <span>{c.tracedCaption}</span>
+        <a
+          href={TRACED_PAGE[locale]}
+          rel="noopener nofollow"
+          target="_blank"
+          class="text-brand underline decoration-brand/30 underline-offset-2 hover:text-gold"
+        >
+          {c.tracedLink}
+        </a>
+      </figcaption>
+    </figure>
+    <div class="mt-4 sm:mt-0">
+      <p class="text-xs leading-relaxed text-ink-faint">{c.method}</p>
+      <p class="mt-2 text-xs leading-relaxed text-ink-faint">{c.caveat(ROSE_ROOM_COUNT)}</p>
     </div>
   </div>
-
-  <p class="mt-5 text-xs leading-relaxed text-ink-faint">{c.caveat(ROSE_ROOM_COUNT)}</p>
 </section>
 
-<script>
-  function initElevation(root: HTMLElement) {
-    const strings = JSON.parse(root.dataset.strings!) as {
-      roomLabel: string;
-      noView: string;
-      parkView: string;
-      bookedAs: string;
-      unassigned: string;
-      separator: string;
-    };
-    const empty = root.querySelector<HTMLElement>('[data-detail-empty]');
-    const body = root.querySelector<HTMLElement>('[data-detail-body]');
-    const number = root.querySelector<HTMLElement>('[data-detail-number]');
-    const meta = root.querySelector<HTMLElement>('[data-detail-meta]');
-    const type = root.querySelector<HTMLElement>('[data-detail-type]');
-    if (!empty || !body || !number || !meta || !type) return;
-
-    root.querySelectorAll<HTMLButtonElement>('[data-cell]').forEach((cell) => {
-      cell.addEventListener('click', () => {
-        const parkView = cell.dataset.park === 'true';
-        number.textContent = strings.roomLabel.replace('{n}', cell.dataset.number!);
-        meta.textContent = [
-          cell.dataset.category,
-          parkView ? strings.parkView : strings.noView,
-        ].join(strings.separator);
-        type.textContent = cell.dataset.type
-          ? strings.bookedAs.replace('{name}', cell.dataset.type)
-          : strings.unassigned;
-        empty.classList.add('hidden');
-        body.classList.remove('hidden');
-      });
-    });
+<style is:global>
+  /* Global rather than scoped: everything here is already namespaced under
+     `.elevation`, and scoping would stamp an attribute onto all 147 windows. */
+  .elevation .orn {
+    fill: #fdf8f0;
+    stroke: #d8bdae;
+    stroke-width: 0.8;
   }
 
-  document.querySelectorAll<HTMLElement>('[data-elevation]').forEach((root) => initElevation(root));
-</script>
+  .elevation .frame {
+    fill: #fdf8f0;
+    stroke: #e7d2c4;
+    stroke-width: 0.8;
+  }
+
+  /* The position no published floor band covers, drawn as unlisted rather than
+     as though it were sold like its neighbours. */
+  .elevation .frame.is-unlisted {
+    stroke: #8b8f99;
+    stroke-width: 1.4;
+    stroke-dasharray: 2.4 1.8;
+  }
+
+  .elevation .num {
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    fill: #1f2a33;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  .elevation .floor {
+    font-size: 10px;
+    font-weight: 600;
+    fill: #8b8f99;
+    text-anchor: end;
+    dominant-baseline: middle;
+  }
+</style>
