@@ -18,13 +18,20 @@
  * twenty-one made every room on it a quarter too wide and carried the tip's rooms,
  * 4369 to 4375, most of twenty metres past the point of the building.
  *
- * Taking the drawing whole cannot make that mistake, and the fit is the check on it.
+ * Taking the drawing whole cannot make that mistake, and there are two checks on it.
  * Ten corners of the building are named by both the drawing and the survey; over
  * those ten the fit is out by 3.0 m on average and 5.4 m at worst, on a building
- * 210 m across. What comes out of it is a room's frontage of 3.9 to 4.5 m on every
+ * 210 m across. What comes out of it is a room's frontage of 3.9 to 5.0 m on every
  * one of the eight walls, which is what a 37 m² room 9.8 m deep has, and nothing was
  * fitted to make that happen — it is eight independent readings of a hand drawing
  * agreeing with a survey none of them was measured against.
+ *
+ * The second check is cell by cell. The drawing's own cells can be had without
+ * reference to any of this — its ink is closed, so every cell is a white region shut
+ * in by it — and paired with the nearest cell this figure draws, the fourth floor's
+ * 165 of them come out 0.9 m apart at the median and 2.2 m at the ninth decile. The
+ * few that are further out are the drawing's corridors, stairs and the chapel, which
+ * have no cell of the figure to pair with at all.
  *
  * Where the two still differ is width. The drawing draws its wings 21.8 m across;
  * the survey measures the harbour arm at 24.4. The drawing wins here, as everywhere
