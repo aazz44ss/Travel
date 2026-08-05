@@ -4,6 +4,7 @@ import { getEntry } from 'astro:content';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import HotelFacts from '~/components/HotelFacts.astro';
 import ElevationMap from '~/components/ElevationMap.astro';
+import SpringsElevation from '~/components/SpringsElevation.astro';
 import SightlineMap from '~/components/SightlineMap.astro';
 import RateTable from '~/components/RateTable.astro';
 import RoomExplorer from '~/components/RoomExplorer.astro';
@@ -31,7 +32,8 @@ import {
   VIEWS,
   roomsByCategory,
 } from '~/data/fantasy-springs-hotel';
-import { ROOM_NUMBERS, ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
+import { ROOM_NUMBERS as ROSE_ROOM_NUMBERS, ROSE_ROOM_COUNT } from '~/data/fsh-rose-court';
+import { ROOM_NUMBERS as SPRINGS_ROOM_NUMBERS } from '~/data/fsh-springs-side';
 import { LAYOUTS } from '~/data/fsh-room-layouts';
 
 export const getStaticPaths = (() => localeParams()) satisfies GetStaticPaths;
@@ -286,6 +288,10 @@ const schema = [
     </section>
 
     <section class="mt-20">
+      <SpringsElevation locale={locale} />
+    </section>
+
+    <section class="mt-20">
       <RoomExplorer
         hotel="fsh"
         rooms={L.rooms(ROOMS)}
@@ -293,7 +299,7 @@ const schema = [
         views={VIEWS}
         flags={FLAGS}
         rates={{}}
-        roomNumbers={ROOM_NUMBERS}
+        roomNumbers={{ ...ROSE_ROOM_NUMBERS, ...SPRINGS_ROOM_NUMBERS }}
         layouts={LAYOUTS}
         viewStyle={viewStyle}
         categoryStyle={categoryStyle}

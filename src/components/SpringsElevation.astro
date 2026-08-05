@@ -1,0 +1,661 @@
+---
+import {
+  spiral,
+  TRIM,
+  TRIM_LINE,
+  WALL_DARK,
+  WALL_LIGHT,
+} from '~/components/elevation-draw';
+import { ROOMS } from '~/data/fantasy-springs-hotel';
+import {
+  SPRINGS_COLUMNS,
+  SPRINGS_FLOORS,
+  SPRINGS_METRICS,
+  SPRINGS_ROOM_COUNT,
+  SPRINGS_ROOMS,
+  SPRINGS_SOURCES,
+  type SpringsCategory,
+} from '~/data/fsh-springs-side';
+import { DEFAULT_LOCALE, type Locale } from '~/i18n/config';
+import { categoryLabel, roomName } from '~/i18n/rooms';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+
+/**
+ * The Springs Side, drawn the same way as the Rose Court Side: one window per
+ * room, coloured by the type it is sold as.
+ *
+ * It is only fifteen rooms, but they are the fifteen the hotel's own tiering
+ * points at — the only Park Grand View on the moderate wing, and the only four
+ * balconies in it. The drawing carries three things a table cannot: the facade
+ * turns between 320 and 319, so the two balcony rooms sit on a taller gabled
+ * pavilion of their own; the balcony openings really are wider and taller than
+ * the plain windows; and the 5th floor looks straight at the roof over the
+ * lobby terrace, which is the whole reason it drops to Partial View.
+ */
+
+const COPY: Record<Locale, {
+  heading: (n: number) => string;
+  intro: string;
+  numbering: string;
+  count: (n: number) => string;
+  floor: (n: number) => string;
+  figureAlt: (n: number) => string;
+  caption: string;
+  terrace: string;
+  terraceShort: string;
+  bend: string;
+  towardsChateau: string;
+  towardsCourt: string;
+  inferredNote: (numbers: string[]) => string;
+  tableCaption: string;
+  roomHeader: string;
+  typeHeader: string;
+  method: string;
+  caveat: string;
+  sourceCounts: string;
+  sourceStays: string;
+  sourceFacade: string;
+}> = {
+  'zh-hant': {
+    heading: (n) => `泉鄉區 ${n} 間客房的位置`,
+    intro:
+      '泉鄉區是夢幻館最小的一側，也是唯一有「樂園全景觀」的一側：整個夢幻館 419 間裡，只有這 15 間正面對著夢幻泉鄉，而且只有這裡的 4 間有陽台。房間全部是 50 m² 的尊爵客房。',
+    numbering:
+      '房號只有 5317～5321、6317～6321、7317～7321 這 15 個，5 到 7 樓各 5 間。走廊走到最底是一個 T 字路口，左邊兩間、右邊三間。從樂園看過去，房號是從右往左變大。',
+    count: (n) => `${n} 間`,
+    floor: (n) => `${n}F`,
+    figureAlt: (n) =>
+      `泉鄉區立面圖，從樂園方向看，${n} 扇窗各標上房號並依訂房房型上色，5 樓那一排前面是大廳露台的屋頂。`,
+    caption: '從夢幻泉鄉看過去的立面。',
+    terrace:
+      '正射立面裡，大廳露台的屋頂只是 5 樓地板高度的一條線；但站在樂園那頭往上看，這片屋頂就橫在 5 樓那一排前面，這才是那五間被降一級成景隅景觀的原因。',
+    terraceShort: '大廳露台的屋頂',
+    bend: '外牆在這裡轉折',
+    towardsChateau: '← 往豪華館',
+    towardsCourt: '往玫瑰庭 →',
+    inferredNote: (numbers) => `斜體的房號是推算出來的位置，沒有人實際回報過：${numbers.join('、')}。`,
+    tableCaption: '泉鄉區的客房房號與對應房型',
+    roomHeader: '房號',
+    typeHeader: '訂房時的房型',
+    method:
+      '這張圖的開間是從樂園拍的實景照量出來的：五個開口的間距一致到 3% 以內，所以畫成等距；陽台那兩個開口實際上比另外三個寬 12%、高 35%，圖上照量到的比例畫。牆面裝飾、屋頂上的渦卷則和玫瑰庭區的立面同源，照飯店官方外觀照描。',
+    caveat:
+      '間數、面積與三級景觀的定義是官方公布的。位置則靠住客回報拼出來：房號範圍與 5 到 7 樓來自兩位實地走過走廊的住客，6、7 樓每個位置的房型由住過四次這一側的人說明，並有兩張圈出窗戶的實景照（6318、6319）與一張門牌照（7321）對得上。5 樓沒有任何人公布過房號，四間附凹室加一間無障礙是官方間數推出來的；無障礙那間是 5321 只有一位部落客的轉述，圖上標為推算。',
+    sourceCounts: '官方間數',
+    sourceStays: '住客實測',
+    sourceFacade: '圈出房號的實景照',
+  },
+  ja: {
+    heading: (n) => `スプリングスサイド ${n} 室の位置`,
+    intro:
+      'スプリングスサイドはファンタジーシャトーで最も小さい面で、「パークグランドビュー」があるのはここだけです。419 室のうちファンタジースプリングスに正対するのはこの 15 室のみ、バルコニー付きも 4 室だけ。客室はすべて 50 m² のデラックスルームです。',
+    numbering:
+      '部屋番号は 5317〜5321、6317〜6321、7317〜7321 の 15 室のみで、5〜7 階に 5 室ずつ。廊下の一番奥は T 字路になっていて、左に 2 室、右に 3 室。パーク側から見ると番号は右から左へ大きくなります。',
+    count: (n) => `${n} 室`,
+    floor: (n) => `${n}F`,
+    figureAlt: (n) =>
+      `スプリングスサイドの立面図。パーク側から見た向きで、${n} 枚の窓に部屋番号を入れ予約時の客室タイプで色分けし、5 階の手前にロビーテラスの屋根を描いています。`,
+    caption: 'ファンタジースプリングス側から見た立面。',
+    terrace:
+      '正投影の立面では、ロビーテラスの屋根は 5 階の床の高さを走る 1 本の線にすぎません。ところがパーク側から見上げると、この屋根が 5 階の列の手前に横たわります。それがこの 5 室だけ一段下のパーシャルビューで売られている理由です。',
+    terraceShort: 'ロビーテラスの屋根',
+    bend: 'ここで外壁が折れる',
+    towardsChateau: '← グランドシャトー側',
+    towardsCourt: 'ローズコート側 →',
+    inferredNote: (numbers) =>
+      `斜体の部屋番号は推定した位置で、実際の報告はありません：${numbers.join('、')}。`,
+    tableCaption: 'スプリングスサイドの部屋番号と対応する客室タイプ',
+    roomHeader: '部屋番号',
+    typeHeader: '予約時の客室タイプ',
+    method:
+      '柱間はパークから撮られた実景写真から測っています。5 つの開口の間隔は 3% 以内で揃っていたので等間隔に、バルコニーの 2 開口は他の 3 つより実測で 12% 広く 35% 高いので、その比で描いています。壁面の装飾と屋根の渦卷はローズコートサイドの立面と同じく、ホテル公式の外観写真をなぞったものです。',
+    caveat:
+      '室数・面積・3 段階の眺望区分は公式の公表値です。位置は宿泊者の報告から組み立てました。番号の範囲と 5〜7 階という点は廊下を実際に歩いた 2 名、6・7 階の位置ごとの客室タイプはこの面に 4 回泊まった人の説明で、窓を丸で囲んだ実景写真 2 枚（6318・6319）とドアプレートの写真 1 枚（7321）が裏づけになっています。5 階の部屋番号は誰も公開しておらず、アルコーヴ 4 室＋アクセシブル 1 室は公式室数からの逆算です。アクセシブルが 5321 という点は 1 名の伝聞のみで、図では推定と示しています。',
+    sourceCounts: '公式室数',
+    sourceStays: '宿泊者の実測',
+    sourceFacade: '部屋番号を囲んだ写真',
+  },
+  en: {
+    heading: (n) => `Where the Springs Side’s ${n} rooms are`,
+    intro:
+      'The Springs Side is the smallest side of the Fantasy Chateau and the only one with Park Grand View: of the wing’s 419 rooms, these 15 are the ones that face Fantasy Springs head on, and 4 of them hold every balcony the wing has. All of them are 50 m² Deluxe Rooms.',
+    numbering:
+      'The numbers are only 5317–5321, 6317–6321 and 7317–7321 — five rooms on each of the 5th, 6th and 7th floors. The corridor ends in a T with two doors left and three right. Seen from the park, the numbers rise from right to left.',
+    count: (n) => `${n} room${n === 1 ? '' : 's'}`,
+    floor: (n) => `${n}F`,
+    figureAlt: (n) =>
+      `Elevation of the Springs Side as seen from the park, with all ${n} windows labelled by room number and coloured by room type, and the lobby terrace roof drawn in front of the 5th-floor row.`,
+    caption: 'The elevation as seen from Fantasy Springs.',
+    terrace:
+      'In a true elevation the roof over the lobby terrace is only a line at the 5th floor’s own level. Look up at it from the park, though, and that roof lies across the whole 5th-floor row — which is why those five rooms are sold a tier down, as Partial View.',
+    terraceShort: 'roof over the lobby terrace',
+    bend: 'the facade turns here',
+    towardsChateau: '← towards the Grand Chateau',
+    towardsCourt: 'towards the Rose Court →',
+    inferredNote: (numbers) =>
+      `Room numbers in italics are positions worked out rather than reported by anyone: ${numbers.join(', ')}.`,
+    tableCaption: 'Room numbers on the Springs Side and the type each is sold as',
+    roomHeader: 'Room',
+    typeHeader: 'Sold as',
+    method:
+      'The bays are measured off a park-level photograph of the facade: the five openings came back evenly spaced to within 3%, so they are drawn even, and the two balcony openings measured 12% wider and 35% taller than the other three, so they are drawn that way. The stucco and the volute on the roofline are traced from the hotel’s own exterior photography, the same as the Rose Court elevations.',
+    caveat:
+      'The counts, the sizes and the definitions of the three view tiers are official. The positions are assembled from guests: the number range and the 5th-to-7th-floor limit come from two people who walked the corridors, the type of each position on the 6th and 7th floors from a guest who has stayed on this side four times, corroborated by two photographs of the facade with a window ringed (6318, 6319) and one of a door plate (7321). Nobody has published a 5th-floor room number at all, so four alcove rooms plus one accessible room is arithmetic from the official counts, and 5321 being the accessible one rests on a single blogger’s second-hand report. Both are marked as inferred.',
+    sourceCounts: 'Official counts',
+    sourceStays: 'Guest survey',
+    sourceFacade: 'Facade photograph',
+  },
+};
+
+const c = COPY[locale];
+
+const displayName = new Map(ROOMS.map((room) => [room.id, roomName(room, 'fsh', locale)]));
+const SIDE = categoryLabel('fsh', locale, 'springs');
+const shortName = (id: string) => {
+  const full = displayName.get(id)!;
+  return full.startsWith(SIDE) ? full.slice(SIDE.length).trim() : full;
+};
+
+/**
+ * Glass tints on the same rule as the Rose Court Side: one hue per official
+ * category, one shade per view tier within it, deepest first. Fifteen windows
+ * is few enough that the legend is short, and the reader still never has to
+ * click anything to learn what a room is.
+ */
+const RAMPS: Record<SpringsCategory, string[]> = {
+  balcony: ['#74a8c6'],
+  balconyAlcove: ['#d9bd77'],
+  alcove: ['#8aa585', '#c3d2bc'],
+  accessible: ['#d8c4d2'],
+};
+
+const CATEGORY_ORDER: SpringsCategory[] = ['balcony', 'balconyAlcove', 'alcove', 'accessible'];
+
+const TYPES = [...new Set(SPRINGS_ROOMS.map((room) => room.roomType))]
+  .map((id) => {
+    const rooms = SPRINGS_ROOMS.filter((room) => room.roomType === id);
+    return {
+      id,
+      category: rooms[0]!.category,
+      grand: rooms[0]!.view === 'grand',
+      count: rooms.length,
+      name: shortName(id),
+    };
+  })
+  .sort(
+    (a, b) =>
+      CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) ||
+      Number(b.grand) - Number(a.grand),
+  )
+  .map((type, _, all) => {
+    const rank = all.filter((other) => other.category === type.category).indexOf(type);
+    const ramp = RAMPS[type.category];
+    if (rank >= ramp.length) {
+      throw new Error(`SpringsElevation: ${type.category} has more types than shades (${type.id})`);
+    }
+    return { ...type, glass: ramp[rank]! };
+  });
+
+const glassFor = new Map(TYPES.map((type) => [type.id, type.glass]));
+
+/** Drawing units. One unit is one CSS pixel at the elevation's natural size. */
+const BAY = 96;
+const STOREY = Math.round(BAY * SPRINGS_METRICS.storeyPerBay);
+const WIN_W = Math.round(BAY * SPRINGS_METRICS.windowPerBay.width);
+const WIN_H = Math.round(BAY * SPRINGS_METRICS.windowPerBay.height);
+const BAL_W = Math.round(BAY * SPRINGS_METRICS.balconyPerBay.width);
+const BAL_H = Math.round(BAY * SPRINGS_METRICS.balconyPerBay.height);
+const GUTTER = 34;
+/** Wall that runs off the frame, because the facade carries on both ways. */
+const EDGE = 22;
+/** Headroom: the pavilion's gable stands about a storey above the wing's parapet. */
+const TOP = 132;
+/** The roof over the lobby terrace, in front of the lowest row of windows. */
+const TERRACE = 68;
+
+const originX = GUTTER + EDGE;
+const centreX = (i: number) => originX + SPRINGS_METRICS.bays[i]! * BAY + BAY / 2;
+const rowOf = (floor: number) => SPRINGS_FLOORS.indexOf(floor);
+const centreY = (floor: number) => TOP + rowOf(floor) * STOREY + STOREY / 2;
+
+const pavilion = SPRINGS_COLUMNS.filter((column) => column.plane === 'pavilion');
+const wing = SPRINGS_COLUMNS.filter((column) => column.plane === 'wing');
+const planeAt = (columns: typeof SPRINGS_COLUMNS, isFirst: boolean, isLast: boolean) => {
+  const first = SPRINGS_COLUMNS.indexOf(columns[0]!);
+  const last = SPRINGS_COLUMNS.indexOf(columns[columns.length - 1]!);
+  return {
+    x0: originX + SPRINGS_METRICS.bays[first]! * BAY - (isFirst ? EDGE : 0),
+    x1: originX + SPRINGS_METRICS.bays[last]! * BAY + BAY + (isLast ? EDGE : 0),
+  };
+};
+const pavilionBox = planeAt(pavilion, true, false);
+const wingBox = planeAt(wing, false, true);
+
+const groundY = TOP + SPRINGS_FLOORS.length * STOREY;
+const width = Math.round(originX + (Math.max(...SPRINGS_METRICS.bays) + 1) * BAY + EDGE);
+const height = groundY + TERRACE;
+
+/**
+ * The wing stops at a parapet a third of a storey above its top windows; the
+ * pavilion's wall carries on past it and then rises again into the shaped
+ * gable, which is what makes the two balcony rooms recognisable from the park.
+ */
+const wingRoofY = TOP - STOREY * 0.42;
+const pavilionRoofY = wingRoofY - STOREY * 0.3;
+const gableY = wingRoofY - STOREY * 1.05;
+
+const cells = SPRINGS_COLUMNS.flatMap((column, i) =>
+  SPRINGS_FLOORS.map((floor) => {
+    const room = SPRINGS_ROOMS.find((r) => r.position === column.position && r.floor === floor)!;
+    return {
+      ...room,
+      typeName: shortName(room.roomType),
+      glass: glassFor.get(room.roomType)!,
+      x: centreX(i),
+      y: centreY(floor),
+      w: room.balcony ? BAL_W : WIN_W,
+      h: room.balcony ? BAL_H : WIN_H,
+    };
+  }),
+);
+
+/** An arched opening: square jambs, a segmental head. Wider and taller on the
+ *  balcony bays, which is how the real openings measure. */
+function arch(w: number, h: number): string {
+  const rise = h * 0.34;
+  return [
+    `M${-w / 2},${h / 2}`,
+    `L${-w / 2},${-h / 2 + rise}`,
+    `Q${-w / 2},${-h / 2} 0,${-h / 2}`,
+    `Q${w / 2},${-h / 2} ${w / 2},${-h / 2 + rise}`,
+    `L${w / 2},${h / 2}`,
+    'Z',
+  ].join(' ');
+}
+
+const FRAME = 5;
+const bendX = (wingBox.x0 + pavilionBox.x1) / 2;
+const pavilionMid = (pavilionBox.x0 + pavilionBox.x1) / 2;
+
+const inferredNumbers = cells
+  .filter((cell) => cell.inferred)
+  .map((cell) => cell.number)
+  .sort();
+---
+
+<section id="springs-side" class="not-prose scroll-mt-32">
+  <div>
+    <h2 class="font-serif text-2xl font-bold text-ink">{c.heading(SPRINGS_ROOM_COUNT)}</h2>
+    <p class="mt-2 max-w-3xl text-[0.9375rem] leading-[1.9] text-ink-soft">{c.intro}</p>
+    <p class="mt-3 max-w-3xl text-[0.875rem] leading-[1.85] text-ink-soft">{c.numbering}</p>
+  </div>
+
+  <ul class="mt-6 grid grid-flow-row gap-x-8 gap-y-2 text-xs sm:grid-flow-col sm:grid-rows-3">
+    {
+      TYPES.map((type) => (
+        <li class="flex items-baseline gap-2">
+          <span
+            class="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[2px] ring-1 ring-black/10"
+            style={`background:${type.glass}`}
+          />
+          <span class="text-ink">{type.name}</span>
+          <span class="ml-auto shrink-0 tabular-nums text-ink-faint">{c.count(type.count)}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <figure class="mt-6 overflow-hidden rounded-2xl border border-line bg-card">
+    <div class="table-scroll">
+      <svg
+        class="springs-elevation elevation block h-auto w-full"
+        style={`min-width:${width}px`}
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={c.figureAlt(SPRINGS_ROOM_COUNT)}
+      >
+        <defs>
+          <linearGradient id="fsh-springs-wall" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color={WALL_LIGHT}></stop>
+            <stop offset="1" stop-color={WALL_DARK}></stop>
+          </linearGradient>
+          <linearGradient id="fsh-springs-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#d6e6f2"></stop>
+            <stop offset="1" stop-color="#f4f1ea"></stop>
+          </linearGradient>
+        </defs>
+
+        <rect width={width} height={height} fill="url(#fsh-springs-sky)" />
+
+        {/* The lower three-bay wing. Its parapet carries cartouche panels. */}
+        <g>
+          <rect
+            x={wingBox.x0}
+            y={wingRoofY}
+            width={wingBox.x1 - wingBox.x0}
+            height={groundY - wingRoofY}
+            fill="url(#fsh-springs-wall)"
+          />
+          <rect
+            x={wingBox.x0}
+            y={wingRoofY}
+            width={wingBox.x1 - wingBox.x0}
+            height={STOREY * 0.3}
+            fill={WALL_LIGHT}
+          />
+          <rect
+            x={wingBox.x0}
+            y={wingRoofY - 4}
+            width={wingBox.x1 - wingBox.x0}
+            height="8"
+            fill={TRIM}
+            stroke={TRIM_LINE}
+            stroke-width="0.9"
+          />
+          {wing.map((_, i) => (
+            <rect
+              class="cartouche"
+              x={centreX(pavilion.length + i) - WIN_W / 2}
+              y={wingRoofY + STOREY * 0.09}
+              width={WIN_W}
+              height={STOREY * 0.13}
+              rx={STOREY * 0.06}
+            />
+          ))}
+          <rect
+            x={wingBox.x0}
+            y={TOP - 3}
+            width={wingBox.x1 - wingBox.x0}
+            height="6"
+            fill={TRIM}
+            stroke={TRIM_LINE}
+            stroke-width="0.8"
+          />
+        </g>
+
+        {/* The taller gabled pavilion, which is what the two balcony rooms sit in. */}
+        <g>
+          <path
+            d={`M${pavilionBox.x0},${groundY}
+                L${pavilionBox.x0},${pavilionRoofY}
+                C${pavilionBox.x0 + BAY * 0.16},${gableY + STOREY * 0.1}
+                 ${pavilionMid - BAY * 0.5},${gableY}
+                 ${pavilionMid},${gableY}
+                C${pavilionMid + BAY * 0.5},${gableY}
+                 ${pavilionBox.x1 - BAY * 0.16},${gableY + STOREY * 0.1}
+                 ${pavilionBox.x1},${pavilionRoofY}
+                L${pavilionBox.x1},${groundY} Z`}
+            fill="url(#fsh-springs-wall)"
+            stroke={TRIM}
+            stroke-width="7"
+            stroke-linejoin="round"
+          />
+          {/* The volute and its answering sweep, the same ornament the courtyard
+              rooflines carry. */}
+          <path
+            d={spiral(pavilionMid + BAY * 0.2, gableY + STOREY * 0.3, 1.7, BAY * 0.16, 2)}
+            fill="none"
+            stroke={TRIM}
+            stroke-width="4.5"
+            stroke-linecap="round"
+          />
+          <path
+            d={`M${pavilionMid - BAY * 0.42},${gableY + STOREY * 0.62}
+                C${pavilionMid - BAY * 0.36},${gableY + STOREY * 0.2}
+                 ${pavilionMid - BAY * 0.16},${gableY + STOREY * 0.06}
+                 ${pavilionMid + BAY * 0.02},${gableY + STOREY * 0.14}`}
+            fill="none"
+            stroke={TRIM}
+            stroke-width="4.5"
+            stroke-linecap="round"
+          />
+          {/* The pendant drop below the gable's crown. */}
+          <path
+            d={`M${pavilionMid - 7},${gableY + STOREY * 0.34}
+                q-6,20 3.5,44 q9.5,-24 3.5,-44 z`}
+            fill={TRIM}
+          />
+          {/* The cornice the gable stands on, so it reads as a gable and not an arch. */}
+          <rect
+            x={pavilionBox.x0 - 4}
+            y={pavilionRoofY}
+            width={pavilionBox.x1 - pavilionBox.x0 + 8}
+            height="7"
+            rx="2"
+            fill={TRIM}
+            stroke={TRIM_LINE}
+            stroke-width="0.9"
+          />
+        </g>
+
+        {/* Where the two planes meet: the wing sits behind the pavilion's corner. */}
+        <rect x={bendX - 3.5} y={pavilionRoofY} width="7" height={groundY - pavilionRoofY} fill="#d6b7ac" />
+        <g>
+          <path
+            d={`M${bendX + 8},${wingRoofY - 16} L${bendX + 1},${wingRoofY - 4}`}
+            stroke="#a89e93"
+            stroke-width="1.4"
+            fill="none"
+          />
+          <text class="note is-start" x={bendX + 11} y={wingRoofY - 18}>{c.bend}</text>
+        </g>
+
+        {
+          cells.map((cell) => (
+            <g transform={`translate(${cell.x},${cell.y})`}>
+              <path class="recess" d={arch(cell.w + 16, cell.h + 20)} />
+              <path class="frame" d={arch(cell.w, cell.h)} />
+              <path d={arch(cell.w - FRAME * 2, cell.h - FRAME * 2)} fill={cell.glass} />
+              {cell.balcony && (
+                <g class="railing">
+                  <rect x={-cell.w / 2 - 5} y={cell.h / 2 - 2} width={cell.w + 10} height="4" rx="2" />
+                  {Array.from({ length: 9 }, (_, k) => (
+                    <rect
+                      x={-cell.w / 2 - 2 + k * ((cell.w + 4) / 8)}
+                      y={cell.h / 2 - 12}
+                      width="2"
+                      height="12"
+                    />
+                  ))}
+                  <rect x={-cell.w / 2 - 5} y={cell.h / 2 - 14} width={cell.w + 10} height="3" rx="1.5" />
+                </g>
+              )}
+              <rect
+                class="sill"
+                x={-cell.w / 2 - 6}
+                y={cell.h / 2 + (cell.balcony ? 2 : 0)}
+                width={cell.w + 12}
+                height="4"
+                rx="1.6"
+              />
+              <text class:list={['num', cell.inferred && 'is-inferred']} y="0.5">
+                {cell.number}
+              </text>
+            </g>
+          ))
+        }
+
+        {/* The roof over the lobby terrace. In a true elevation it is a line at the
+            5th floor's own level; from the park it stands in front of that whole
+            row, which is why those five rooms are sold a tier down. */}
+        <g>
+          <path
+            d={`M0,${groundY} L${width},${groundY} L${width},${groundY + 22}
+                Q${width * 0.5},${groundY + 38} 0,${groundY + 22} Z`}
+            fill="#c6d3d0"
+          />
+          <path
+            d={`M0,${groundY + 20} Q${width * 0.5},${groundY + 36} ${width},${groundY + 20}`}
+            fill="none"
+            stroke="#a3b4b1"
+            stroke-width="2"
+          />
+          {[0.3, 0.7].map((f) => (
+            <g transform={`translate(${width * f},${groundY + 34})`} class="scroll">
+              <path d={spiral(0, 0, 1.4, 13, 2)} />
+              <path d="M-26,4 Q-13,-9 0,-1 Q13,-9 26,4" />
+            </g>
+          ))}
+          <text class="terrace" x={width / 2} y={groundY + 12}>{c.terraceShort}</text>
+          <rect x="0" y={groundY + 38} width={width} height={TERRACE - 38} fill="#e2d6c4" />
+          {/* Which way the facade carries on, since neither end of it is a corner. */}
+          <text class="note is-start" x={6} y={groundY + 53}>{c.towardsChateau}</text>
+          <text class="note is-end" x={width - 6} y={groundY + 53}>{c.towardsCourt}</text>
+        </g>
+
+        {SPRINGS_FLOORS.map((floor) => (
+          <text class="floor" x={GUTTER - 10} y={centreY(floor)}>
+            {c.floor(floor)}
+          </text>
+        ))}
+      </svg>
+    </div>
+
+    <figcaption class="border-t border-line-soft px-4 py-3 sm:px-5">
+      <p class="text-xs leading-relaxed text-ink-faint">
+        <span class="font-semibold text-ink-soft">{c.caption}</span>{' '}
+        {c.terrace}
+      </p>
+      <p class="mt-1.5 text-2xs leading-relaxed text-ink-faint">
+        {c.inferredNote(inferredNumbers)}
+      </p>
+    </figcaption>
+
+    {/* The drawing is one image to a screen reader, so the numbers and their types
+        are also given as a table. */}
+    <div class="sr-only">
+      <table>
+        <caption>{c.tableCaption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{c.roomHeader}</th>
+            <th scope="col">{c.typeHeader}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            cells.map((cell) => (
+              <tr>
+                <th scope="row">{cell.number}</th>
+                <td>{cell.typeName}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </figure>
+
+  <div class="mt-4 max-w-3xl">
+    <p class="text-xs leading-relaxed text-ink-faint">{c.method}</p>
+    <p class="mt-2 text-xs leading-relaxed text-ink-faint">{c.caveat}</p>
+    <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-2xs">
+      {
+        (
+          [
+            [c.sourceCounts, SPRINGS_SOURCES.counts],
+            [c.sourceStays, SPRINGS_SOURCES.stays],
+            [c.sourceFacade, SPRINGS_SOURCES.facade],
+          ] as const
+        ).map(([label, href]) => (
+          <a
+            href={href}
+            rel="nofollow noopener"
+            target="_blank"
+            class="text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
+          >
+            {label}
+          </a>
+        ))
+      }
+    </p>
+  </div>
+</section>
+
+<style is:global>
+  .springs-elevation .recess {
+    fill: #ead6ce;
+    stroke: #dcc0b5;
+    stroke-width: 1;
+  }
+
+  .springs-elevation .frame {
+    fill: #fdf8f0;
+    stroke: #e7d2c4;
+    stroke-width: 1;
+  }
+
+  .springs-elevation .sill {
+    fill: #fdf8f0;
+    stroke: #d8bdae;
+    stroke-width: 0.9;
+  }
+
+  .springs-elevation .railing {
+    fill: #f5eadd;
+    stroke: #cbb08f;
+    stroke-width: 0.6;
+  }
+
+  .springs-elevation .cartouche {
+    fill: none;
+    stroke: #d8bdae;
+    stroke-width: 1.6;
+  }
+
+  .springs-elevation .scroll {
+    fill: none;
+    stroke: #c8a862;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+  }
+
+  .springs-elevation .num {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    fill: #1f2a33;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  /* Positions placed by arithmetic rather than by a report, drawn as such. */
+  .springs-elevation .num.is-inferred {
+    fill: #5c6672;
+    font-style: italic;
+  }
+
+  .springs-elevation .note,
+  .springs-elevation .terrace {
+    font-size: 12px;
+    font-weight: 600;
+    fill: #7d8892;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  .springs-elevation .note.is-start {
+    text-anchor: start;
+  }
+
+  .springs-elevation .note.is-end {
+    text-anchor: end;
+  }
+
+  .springs-elevation .terrace {
+    fill: #5f6f6c;
+  }
+
+  .springs-elevation .floor {
+    font-size: 13px;
+    font-weight: 600;
+    fill: #8b8f99;
+    text-anchor: end;
+    dominant-baseline: middle;
+  }
+</style>

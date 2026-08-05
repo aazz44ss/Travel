@@ -1,6 +1,14 @@
 ---
 import CourtPlan from '~/components/CourtPlan.astro';
 import {
+  jitter,
+  spiral,
+  TRIM,
+  TRIM_LINE,
+  WALL_DARK,
+  WALL_LIGHT,
+} from '~/components/elevation-draw';
+import {
   ELEVATIONS,
   ROSE_ROOMS,
   ROSE_ROOM_COUNT,
@@ -291,10 +299,6 @@ const TRACED_PAGE: Record<Locale, string> = {
   en: 'https://www.tokyodisneyresort.jp/en/hotel/fsh/fcu/gallery.html',
 };
 
-const WALL_LIGHT = '#f1ddd6';
-const WALL_DARK = '#e3c6bd';
-const TRIM = '#fdf8f0';
-const TRIM_LINE = '#d8bdae';
 
 /** The window surround, traced from the hotel's own exterior photography: a soft
  *  Art Nouveau frame, wider on the upper left, with a gently domed head. */
@@ -318,25 +322,6 @@ function windowShape(w: number, h: number): string {
 /** The little fan-topped corbel that hangs above every window head. */
 const CORBEL =
   'M-7,0 Q-7,-4 -3.6,-4.6 L3.6,-4.6 Q7,-4 7,0 C3.8,0.2 2.2,1.4 1.7,5 L-1.7,5 C-2.2,1.4 -3.8,0.2 -7,0 Z';
-
-/** The volute at the centre of the roofline, drawn as a spiral rather than an arc. */
-function spiral(cx: number, cy: number, turns: number, outer: number, inner: number): string {
-  const steps = 44;
-  let d = '';
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const angle = t * turns * Math.PI * 2;
-    const r = outer + (inner - outer) * t;
-    d += `${i ? 'L' : 'M'}${(cx + Math.cos(angle) * r).toFixed(1)},${(cy + Math.sin(angle) * r).toFixed(1)}`;
-  }
-  return d;
-}
-
-/** Deterministic pseudo-randomness, so the drawing is identical every build. */
-function jitter(i: number, seed: number): number {
-  const n = Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453;
-  return n - Math.floor(n);
-}
 
 /**
  * The courtyard rockwork, as overlapping boulders rather than one silhouette.

@@ -89,11 +89,16 @@ ok(`${hrefs.size} distinct internal hrefs, all resolve`);
 // heading and legend, so a drift on either side shows up as a disagreement.
 console.log('\nRose Court elevations');
 const fshDb = read('hotels/fantasy-springs-hotel/index.html');
+/** One room-number map's own slice of the page, so the two cannot be confused. */
+const section = (html, id, until) =>
+  html.slice(html.indexOf(`id="${id}"`), until ? html.indexOf(`id="${until}"`) : undefined);
+const roseHtml = section(fshDb, 'rose-court', 'springs-side');
+const springsHtml = section(fshDb, 'springs-side', 'room-explorer');
 // The room type is now carried by the colour of the window, with no interaction to
 // reveal it, so what has to hold is that the colour a reader looks up in the legend
 // covers exactly as many windows as the legend says it does.
 const cells = [
-  ...fshDb.matchAll(
+  ...roseHtml.matchAll(
     /<use href="#fsh-glass" fill="(#[0-9a-f]{6})"><\/use><text class="num" y="0\.5">(\d{4})</g,
   ),
 ].map((m) => ({ glass: m[1], number: m[2] }));
@@ -106,10 +111,9 @@ new Set(cells.map((c) => c.number)).size === cells.length
   ? ok('no duplicate room numbers')
   : fail('duplicate room numbers');
 
-const sectionStart = fshDb.indexOf('id="rose-court"');
 // Up to the first elevation rather than the first figure: the key plan that says
 // which wall each face is comes before the legend and is a figure too.
-const legendHtml = fshDb.slice(sectionStart, fshDb.indexOf('class="elevation', sectionStart));
+const legendHtml = roseHtml.slice(0, roseHtml.indexOf('class="elevation'));
 const legend = [
   ...legendHtml.matchAll(
     /style="background:(#[0-9a-f]{6})[^"]*"[^>]*><\/span><span class="text-ink">([^<]+)<\/span><span[^>]*>(\d+) 間/g,
@@ -134,10 +138,51 @@ legendHtml.includes('官方未分級') && fshDb.includes('is-unlisted')
   ? ok('the position no published band covers is drawn and named as such')
   : fail('unassigned position not disclosed');
 // The drawing is one image to a screen reader, so the numbers must also exist as text.
-[...fshDb.matchAll(/<div class="sr-only"><table>/g)].length === 3 &&
-[...fshDb.matchAll(/<th scope="row">\d{4}<\/th>/g)].length === cells.length
+[...roseHtml.matchAll(/<div class="sr-only"><table>/g)].length === 3 &&
+[...roseHtml.matchAll(/<th scope="row">\d{4}<\/th>/g)].length === cells.length
   ? ok(`all ${cells.length} numbers also given as a table for screen readers`)
   : fail('the elevations have no text alternative carrying the room numbers');
+
+// ── the Springs Side, which is fifteen rooms nobody has surveyed as a whole ──
+// The official per-type counts are the only hard numbers on this side, so the
+// check is that the drawing spends them exactly and marks what it inferred.
+console.log('\nSprings Side elevation');
+const springsCells = [
+  ...springsHtml.matchAll(/<text class="num(?: is-inferred)?" y="0\.5">(\d{4})</g),
+].map((m) => m[1]);
+const springsLegend = [
+  ...springsHtml
+    .slice(0, springsHtml.indexOf('class="springs-elevation'))
+    .matchAll(
+      /style="background:(#[0-9a-f]{6})[^"]*"[^>]*><\/span><span class="text-ink">([^<]+)<\/span><span[^>]*>(\d+) 間/g,
+    ),
+].map((m) => ({ glass: m[1], label: m[2], stated: Number(m[3]) }));
+const springsHeading = Number(fshDb.match(/泉鄉區 (\d+) 間客房的位置/)?.[1]);
+springsCells.length === springsHeading && springsHeading === 15
+  ? ok(`heading says ${springsHeading} rooms and ${springsCells.length} windows are drawn`)
+  : fail(`heading says ${springsHeading} rooms but ${springsCells.length} windows are drawn`);
+new Set(springsCells).size === springsCells.length
+  ? ok('no duplicate room numbers')
+  : fail('duplicate room numbers on the Springs Side');
+springsCells.every((n) => /^[567](31[789]|32[01])$/.test(n))
+  ? ok('every number is 317–321 on the 5th, 6th or 7th floor')
+  : fail(`a Springs number falls outside 317–321 on floors 5–7: ${springsCells.join(' ')}`);
+springsLegend.length === 5
+  ? ok(`legend names ${springsLegend.length} room types`)
+  : fail(`legend names ${springsLegend.length} room types, the hotel publishes 5`);
+springsLegend.reduce((n, l) => n + l.stated, 0) === springsCells.length
+  ? ok(`room type tallies sum to ${springsCells.length}`)
+  : fail('Springs room type tallies do not sum to the number of windows');
+// Nine of the fifteen are placed by arithmetic. Saying which is the point.
+const inferred = [...springsHtml.matchAll(/<text class="num is-inferred" y="0\.5">(\d{4})</g)].map(
+  (m) => m[1],
+);
+inferred.length === 9 && inferred.every((n) => springsHtml.includes(n))
+  ? ok(`${inferred.length} inferred positions drawn as inferred and listed`)
+  : fail(`${inferred.length} positions drawn as inferred, expected 9 and all listed`);
+[...springsHtml.matchAll(/<th scope="row">\d{4}<\/th>/g)].length === springsCells.length
+  ? ok(`all ${springsCells.length} numbers also given as a table for screen readers`)
+  : fail('the Springs elevation has no text alternative carrying the room numbers');
 
 // A hotel with a page nobody links to is a hotel nobody finds. Both listing pages
 // enumerate the same registry, so the check is that every hotel appears on both.
@@ -154,13 +199,21 @@ for (const prefix of PREFIXES) {
 }
 ok(`all ${HOTELS.length} hotels linked from the home page and the index, in every locale`);
 
-console.log('\nevery locale renders the position map');
+console.log('\nevery locale renders both position maps');
 for (const prefix of PREFIXES) {
   const html = read(`${prefix}hotels/fantasy-springs-hotel/index.html`);
-  const n = [...html.matchAll(/<text class="num" y="0\.5">\d{4}</g)].length;
-  n === cells.length
-    ? ok(`${prefix || 'zh-hant/'} renders ${n} cells`)
-    : fail(`${prefix || 'zh-hant/'} renders ${n} cells, expected ${cells.length}`);
+  const rose = [...section(html, 'rose-court', 'springs-side').matchAll(
+    /<text class="num" y="0\.5">\d{4}</g,
+  )].length;
+  const springs = [...section(html, 'springs-side', 'room-explorer').matchAll(
+    /<text class="num(?: is-inferred)?" y="0\.5">\d{4}</g,
+  )].length;
+  rose === cells.length && springs === springsCells.length
+    ? ok(`${prefix || 'zh-hant/'} renders ${rose} + ${springs} cells`)
+    : fail(
+        `${prefix || 'zh-hant/'} renders ${rose} + ${springs} cells, expected ` +
+          `${cells.length} + ${springsCells.length}`,
+      );
 }
 
 console.log('\nlanguage switcher targets exist');
