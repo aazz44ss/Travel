@@ -79,18 +79,21 @@ const walls = COURT_PLAN.walls
     const back = (wall.faces + 180) % 360;
     const stand = along(centre, 16, wall.faces);
     return {
-      ...wall,
-      // Labels sit on the wing they name, not in the courtyard, which is too
-      // small to hold three of them without collisions.
-      label: along(centre, 13, back),
-      from: along(wall.from, 5, back),
-      to: along(wall.to, 5, back),
       wall,
+      // The name sits on the wing it belongs to, not in the courtyard, which is
+      // too small to hold three of them without collisions. The two position
+      // numbers sit just outside their own ends of the wall.
+      nameAt: along(centre, 13, back),
+      lowAt: along(wall.from, 5, back),
+      highAt: along(wall.to, 5, back),
       // Where the surveyed photograph was taken from, and what it looks at.
       stand,
       look: along(stand, 8, back),
     };
   });
+
+/** Where the Springs Side carries on past the far end of the 3xx face. */
+const pastDiagonal = COURT_PLAN.walls.find((wall) => wall.key === 'diagonal')!.to;
 
 /**
  * Both landmarks drawn from the middle of the courtyard, which is what makes
@@ -169,17 +172,17 @@ const ROCK = '#c6c3ac';
     !small &&
       walls.map((w) => (
         <g>
-          <text class="band" x={X(w.label)} y={Y(w.label)}>
-            {bands[w.key]}
+          <text class="band" x={X(w.nameAt)} y={Y(w.nameAt)}>
+            {bands[w.wall.key]}
           </text>
-          <text class="face" x={X(w.label)} y={Y(w.label) + 3.4}>
-            {labels[w.key]}
+          <text class="face" x={X(w.nameAt)} y={Y(w.nameAt) + 3.4}>
+            {labels[w.wall.key]}
           </text>
-          <text class="end" x={X(w.from)} y={Y(w.from)}>
-            {w.fromPosition}
+          <text class="end" x={X(w.lowAt)} y={Y(w.lowAt)}>
+            {w.wall.fromPosition}
           </text>
-          <text class="end" x={X(w.to)} y={Y(w.to)}>
-            {w.toPosition}
+          <text class="end" x={X(w.highAt)} y={Y(w.highAt)}>
+            {w.wall.toPosition}
           </text>
         </g>
       ))
@@ -231,10 +234,10 @@ const ROCK = '#c6c3ac';
         {springs && (
           <g>
             <line
-              x1={X(along(COURT_PLAN.walls[2]!.to, 3, 136))}
-              y1={Y(along(COURT_PLAN.walls[2]!.to, 3, 136))}
-              x2={X(along(COURT_PLAN.walls[2]!.to, 8.5, 136))}
-              y2={Y(along(COURT_PLAN.walls[2]!.to, 8.5, 136))}
+              x1={X(along(pastDiagonal, 3, 136))}
+              y1={Y(along(pastDiagonal, 3, 136))}
+              x2={X(along(pastDiagonal, 8.5, 136))}
+              y2={Y(along(pastDiagonal, 8.5, 136))}
               stroke="#8b7c96"
               stroke-width="0.9"
               marker-end="url(#court-plan-tip-springs)"
