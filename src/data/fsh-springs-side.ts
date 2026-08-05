@@ -59,7 +59,7 @@ export interface SpringsColumn {
  * authors also ringed their own window on a photograph of the facade. 6320,
  * 6321 and 7320 are named by a guest who has stayed in all four balcony rooms.
  */
-export const SPRINGS_ATTESTED = new Set(['6318', '6319', '6320', '6321', '7320', '7321']);
+const ATTESTED = new Set(['6318', '6319', '6320', '6321', '7320', '7321']);
 
 export const SPRINGS_FLOORS = [7, 6, 5];
 
@@ -97,13 +97,6 @@ export const SPRINGS_METRICS = {
   storeyPerBay: 0.73,
   windowPerBay: { width: 0.54, height: 0.35 },
   balconyPerBay: { width: 0.6, height: 0.47 },
-};
-
-export const SPRINGS_CATEGORY_LABEL: Record<SpringsCategory, string> = {
-  alcove: '附凹室尊爵客房',
-  balconyAlcove: '附陽台＆凹室尊爵客房',
-  balcony: '附陽台尊爵客房',
-  accessible: '尊爵無障礙客房',
 };
 
 export interface SpringsRoom {
@@ -144,7 +137,7 @@ export const SPRINGS_ROOMS: SpringsRoom[] = SPRINGS_COLUMNS.flatMap((column) =>
       view,
       plane: column.plane,
       balcony: category === 'balcony' || category === 'balconyAlcove',
-      inferred: !SPRINGS_ATTESTED.has(number),
+      inferred: !ATTESTED.has(number),
       roomType,
     };
   }),
@@ -177,7 +170,7 @@ for (const [type, expected] of Object.entries(PUBLISHED_COUNTS)) {
 if (SPRINGS_METRICS.bays.length !== SPRINGS_COLUMNS.length) {
   throw new Error('fsh-springs-side: measured bays and columns disagree');
 }
-for (const number of SPRINGS_ATTESTED) {
+for (const number of ATTESTED) {
   if (!SPRINGS_ROOMS.some((room) => room.number === number)) {
     throw new Error(`fsh-springs-side: ${number} is attested but is not a position here`);
   }

@@ -552,7 +552,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         '這間飯店的加床有四種，而且尺寸差很多。房型名稱只寫「附凹室」「附陽台」，實際睡幾個人、睡得舒不舒服看這張表。',
       bedTableCaption: '東京迪士尼海洋夢幻泉鄉大飯店床型尺寸與可睡人數',
       explorerProvenance:
-        '名稱依官方繁體中文客房頁，玫瑰庭區採用 2026 年 10 月起適用的分類。房號只有玫瑰庭區有——那一側的 147 間客房位置已被逐間整理出來，其他三區與豪華館沒有這樣的資料。',
+        '名稱依官方繁體中文客房頁，玫瑰庭區採用 2026 年 10 月起適用的分類。房號收錄 {numbered} 間：玫瑰庭區的 147 間有逐間調查，泉鄉區的 15 間是官方間數加住客回報拼出來的，其中九間位置屬推算。灣岸區、飯店入口區與豪華館沒有這樣的資料。',
       rateSourceLabel: '開賣日價格調查（二手整理）',
       bargainNote: '',
       articleTeaseHeading: '想知道這些數字背後的判斷？',
@@ -598,7 +598,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         'このホテルの追加ベッドは 4 種類あり、サイズがかなり違います。実際に何人がどう寝るかはこの表を見てください。',
       bedTableCaption: '東京ディズニーシー・ファンタジースプリングスホテルのベッドサイズと定員',
       explorerProvenance:
-        '名称は公式の客室ページに従い、ローズコートサイドは 2026 年 10 月 1 日からの区分です。部屋番号があるのはローズコートサイドだけで、そのサイドの 147 室は 1 室ずつ位置が特定されています。',
+        '名称は公式の客室ページに従い、ローズコートサイドは 2026 年 10 月 1 日からの区分です。部屋番号は {numbered} 室分。ローズコートサイドの 147 室は 1 室ずつの調査、スプリングスサイドの 15 室は公式室数と宿泊者の報告を突き合わせたもので、うち 9 室は推定です。ベイエリアサイド、ホテルエントランスサイド、グランドシャトーには同種の資料がありません。',
       rateSourceLabel: '予約開始日の価格調査（二次情報）',
       bargainNote: '',
       articleTeaseHeading: 'この数字の背景を知りたい方へ',
@@ -644,7 +644,7 @@ const COPY: Record<HotelKey, Record<Locale, Omit<HotelCopy, 'sections'>>> = {
         'This hotel has four kinds of extra bed and they differ a great deal in size. A room name only tells you "alcove" or "balcony"; this table tells you who actually fits.',
       bedTableCaption: 'Bed sizes and occupancy at the Tokyo DisneySea Fantasy Springs Hotel',
       explorerProvenance:
-        'Names follow the hotel’s official pages, with the Rose Court Side using the categories that apply from 1 October 2026. Only the Rose Court Side has room numbers: all 147 of its rooms have been placed individually.',
+        'Names follow the hotel’s official pages, with the Rose Court Side using the categories that apply from 1 October 2026. Room numbers cover {numbered} rooms: the Rose Court Side’s 147 from a room-by-room survey, the Springs Side’s 15 from the official counts set against guest reports, nine of them inferred. Nothing comparable exists for the Bay Area Side, the Hotel Entrance Side or the Grand Chateau.',
       rateSourceLabel: 'Opening-day rate survey (secondary source)',
       bargainNote: '',
       articleTeaseHeading: 'Want the reasoning behind these numbers?',
