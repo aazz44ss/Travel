@@ -21,9 +21,10 @@
  * Taking the drawing whole cannot make that mistake, and there are two checks on it.
  * Ten corners of the building are named by both the drawing and the survey; over
  * those ten the fit is out by 2.4 m on average and 5.4 m at worst, on a building
- * 210 m across. What comes out of it is a room's frontage of 3.9 to 5.0 m on every
- * one of the eight walls, which is what a 37 m² room 9.8 m deep has, and nothing was
- * fitted to make that happen — it is eight independent readings of a hand drawing
+ * 210 m across. What comes out of it is a room's frontage of 3.9 to 4.3 m on each of
+ * the seven walls that carry a corridor, and 4.9 m on the two corner stubs that carry
+ * one room and three — which is what a 37 m² room 9.8 m deep has, and nothing was
+ * fitted to make it come out: it is nine independent readings of a hand drawing
  * agreeing with a survey none of them was measured against.
  *
  * The second check is cell by cell. The drawing's own cells can be had without

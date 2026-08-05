@@ -29,9 +29,10 @@
  * is the shape of the drawing and the photograph under it is what has to be met.
  * The survey in `./dhm-site` is still what says how big and which way round: it is
  * the ten corners the fit was made on, and it is the check afterwards. Wall by wall
- * the fit gives 3.85, 4.15, 4.15, 4.23, 4.30, 4.35, 4.47 and 4.97 m of frontage a
- * room, against the 4.3 m a 37 m² room has if it is 9.8 m deep — eight readings of a
- * hand drawing agreeing with a survey none of them was measured against, and nothing
+ * the fit gives 3.85, 4.13, 4.15, 4.15, 4.23, 4.30 and 4.34 m of frontage a room on
+ * the seven walls that carry a corridor, and 4.92 and 4.98 m on the two corner stubs,
+ * against the 4.3 m a 37 m² room has if it is 9.8 m deep — nine readings of a hand
+ * drawing agreeing with a survey none of them was measured against, and nothing
  * fitted to make them.
  *
  * It used to be the other way about: the survey gave the walls and the plans only the
