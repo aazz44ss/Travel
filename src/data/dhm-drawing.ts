@@ -20,7 +20,7 @@
  *
  * Taking the drawing whole cannot make that mistake, and there are two checks on it.
  * Ten corners of the building are named by both the drawing and the survey; over
- * those ten the fit is out by 3.0 m on average and 5.4 m at worst, on a building
+ * those ten the fit is out by 2.4 m on average and 5.4 m at worst, on a building
  * 210 m across. What comes out of it is a room's frontage of 3.9 to 5.0 m on every
  * one of the eight walls, which is what a 37 m² room 9.8 m deep has, and nothing was
  * fitted to make that happen — it is eight independent readings of a hand drawing
@@ -39,40 +39,76 @@
  * over the eaves.
  */
 
-import type { Point } from './dhm-site';
+import { FRONTAGE_WALL, TAIL_WALL, type Point } from './dhm-site';
 
 /** A point on the drawing sheet, in its own pixels: x right, y down. */
 export type Pixel = readonly [number, number];
 
 /**
- * The similarity taking sheet pixels to metres about the hotel centre.
+ * The corners the fit is made on: the ones the drawing and the surveyed outline both
+ * name, in the order they are walked.
  *
- * Fitted by least squares to the ten corners tabulated in `DRAWING_LANDMARKS`,
- * which are the ones the drawing and the surveyed outline both name.
+ * Eight are the frontage's own corners and two the tail's, so the survey side of the
+ * table is not written out here — it is read straight off `./dhm-site`, and moving a
+ * vertex there refits the drawing rather than leaving the two to disagree quietly.
  */
-export const DRAWING_FIT = {
-  metresPerPixel: 0.18453,
-  /** Degrees the sheet is turned to bring it to north-up. */
-  turn: -19.7,
-  shift: [-189.2, -59.4] as const,
-} as const;
+export const DRAWING_LANDMARKS: { at: Pixel; to: Point; is: string }[] = [
+  { at: [273, 255], to: FRONTAGE_WALL[0]!, is: 'the dog-leg near the north-west wing’s far end' },
+  { at: [484, 455], to: FRONTAGE_WALL[1]!, is: 'that wing meeting the north spine' },
+  { at: [769, 456], to: FRONTAGE_WALL[2]!, is: 'the two spines meeting' },
+  { at: [769, 800], to: FRONTAGE_WALL[3]!, is: 'the south spine meeting the harbour arm' },
+  { at: [606, 796], to: FRONTAGE_WALL[4]!, is: 'the arm’s first bend' },
+  { at: [439, 859], to: FRONTAGE_WALL[5]!, is: 'its second' },
+  { at: [334, 972], to: FRONTAGE_WALL[6]!, is: 'its third, where the tip begins' },
+  { at: [320, 1042], to: FRONTAGE_WALL[7]!, is: 'the point of the tip' },
+  { at: [1017, 1033], to: TAIL_WALL[0]!, is: 'the south-eastern tail’s head' },
+  { at: [1022, 1262], to: TAIL_WALL[1]!, is: 'its far end' },
+];
 
 /**
- * The corners the fit was made on: sheet pixels against `FRONTAGE_WALL` and
- * `TAIL_WALL` in `./dhm-site`, in the order they are walked.
+ * The similarity taking sheet pixels to metres about the hotel centre, by least
+ * squares over those corners.
+ *
+ * Umeyama's solution, which is the closed form: bring both sets of corners to their
+ * centres, and the turn and the scale that best line them up fall out of one sum over
+ * the pairs. Three degrees of freedom and no fourth, so the drawing can be scaled,
+ * turned and moved but not stretched.
  */
-export const DRAWING_LANDMARKS: { at: Pixel; is: string }[] = [
-  { at: [273, 255], is: 'the dog-leg near the north-west wing\u2019s far end' },
-  { at: [484, 455], is: 'that wing meeting the north spine' },
-  { at: [769, 456], is: 'the two spines meeting' },
-  { at: [769, 800], is: 'the south spine meeting the harbour arm' },
-  { at: [606, 796], is: 'the arm\u2019s first bend' },
-  { at: [439, 859], is: 'its second' },
-  { at: [334, 972], is: 'its third, where the tip begins' },
-  { at: [320, 1042], is: 'the point of the tip' },
-  { at: [1017, 1033], is: 'the south-eastern tail\u2019s head' },
-  { at: [1022, 1262], is: 'its far end' },
-];
+function fitLandmarks(): { metresPerPixel: number; turn: number; shift: Point } {
+  const n = DRAWING_LANDMARKS.length;
+  const centre = (of: (p: (typeof DRAWING_LANDMARKS)[number]) => Point): Point => {
+    let x = 0;
+    let y = 0;
+    for (const p of DRAWING_LANDMARKS) {
+      x += of(p)[0];
+      y += of(p)[1];
+    }
+    return [x / n, y / n];
+  };
+  const ca = centre((p) => p.at);
+  const cb = centre((p) => p.to);
+  let along = 0;
+  let across = 0;
+  let spread = 0;
+  for (const p of DRAWING_LANDMARKS) {
+    const [x, y] = [p.at[0] - ca[0], p.at[1] - ca[1]];
+    const [u, v] = [p.to[0] - cb[0], p.to[1] - cb[1]];
+    along += x * u + y * v;
+    across += x * v - y * u;
+    spread += x * x + y * y;
+  }
+  const turn = Math.atan2(across, along);
+  const scale = Math.hypot(along, across) / spread;
+  const [c, s] = [Math.cos(turn) * scale, Math.sin(turn) * scale];
+  return {
+    metresPerPixel: scale,
+    /** Degrees the sheet is turned to bring it to north-up. */
+    turn: (turn * 180) / Math.PI,
+    shift: [cb[0] - (c * ca[0] - s * ca[1]), cb[1] - (s * ca[0] + c * ca[1])],
+  };
+}
+
+export const DRAWING_FIT = fitLandmarks();
 
 const RADIANS = (DRAWING_FIT.turn * Math.PI) / 180;
 const COS = Math.cos(RADIANS) * DRAWING_FIT.metresPerPixel;
@@ -174,3 +210,20 @@ export const DRAWN_WALLS_M: Record<string, { line: Point[]; lead?: Point[] }> =
  */
 export const DRAWN_ROW_DEPTH = Math.round(53 * DRAWING_FIT.metresPerPixel * 100) / 100;
 export const DRAWN_CORRIDOR = Math.round(12 * DRAWING_FIT.metresPerPixel * 100) / 100;
+
+/**
+ * How far each landmark ends up from the corner it was fitted to, which is the check
+ * on the fit and is thrown if it goes badly wrong.
+ *
+ * Ten corners over a building 210 m across, and the drawing is a schematic: 2.4 m on
+ * average and 5.4 m at worst is as close as a hand drawing gets without being
+ * stretched, and stretching it is the one thing that would defeat the point.
+ */
+export const DRAWING_FIT_ERROR: number[] = DRAWING_LANDMARKS.map((p) => {
+  const at = place(p.at);
+  return Math.round(Math.hypot(at[0] - p.to[0], at[1] - p.to[1]) * 10) / 10;
+});
+
+if (Math.max(...DRAWING_FIT_ERROR) > 8) {
+  throw new Error(`dhm-drawing: the fit is ${Math.max(...DRAWING_FIT_ERROR)} m out somewhere`);
+}

@@ -24,10 +24,10 @@ export const PHOTO = {
   originY: 52876959.08,
   /**
    * The window drawn, in metres about that origin. Cropped to the rooms and the
-   * water in front of them: at 480 m across, a 4.4 m room front was 7 px on a
-   * phone and could not carry its number. The rooms span 212 by 158 m, so 250 m
-   * across leaves 21 m of Mediterranean Harbor beyond the far end of the wing and
-   * makes a room front 17 px wide and 38 deep, which a four-digit number fits
+   * water in front of them: at 480 m across, a 4.3 m room front was 7 px on a
+   * phone and could not carry its number. The rooms span 210 by 164 m, so 250 m
+   * across leaves 18 m of Mediterranean Harbor beyond the far end of the wing and
+   * makes a room front 18 px wide and 40 deep, which a four-digit number fits
    * across comfortably.
    */
   window: { x0: -160.0, y0: -70.0, x1: 90.0, y1: 120.0 },
