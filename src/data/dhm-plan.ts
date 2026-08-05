@@ -10,33 +10,41 @@
  * corridor, which side of the corridor it opens from, and therefore which way it
  * looks.
  *
- * A corridor is divided into the structural bays the plans draw along it, and both
+ * A corridor is divided into the structural bays the drawing draws along it, and both
  * of its rows of rooms are written out against those same bays. That is what makes
  * the figure agree with the drawing rather than merely resemble it: a floor's row is
- * a bay-by-bay line, so 4306 lands opposite 4305 with the two lift lobbies above it
- * written out as gaps, 4405 lands opposite 4406 and not 4404, 3313 sits directly
- * under 5313, and a fifth-floor Terrace Room over two bays comes out twice as wide
- * as the standard room below it. A row that is shorter than the one opposite because
- * a stair core or a lift lobby takes part of it keeps the width of a room rather than
- * being stretched to fill the wing; a row that is shorter because it runs round the
- * inside of a bend, where there is less wall to go at, closes up over the room the
- * bend costs it, as the plans draw it closing up — no 4346, no 4360, and no gap where
- * they would be.
+ * a bay-by-bay line, so 4306 lands opposite 4305 with the four bays of lift lobby
+ * above it written out as gaps, 4405 lands opposite 4406 and not 4404, 3313 sits
+ * directly under 5313, and a fifth-floor Terrace Room over two bays comes out twice
+ * as wide as the standard room below it. A suite comes out as wide as the drawing
+ * draws it, three bays for 4369 and 4371 at the point of the harbour arm and five for
+ * 5303. A row that is shorter than the one opposite because a stair core or a lift
+ * lobby takes part of it keeps the width of a room rather than being stretched to fill
+ * the wing; a row that is shorter because it runs round the inside of a bend, where
+ * there is less wall to go at, closes up over the room the bend costs it, as the
+ * drawing closes it up — no 4346, no 4360, and no gap where they would be.
  *
- * Where those corridors run is measured rather than drawn. The plans' lengths and
- * angles are not used, because they are schematic: on one sheet the south spine's
- * rooms are drawn half again as wide as the north spine's, and no wall of the
- * building is anything like that. What the plans are trusted for is the count — how
- * many bays a corridor has and which of them it turns at — and each corridor is then
- * stood on the wall of the surveyed outline in `./dhm-site` that runs where the plans
- * put it. Wall by wall that gives 3.99, 4.11, 4.39 and 4.47 m of frontage a room,
- * against the 4.37 m a 37 m² room has if it is 8.5 m deep, and nothing was fitted to
- * make it come out: it is the check on both the counting and the survey.
+ * Where those corridors run is the drawing's too. Every wall a room stands on is
+ * traced off the sheet and placed by the one fit in `./dhm-drawing`, so the figure
+ * is the shape of the drawing and the photograph under it is what has to be met.
+ * The survey in `./dhm-site` is still what says how big and which way round: it is
+ * the ten corners the fit was made on, and it is the check afterwards. Wall by wall
+ * the fit gives 3.85, 4.15, 4.15, 4.23, 4.30, 4.35, 4.47 and 4.97 m of frontage a
+ * room, against the 4.3 m a 37 m² room has if it is 9.8 m deep — eight readings of a
+ * hand drawing agreeing with a survey none of them was measured against, and nothing
+ * fitted to make them.
  *
- * What is still not faithful: two rooms of the same frontage and different floor
- * area, a 37 m² Superior and a 60 m² Harbor Room, are drawn the same size, and the
- * inland row's own back wall is nowhere measured. So read a cell as "this position,
- * this orientation", and read its depth as a standard room's.
+ * It used to be the other way about: the survey gave the walls and the plans only the
+ * counts, each wing's wall divided by the number of rooms on it. That is wrong
+ * wherever the count is short of the bays, and on the harbour arm it was short by
+ * six — two suites three bays wide and two dead wedges at the bends — which made
+ * every room on that arm a quarter too wide and carried the tip's, 4369 to 4375,
+ * most of twenty metres past the point of the building.
+ *
+ * What is still not faithful: the inland row's own back wall is nowhere traced, so it
+ * is drawn a room's depth behind the corridor rather than against the far wall. So
+ * read a cell as "this position, this orientation", and read the far row's depth as a
+ * standard room's.
  *
  * Two things the plans show that the article's text does not:
  *
@@ -51,12 +59,12 @@
  */
 
 import {
-  FRONTAGE_WALL,
-  NW_TIP_WALL,
-  TAIL_WALL,
-  interiorSide,
-  type Point,
-} from './dhm-site';
+  DRAWN_CORRIDOR,
+  DRAWN_ROW_DEPTH,
+  DRAWN_WALLS,
+  DRAWN_WALLS_M,
+} from './dhm-drawing';
+import type { Point } from './dhm-site';
 
 /** Which way a room's window looks, once the building is walked. */
 export type Facing =
@@ -95,14 +103,12 @@ export interface PlanRun {
    */
   floors: Record<number, { left?: string; right?: string }>;
   /**
-   * Slots at the head of the run that lie before its share of the frontage.
+   * Slots at the head of the run that lie before its own wall begins.
    *
-   * Two runs have them, for different reasons. The north-west wing's first four are
-   * round the dog-leg the plans draw near its far end, on the measured wall named in
-   * `LEAD_WALLS`. The south-west wing's first three are its inland row turning the
-   * corner out of the south spine before its harbour row does, which is what a row
-   * on the outside of a 94-degree turn does; they are carried on the wing's own
-   * bearing, because that is the only wall they have.
+   * One run has them: the north-west wing's first five are round the dog-leg the
+   * drawing puts near its far end, on the short wall named as that wing's `lead` in
+   * `./dhm-drawing`. They are carried back off the head of the wall at the run's own
+   * room width, along that wall's bearing.
    */
   lead?: number;
 }
@@ -118,44 +124,49 @@ export const PLAN_RUNS: PlanRun[] = [
   {
     /**
      * Slots 0 to 3 are round the dog-leg at the wing's far end, on a wall of their
-     * own. Slot 4 is the dog-leg: the plans draw a wedge of dead wall there on the
-     * harbour side and nothing at all on the inland side. Blank slots 10 to 12 are
-     * the wing's stair and lift core, 15 the corner where it meets the north spine.
+     * own. Slots 4 and 5 are the dog-leg itself: the drawing puts a wedge of dead
+     * wall across it, half on each of the two walls, and nothing on the inland side.
+     * Blank slots 11 to 13 are the wing's stair and lift core, and 16 and 17 the
+     * corner where it meets the north spine, which the drawing gives to one wedge of
+     * a room, 4125, on the piazza side and to the corridor's turn on the other.
      */
     key: 'nw',
-    lead: 4,
+    lead: 5,
     facing: { left: 'inland', right: 'piazza' },
     floors: {
       5: {
-        left:  '5154 5152 5150 5148    / 5146 5144 5142 5140 5138    -    -    - 5130 5128    -',
-        right: '5153 5153 5149 5149    - 5145 5145 5141 5141 5137 5135 5133 5131 5129 5127 5125',
+        left:  '5154 5152 5150 5148    /    - 5146 5144 5142 5140 5138    -    -    - 5130 5128    -    -',
+        right: '5153 5153 5149 5149    -    - 5145 5145 5141 5141 5137 5135 5133 5131 5129 5127 5125 5125',
       },
       4: {
-        left:  '4154 4152 4150 4148    / 4146 4144 4142 4140 4138    -    -    - 4130 4128    -',
-        right: '4153 4151 4149 4147    - 4145 4143 4141 4139 4137 4135 4133 4131 4129 4127 4125',
+        left:  '4154 4152 4150 4148    /    - 4146 4144 4142 4140 4138    -    -    - 4130 4128    -    -',
+        right: '4153 4151 4149 4147    -    - 4145 4143 4141 4139 4137 4135 4133 4131 4129 4127 4125 4125',
       },
       3: {
-        left:  '3154 3152 3150 3148    / 3146 3144 3142 3140 3138    -    -    - 3130 3128    -',
-        right: '3153 3151 3149 3147    - 3145 3143 3141 3139 3137 3135 3133 3131 3129 3127 3125',
+        left:  '3154 3152 3150 3148    /    - 3146 3144 3142 3140 3138    -    -    - 3130 3128    -    -',
+        right: '3153 3151 3149 3147    -    - 3145 3143 3141 3139 3137 3135 3133 3131 3129 3127 3125 3125',
       },
     },
   },
   {
-    /** Slot 0 is where the corridor bends out of the north-west wing. */
+    /**
+     * Slot 0 is the corner the north-west wing turns out of, which the drawing gives
+     * to that wing's own wedge of a room, 4125, on both sides of the corridor.
+     */
     key: 'spine-n',
     facing: { left: 'inland', right: 'piazza' },
     floors: {
       5: {
         left:  '   - 5122 5120 5118 5116 5114 5112 5110 5108 5106 5104',
-        right: '5123 5121 5119 5117 5115 5113 5111 5109 5107    -    -',
+        right: '   - 5123 5121 5119 5117 5115 5113 5111 5109 5107    -',
       },
       4: {
         left:  '   - 4122 4120 4118 4116 4114 4112 4110 4108 4106 4104',
-        right: '4123 4121 4119 4117 4115 4113 4111 4109 4107 4105 4105',
+        right: '   - 4123 4121 4119 4117 4115 4113 4111 4109 4107 4105',
       },
       3: {
         left:  '   - 3122 3120 3118 3116 3114 3112 3110 3108 3106 3104',
-        right: '3123 3121 3119 3117 3115 3113 3111 3109 3107 3105 3105',
+        right: '   - 3123 3121 3119 3117 3115 3113 3111 3109 3107 3105',
       },
     },
   },
@@ -175,53 +186,82 @@ export const PLAN_RUNS: PlanRun[] = [
     },
   },
   {
-    /** The inland row's first three slots are the two lift lobbies. */
+    /**
+     * Sixteen bays, and the drawing puts the head of both rows on two of them: the
+     * Porto Suite 4101 on the harbour side, and the two lift lobbies stacked one
+     * above the other, four bays of them, on the inland side. That is what puts 4306
+     * opposite 4305 rather than opposite 4301.
+     */
     key: 'spine-s',
     facing: { left: 'inland', right: 'harbour' },
     floors: {
       5: {
-        left:  '   -    -    - 5306 5308 5310 5312 5314 5316 5318 5320 5322 5324 5326 5328',
-        right: '   - 5301 5303 5303 5303 5303 5303 5313 5315 5317 5319 5321 5323 5325 5327',
+        left:  '   -    -    -    - 5306 5308 5310 5312 5314 5316 5318 5320 5322 5324 5326 5328',
+        right: '   -    - 5301 5303 5303 5303 5303 5303 5313 5315 5317 5319 5321 5323 5325 5327',
       },
       4: {
-        left:  '   -    -    - 4306 4308 4310 4312 4314 4316 4318 4320 4322 4324 4326 4328',
-        right: '4101 4301 4303 4305 4307 4309 4311 4313 4315 4317 4319 4321 4323 4325 4327',
+        left:  '   -    -    -    - 4306 4308 4310 4312 4314 4316 4318 4320 4322 4324 4326 4328',
+        right: '4101 4101 4301 4303 4305 4307 4309 4311 4313 4315 4317 4319 4321 4323 4325 4327',
       },
       3: {
-        left:  '   -    -    - 3306 3308 3310 3312 3314 3316 3318 3320 3322 3324 3326 3328',
-        right: '3101 3301 3303 3305 3307 3309 3311 3313 3315 3317 3319 3321 3323 3325 3327',
+        left:  '   -    -    -    - 3306 3308 3310 3312 3314 3316 3318 3320 3322 3324 3326 3328',
+        right: '3101 3101 3301 3303 3305 3307 3309 3311 3313 3315 3317 3319 3321 3323 3325 3327',
       },
       2: {
-        right: '   -    -    -    -    -    -    -    -    -    -    -    -    - 2325 2327',
+        right: '   -    -    -    -    -    -    -    -    -    -    -    -    -    - 2325 2327',
       },
     },
   },
   {
     /**
-     * Slots 0 to 2 wrap the corner out of the south spine, which the inland row
-     * turns before the harbour row does. Slots 8, 15 and 20 are where the wing bends
-     * and the plans stop the inland row a room short — no 4346, no 4360, no 4370 —
-     * and 21 is the stair the corridor turns round at the tip.
+     * The three rooms that turn the corner out of the south spine before the harbour
+     * arm's own wall begins, on the short south face the drawing gives them.
+     */
+    key: 'sw-head',
+    facing: { left: 'inland', right: 'harbour' },
+    floors: {
+      5: { left: '5330 5332 5334' },
+      4: { left: '4330 4332 4334' },
+      3: { left: '3330 3332 3334' },
+      2: { left: '2330 2332 2334' },
+    },
+  },
+  {
+    /**
+     * Twenty-seven bays, of which the harbour row's twenty-one numbered rooms take
+     * twenty-five: the MiraCosta Suites 4369 and 4371, at the point of the arm, are
+     * drawn three bays wide apiece, being corner suites with windows on two faces.
+     * Two more bays hold no numbered room, the wedges of dead wall the arm's first
+     * two bends leave on the harbour side.
+     *
+     * Getting that count wrong was what put this wing out. Twenty-one rooms over the
+     * arm's whole wall makes each of them 5.3 m of frontage where the drawing gives
+     * 4.3, and the error accumulates: 4375 came out at the far side of the point of
+     * the building.
+     *
+     * The inland row runs round the inside of four bends, where there is less wall to
+     * go at, and the drawing closes it up over the bays it loses rather than leaving
+     * holes — no 4346, no 4360, no 4370. Behind the two suites at the tip it holds
+     * the stair the corridor turns round, which is why nothing faces them.
      */
     key: 'sw',
-    lead: 3,
     facing: { left: 'inland', right: 'harbour' },
     floors: {
       5: {
-        left:  '5330 5332 5334 5336 5338 5340 5342 5344    / 5348 5348 5352 5352 5356 5356    / 5362 5362 5366 5366    /    -    -    -',
-        right: '   -    -    - 5335 5337 5339 5341 5343 5345 5349 5349 5353 5353 5357 5357 5361 5361 5365 5365 5369 5369 5371 5371    -',
+        left:  '5336 5338 5340 5342 5344    -    / 5348 5348 5352 5352 5356 5356    /    - 5362 5362 5366 5366    /    /    -    /    /    /    -    -',
+        right: '5335 5337 5339 5341 5343 5345    - 5349 5349 5353 5353 5357 5357    - 5361 5361 5365 5365 5365 5369 5369 5369 5371 5371 5371    -    -',
       },
       4: {
-        left:  '4330 4332 4334 4336 4338 4340 4342 4344    / 4348 4350 4352 4354 4356 4358    / 4362 4364 4366 4368    /    - 4374 4376',
-        right: '   -    -    - 4335 4337 4339 4341 4343 4345 4347 4349 4351 4353 4355 4357 4359 4361 4363 4365 4367 4369 4371 4373 4375',
+        left:  '4336 4338 4340 4342 4344    -    / 4348 4350 4352 4354 4356 4358    /    - 4362 4364 4366 4368    /    /    -    /    /    / 4374 4376',
+        right: '4335 4337 4339 4341 4343 4345    - 4347 4349 4351 4353 4355 4357    - 4359 4361 4363 4365 4367 4369 4369 4369 4371 4371 4371 4373 4375',
       },
       3: {
-        left:  '3330 3332 3334 3336 3338 3340 3342 3344    / 3348 3350 3352 3354 3356 3358    / 3362 3364 3366 3368    /    - 3374 3376',
-        right: '   -    -    - 3335 3337 3339 3341 3343 3345 3347 3349 3351 3353 3355 3357 3359 3361 3363 3365 3367 3369 3371 3373 3375',
+        left:  '3336 3338 3340 3342 3344    -    / 3348 3350 3352 3354 3356 3358    /    - 3362 3364 3366 3368    /    /    -    /    /    / 3374 3376',
+        right: '3335 3337 3339 3341 3343 3345    - 3347 3349 3351 3353 3355 3357    - 3359 3361 3363 3365 3367 3369 3369 3369 3371 3371 3371 3373 3375',
       },
       2: {
-        left:  '2330 2332 2334 2336 2338 2340 2342 2344    / 2348 2350 2352 2354 2356 2358    / 2362 2364 2366 2368    /    - 2374 2376',
-        right: '   -    -    - 2335 2337 2339 2341 2343 2345 2347 2349 2351 2353 2355 2357 2359 2361 2363 2365 2367 2369 2371 2373 2375',
+        left:  '2336 2338 2340 2342 2344    -    / 2348 2350 2352 2354 2356 2358    /    - 2362 2364 2366 2368    /    /    -    /    /    / 2374 2376',
+        right: '2335 2337 2339 2341 2343 2345    - 2347 2349 2351 2353 2355 2357    - 2359 2361 2363 2365 2367 2369 2369 2369 2371 2371 2371 2373 2375',
       },
     },
   },
@@ -338,47 +378,9 @@ export function spansOf(
   return out;
 }
 
-/** How deep a room is drawn: 37 m² over the frontage the measurement gives it. */
-export const ROOM_DEPTH = 8.8;
-/** The corridor the two rows of rooms open onto. */
-export const CORRIDOR = 2.0;
-
-/**
- * Which walls of the measured frontage each wing stands on.
- *
- * The frontage is one straight wall for each face of it, and the plans draw one
- * corridor against each of those faces, so the two are matched face by face rather
- * than by sharing the total length out. That is what keeps the figure the shape of
- * the drawing: every corner of the building falls between two of the plans' wings,
- * where the plans put it, instead of in the middle of a room that then has to bend
- * round it. It is also what fixes the north-west wing, which the old share-out ran
- * three rooms past its own corner and out along the north spine.
- *
- * That the match works at all is the check on the plans. Wall by wall it gives 3.99,
- * 4.11, 4.39 and 4.47 m of frontage a room, against the 4.37 m a 37 m² room has if it
- * is 8.5 m deep — all four within a tenth of it, and nothing fitted to make them come
- * out. The north-west wing used to be the one that did not, at 4.87 m; reading the
- * plans again found the reason, a bay of dead wall at the dog-leg near its far end
- * that had been left out of the count.
- */
-const FRONTAGE_GROUPS: { keys: string[]; from: number; to: number }[] = [
-  { keys: ['nw'], from: 0, to: 1 },
-  { keys: ['spine-n', 'corner'], from: 1, to: 2 },
-  { keys: ['spine-s'], from: 2, to: 3 },
-  { keys: ['sw'], from: 3, to: 6 },
-];
-
-/**
- * The wall a run's lead-in slots stand on, where it is not the run's own.
- *
- * Only the north-west wing has one: the plans put four rooms a side round the
- * dog-leg at its far end, on the face the outline continues past the frontage's
- * first corner.
- */
-const LEAD_WALLS: Record<string, readonly Point[]> = { nw: NW_TIP_WALL };
-
-/** How much frontage the chapel takes between the north spine and the east wing. */
-const CHAPEL_SLOTS = 5;
+/** A row of rooms, and the corridor between two rows, as the drawing draws them. */
+export const ROOM_DEPTH = DRAWN_ROW_DEPTH;
+export const CORRIDOR = DRAWN_CORRIDOR;
 
 export interface RunWall {
   /** The outer wall the run's rooms open from, in metres, in walking order. */
@@ -387,11 +389,9 @@ export interface RunWall {
   inward: 'left' | 'right';
   /** Which side of the corridor is the row against that wall. */
   face: 'left' | 'right';
-  /** False where the outline gave no wall and one had to be carried on. */
-  measured: boolean;
   /**
-   * How the frontage carries on past each end of this wall, where the next wing
-   * stands on the same corner of the building.
+   * How the wall carries on past each end, where the next wing stands on the same
+   * corner of the building.
    *
    * Without it the two wings both take the whole corner: each mitres its end room
    * square to its own wall, and on the inside of the turn the two rooms cover the
@@ -422,22 +422,6 @@ function pointAt(
     travelled += len;
   }
   throw new Error('dhm-plan: pointAt needs at least two points');
-}
-
-/** The piece of a polyline between two distances along it, its corners kept. */
-function sliceLine(
-  line: readonly Point[],
-  from: number,
-  to: number,
-): [number, number][] {
-  const out: [number, number][] = [pointAt(line, from).at];
-  let travelled = 0;
-  for (let i = 1; i < line.length; i += 1) {
-    if (travelled > from + 0.05 && travelled < to - 0.05) out.push([...line[i - 1]!]);
-    travelled += Math.hypot(line[i]![0] - line[i - 1]![0], line[i]![1] - line[i - 1]![1]);
-  }
-  out.push(pointAt(line, to).at);
-  return out;
 }
 
 /**
@@ -496,113 +480,62 @@ function lostAtBend(line: readonly Point[], i: number, side: 'left' | 'right', b
 }
 
 /**
- * The wall every run's rooms stand on, built from the measurement and the counts.
+ * The wall every run's rooms stand on: the drawing's, placed by the drawing's fit.
  *
- * The three wings the frontage does not carry are the ones facing the canals and
- * the park entrance, and they are placed by carrying on the measured wall the
- * plans join them to:
+ * Each wing's wall is traced whole off the sheet, so nothing has to be carried over
+ * open ground and nothing has to be shared out. The chapel takes as much of the
+ * frontage between the north spine and the east wing as the drawing gives it, the
+ * south-eastern tail leaves its wing where the drawing leaves it, and the harbour
+ * arm's four bends are the drawing's four bends.
  *
- * - The east wing is the north spine's wall continued past the chapel, which is
- *   how the plans draw it — one corridor, the chapel's octagon set into the middle
- *   of it, rooms on both sides of both halves.
- * - The tail has a wall of its own in the outline, `TAIL_WALL`.
- * - The south-east wing runs from the back of the south spine to where that tail
- *   starts, which is the corner the plans draw it between. Nothing sets its length
- *   but those two ends, and it comes out at 4.49 m a room — inside the range the
- *   frontage gives, which is the only check available on it.
+ * A run whose plan turns before its wall does has lead-in slots, and they are carried
+ * back off the head of the wall at the run's own room width: along the wall the
+ * drawing puts them on, where there is one, and otherwise along the wall's own
+ * bearing.
  */
 function buildWalls(): Record<string, RunWall> {
   const run = (key: string): PlanRun => PLAN_RUNS.find((r) => r.key === key)!;
-  const slots = (key: string): number => slotsOf(run(key));
-  /** The slots the frontage itself carries, which are all of them bar the lead-in. */
-  const share = (key: string): number => slots(key) - (run(key).lead ?? 0);
-  /**
-   * A measured wall can be asked which side the building is on. One that had to be
-   * carried over open ground cannot, so it is told: the side its plans put the
-   * inland row, which is the side the wall it continues has its own on.
-   */
-  const wall = (key: string, line: [number, number][], inward: 'left' | 'right' | null): RunWall => ({
-    line,
-    inward: inward ?? interiorSide(line),
-    face: run(key).facing.left === 'inland' ? 'right' : 'left',
-    measured: inward === null,
-    joint: {},
-  });
   const unit = (a: Point, b: Point): Point => {
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
     return [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
   };
-  /**
-   * A wall carried back past its start, by the length of its lead-in slots.
-   *
-   * On its own bearing, unless the lead-in has a measured wall of its own — the
-   * north-west wing's does, and carrying its four tip rooms straight on instead
-   * would draw the wing's dog-leg out flat.
-   */
-  const leadIn = (key: string, line: [number, number][], by: number): [number, number][] => {
-    if (by <= 0) return line;
-    const on = LEAD_WALLS[key];
-    const [a, b] = on ? [on[0]!, on[on.length - 1]!] : [line[0]!, line[1]!];
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    const head = line[0]!;
-    return [[head[0] - ((b[0] - a[0]) / len) * by, head[1] - ((b[1] - a[1]) / len) * by], ...line];
-  };
 
-  const arc = FRONTAGE_WALL.map((_, i) => lineLength(FRONTAGE_WALL.slice(0, i + 1)));
   const walls: Record<string, RunWall> = {};
-  /** What a room's frontage came out at on each wing, which the east wing borrows. */
-  const pitches: Record<string, number> = {};
-  for (const group of FRONTAGE_GROUPS) {
-    const room = arc[group.to]! - arc[group.from]!;
-    const pitch = room / group.keys.reduce((sum, key) => sum + share(key), 0);
-    let at = arc[group.from]!;
-    for (const key of group.keys) {
-      const line = sliceLine(FRONTAGE_WALL, at, at + share(key) * pitch);
-      walls[key] = wall(key, leadIn(key, line, (run(key).lead ?? 0) * pitch), null);
-      pitches[key] = pitch;
-      at += share(key) * pitch;
+  for (const [key, drawn] of Object.entries(DRAWN_WALLS_M)) {
+    const here = run(key);
+    const line = drawn.line.map((p) => [p[0], p[1]] as [number, number]);
+    const lead = here.lead ?? 0;
+    if (lead > 0) {
+      /** The run's own room width, from the slots its wall does carry. */
+      const room = lineLength(line) / (slotsOf(here) - lead);
+      /** A lead wall of its own is taken end to end; otherwise the wall's own head. */
+      const on = drawn.lead ?? line;
+      const u = drawn.lead ? unit(on[0]!, on[on.length - 1]!) : unit(on[0]!, on[1]!);
+      const head = line[0]!;
+      line.unshift([head[0] - u[0] * room * lead, head[1] - u[1] * room * lead]);
     }
+    walls[key] = {
+      line,
+      inward: DRAWN_WALLS[key]!.inward,
+      face: DRAWN_WALLS[key]!.face,
+      joint: {},
+    };
   }
+
   /**
-   * Each wing told how the wall goes on past it, in the order the frontage is walked.
+   * Each wing told how the wall goes on past it, in the order the drawing is walked.
    *
    * A wing whose head is carried back past the corner — the south-west's, whose
    * inland row turns it early — does not stand on that corner, so it is left out and
    * so is the wing before it.
    */
-  const order = FRONTAGE_GROUPS.flatMap((group) => group.keys);
-  for (let i = 1; i < order.length; i += 1) {
-    if (run(order[i]!).lead) continue;
-    const [a, b] = [walls[order[i - 1]!]!, walls[order[i]!]!];
+  const walk = ['nw', 'spine-n', 'corner', 'spine-s', 'sw'];
+  for (let i = 1; i < walk.length; i += 1) {
+    if (run(walk[i]!).lead) continue;
+    const [a, b] = [walls[walk[i - 1]!]!, walls[walk[i]!]!];
     a.joint.after = unit(b.line[0]!, b.line[1]!);
     b.joint.before = unit(a.line[a.line.length - 2]!, a.line[a.line.length - 1]!);
   }
-
-  /** The east wing is carried on at the pitch the north spine's own wall sets. */
-  const north = pitches['spine-n']!;
-
-  const corner = walls['corner']!;
-  const { at: end, u } = pointAt(corner.line, lineLength(corner.line));
-  const chapel = CHAPEL_SLOTS * north;
-  const from: [number, number] = [end[0] + u[0] * chapel, end[1] + u[1] * chapel];
-  const reach = slots('east') * north;
-  walls['east'] = wall(
-    'east',
-    [from, [from[0] + u[0] * reach, from[1] + u[1] * reach]],
-    corner.inward,
-  );
-
-  walls['se-tail'] = wall('se-tail', [[...TAIL_WALL[0]!], [...TAIL_WALL[1]!]], null);
-
-  const spine = walls['spine-s']!;
-  const tip = pointAt(spine.line, lineLength(spine.line));
-  const back = ROOM_DEPTH * 2 + CORRIDOR;
-  const sign = spine.inward === 'left' ? -1 : 1;
-  const behind: [number, number] = [
-    tip.at[0] - tip.u[1] * back * sign,
-    tip.at[1] + tip.u[0] * back * sign,
-  ];
-  walls['se'] = wall('se', [behind, [...TAIL_WALL[0]!]], spine.inward);
 
   return walls;
 }

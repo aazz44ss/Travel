@@ -7,12 +7,15 @@
  * The footprint is 294 by 235 m over about 20,100 m²; the harbour it faces is
  * about 178,000 m².
  *
- * This is the one figure on the page that carries a distance. Google's maps could
- * not be used for it: measuring their imagery to build geometry is not something
- * their terms allow, and no key is available here either. What the survey cannot
- * give is which window sits where along a corridor; that is in the hand-drawn
- * floor plans. So the walls a room sits against are measured, and the order of
- * the rooms along them is the plans'.
+ * This is what gives the plan its size and its bearing. The room plan itself is the
+ * hand-drawn one traced in `./dhm-drawing`, and what a hand drawing cannot say is how
+ * many metres across the building is or which way it points; the survey says both. Ten
+ * corners named by the drawing and by the outline below are the ones the drawing's fit
+ * was made on, and afterwards the outline is the check on it — every one of the 515
+ * cells drawn has its centre inside this footprint.
+ *
+ * Google's maps could not be used for any of it: measuring their imagery to build
+ * geometry is not something their terms allow, and no key is available here either.
  */
 
 /** Metres about the hotel centre, y south-positive, as a plan is read. */
@@ -389,17 +392,21 @@ export const HARBOUR: Point[] = [[37.2, 56.4],
  * It is the stretch of outline from the north-west wing round to the south-western
  * tip of the harbour arm: 31 vertices over 294 m, reduced to the walls those
  * vertices lie on. Reducing it matters because most of them are balconies and bays
- * two to nine metres deep. Kept, they turn a wall into a zigzag, and a room drawn
- * across one of their right angles crosses its neighbours.
+ * two to nine metres deep, and because it is the corners that are wanted here: the
+ * first eight points below are eight of the ten the drawing was fitted on.
  *
  * Which vertices belong to which wall is decided by their segments' bearings, not
- * by fitting a fixed number of lines to the whole run — the difference matters. Six
- * lines fitted over the whole frontage put two of the north-west wing's vertices on
- * the north spine's line, which dragged the corner between them six metres west and
- * left the wing three rooms longer than the plans draw it. Grouping by bearing first
- * puts every corner where the plans turn one. Each group then gets a least squares
- * line, consecutive lines are intersected for the corner, and no vertex ends up more
- * than 2.5 m from its wall.
+ * by fitting a fixed number of lines to the whole run. Six lines fitted over the
+ * whole frontage put two of the north-west wing's vertices on the north spine's
+ * line, which dragged the corner between them six metres west. Grouping by bearing
+ * first puts every corner where the drawing turns one. Each group then gets a least
+ * squares line, consecutive lines are intersected for the corner, and no vertex ends
+ * up more than 2.5 m from its wall.
+ *
+ * The last wall is the tip. The harbour arm does not end where it stops bearing away
+ * from the water: it turns back and runs 19 m south-south-east to the point of the
+ * tip, and the drawing draws that turn — the wing's last rooms, 4373 and 4375, are on
+ * it, set at an angle to the rest.
  *
  * Walked in this order the building is always on the left, which is the side both
  * rows of every corridor's rooms are on.
@@ -410,27 +417,17 @@ export const FRONTAGE_WALL: Point[] = [[-125.5, -33.8],
   [-6.7, 29.7],
   [-31.5, 37.1],
   [-60.0, 61.3],
-  [-70.8, 88.2]];
+  [-70.9, 88.3],
+  [-66.2, 106.5]];
 
 /**
- * The wall the north-west wing's four tip rooms stand on.
- *
- * The plans draw that wing with a dog-leg near its far end: four rooms a side, then
- * a turn of about twenty degrees, then eleven more. The outline turns there too —
- * this is the 70 m face running down from the building's western corner at
- * (-174.1, -83.9) to the frontage's first corner — and the rest of it is the
- * Toscana side, whose rooms these plans do not number. So only its last four rooms
- * are used, and the frontage proper starts where the wing's own wall does.
- */
-export const NW_TIP_WALL: Point[] = [[-174.1, -83.9], [-125.5, -33.8]];
-
-/**
- * The wall the plans' south-eastern tail stands on: outline vertices 77 and 76.
+ * The wall the south-eastern tail stands on: outline vertices 77 and 76, and the
+ * last two corners the drawing was fitted on.
  *
  * It is the only wall off the frontage the outline gives cleanly: 40 m running
- * parallel to the south spine, which is 4.0 m for each of the ten rooms the plans
- * put there and inside the range the frontage itself gives. Nothing else of that
- * length or bearing lies anywhere near where the plans put the tail.
+ * parallel to the south spine, which is 4.0 m for each of the ten rooms the drawing
+ * puts there. Nothing else of that length or bearing lies anywhere near where the
+ * drawing puts the tail.
  */
 export const TAIL_WALL: Point[] = [[52.5, 58.5], [64.8, 96.9]];
 
@@ -451,7 +448,7 @@ export const LAGOON: Point[] = [[-427.5, 264.5],
   [-424.3, 244.2]];
 
 
-/** Whether a point is within the measured building. */
+/** Whether a point is within the measured building, which is how the cells are checked. */
 export function inFootprint(p: Point): boolean {
   let hit = false;
   for (let i = 0, j = HOTEL_FOOTPRINT.length - 1; i < HOTEL_FOOTPRINT.length; j = i, i += 1) {
@@ -462,20 +459,4 @@ export function inFootprint(p: Point): boolean {
     }
   }
   return hit;
-}
-
-/** Which side of a line the building is on, tested rather than assumed. */
-export function interiorSide(line: readonly Point[]): 'left' | 'right' {
-  let right = 0;
-  for (let i = 1; i < line.length; i += 1) {
-    const a = line[i - 1]!;
-    const b = line[i]!;
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    const mid: Point = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-    const nx = -(b[1] - a[1]) / len;
-    const ny = (b[0] - a[0]) / len;
-    if (inFootprint([mid[0] + nx * 4, mid[1] + ny * 4])) right += 1;
-    if (inFootprint([mid[0] - nx * 4, mid[1] - ny * 4])) right -= 1;
-  }
-  return right >= 0 ? 'right' : 'left';
 }

@@ -135,17 +135,13 @@ const scaleBar = {
  * Every cell on the plan, per floor, ready to draw.
  *
  * A wing is a slab with a corridor down it and rooms against both faces. The face
- * the plans number sits on the measured wall itself; the other sits directly behind
- * it, one room deep plus the corridor, rather than against the far wall. That far
- * wall is nowhere measured — the outline carries the courtyards as building rather
- * than as holes, so casting across the block for it crosses a garden as readily as
- * a corridor and gives 25 to 38 m. A row behind the first is right for the shape of
- * the wing and lands a few metres short of its back.
+ * the plans number sits on the wall traced off the drawing; the other sits directly
+ * behind it, one room deep plus the corridor. The drawing does draw that far row's
+ * own back wall, but it is not traced here, so the far row is given a standard room's
+ * depth: right for the shape of the wing, and a metre or so short of its back.
  */
 const cells = PLAN_RUNS.flatMap((run) => {
   const wall = RUN_WALLS[run.key]!;
-  /** Positions no wall could be measured for are drawn as such, not as fact. */
-  const approximate = !wall.measured;
   return (['left', 'right'] as const).flatMap((side) => {
     /** The facade row stands on the wall; the other stands a room and a corridor in. */
     const behind = side === wall.face ? 0 : ROOM_DEPTH + CORRIDOR;
@@ -170,7 +166,6 @@ const cells = PLAN_RUNS.flatMap((run) => {
         /** Whatever direction the run is walked, the number reads upright. */
         const upright = (deg: number) => (deg > 90 ? deg - 180 : deg <= -90 ? deg + 180 : deg);
         return {
-          approximate,
           across,
           labelAngle: upright(across ? cell.angle + 90 : cell.angle),
           number,
@@ -287,24 +282,6 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
     </div>
 
     <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-      <li class="flex items-center gap-2 text-xs">
-        <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 14 14" aria-hidden="true">
-          <rect
-            x="0.7"
-            y="0.7"
-            width="12.6"
-            height="12.6"
-            rx="1.5"
-            fill="#0f4c5c"
-            fill-opacity="0.62"
-            stroke="#0f4c5c"
-            stroke-width="1.4"
-            stroke-dasharray="2.6 1.8"
-          />
-        </svg>
-        <span class="font-bold text-ink">{copy.approximate}</span>
-        <span class="text-ink-faint">{copy.approximateWhy}</span>
-      </li>
       {
         legend.map((grade) => (
           <li class="flex items-center gap-2 text-xs">
@@ -387,10 +364,9 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
                         <polygon
                           points={cell.points}
                           fill={TONE[cell.grade]!.fill}
-                          fill-opacity={cell.approximate ? 0.62 : 0.95}
+                          fill-opacity="0.95"
                           stroke="#ffffff"
                           stroke-width="0.3"
-                          stroke-dasharray={cell.approximate ? '1.4 1' : undefined}
                           data-shape
                         />
                         <text
