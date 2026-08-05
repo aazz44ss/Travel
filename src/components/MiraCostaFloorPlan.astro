@@ -97,7 +97,7 @@ const view = {
 };
 /**
  * The photograph is a lazy layer of plain images under a transparent drawing, not
- * pixels inside it: at this zoom it is 20 tiles, and a reader who never scrolls
+ * pixels inside it: at this zoom it is 24 tiles, and a reader who never scrolls
  * this far should not pay for them. Positions are percentages so the two layers
  * stay locked together at any width.
  */
@@ -374,7 +374,7 @@ const harbourRooms = cells.filter((cell) => cell.facing === 'harbour').length;
                           y={cell.cy}
                           text-anchor="middle"
                           dominant-baseline="central"
-                          font-size="2.6"
+                          font-size="3"
                           font-weight="700"
                           fill={TONE[cell.grade]!.text}
                           transform={`rotate(${cell.labelAngle} ${cell.cx} ${cell.cy})`}

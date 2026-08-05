@@ -23,15 +23,17 @@ export const PHOTO = {
   originX: 119262909.58,
   originY: 52876959.08,
   /**
-   * The window drawn, in metres about that origin. Cropped to the rooms and the
-   * water in front of them: at 480 m across, a 4.3 m room front was 7 px on a
-   * phone and could not carry its number. The rooms span 210 by 164 m, so 250 m
-   * across leaves 18 m of Mediterranean Harbor beyond the far end of the wing and
-   * makes a room front 18 px wide and 40 deep, which a four-digit number fits
-   * across comfortably.
+   * The window drawn, in metres about that origin, centred on the rooms.
+   *
+   * The rooms span 210 by 164 m, and the window is 300 by 228: about 45 m of
+   * Mediterranean Harbor beyond the far end of the harbour arm, and enough of
+   * Piazza Topolino, the Palazzo Canals and the park entrance to see what each
+   * side of the building actually faces. Any wider and a 4.3 m room front falls
+   * below about 15 px, which is where a four-digit number stops fitting across it;
+   * that is what set the limit rather than taste.
    */
-  window: { x0: -160.0, y0: -70.0, x1: 90.0, y1: 120.0 },
-  tiles: { x0: 465868, y0: 206549, x1: 465872, y1: 206552 },
+  window: { x0: -188.0, y0: -83.0, x1: 112.0, y1: 145.0 },
+  tiles: { x0: 465867, y0: 206549, x1: 465872, y1: 206552 },
   size: 256,
   url: (x: number, y: number, z: number) =>
     `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,

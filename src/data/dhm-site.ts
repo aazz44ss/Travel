@@ -23,8 +23,8 @@ export type Point = readonly [number, number];
 
 export const SITE_VIEW = { x0: -330.0, y0: -170.0, x1: 150.0, y1: 190.0 } as const;
 
-/** 100 m, for the scale bar. */
-export const SITE_SCALE_BAR = 100;
+/** 75 m, for the scale bar: a quarter of the window's width at this crop. */
+export const SITE_SCALE_BAR = 75;
 
 export const HOTEL_FOOTPRINT: Point[] = [[-174.1, -83.9],
   [-168.8, -89.5],
