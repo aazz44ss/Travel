@@ -60,3 +60,10 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          # Pages has been taking longer than the action's ten-minute default to
+          # report a deployment finished, and when the wait runs out the action
+          # cancels a deployment that was still on its way. Half an hour of
+          # patience costs nothing on a run that normally reports in seconds.
+          timeout: 1800000
+          error_count: 20
