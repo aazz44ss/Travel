@@ -45,7 +45,7 @@ export const ROOM_NUMBERS: RoomNumbers = {
     numbers: ['2373', '2375', '3373', '3375', '4373', '4375', '5325'],
     balcony: [],
     complete: true,
-    note: '整個海港區只有這 7 間是一張雙人床。想要雙人床又想看廣場，機率大約是 7／502。',
+    note: '整個海港區只有這 7 間是一張雙人床——全館 502 間裡的 7 間。想要雙人床又想看廣場，機率就是這個數字。',
   },
   'porto-superior-piazza-twin': {
     numbers: [
