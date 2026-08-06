@@ -81,7 +81,6 @@ export interface ExplorerCopy {
     unlisted: string;
     svgTitle: string;
     svgDesc: string;
-    note: (rooms: number, enumerated: number) => string;
     zones: { harbour: string; piazza: string; chapel: string };
     facing: { inland: string; canal: string; entrance: string; spa: string };
     shows: { full: string; partial: string; piazza: string; none: string };
@@ -183,8 +182,6 @@ const zhHant: ExplorerCopy = {
     svgTitle: '東京迪士尼海洋觀海景大飯店逐間客房位置圖',
     svgDesc:
       '飯店是環抱地中海港灣的馬蹄形。外側面向港灣與米老鼠廣場，港灣臂的內側俯視宮殿運河，東側與東南翼朝園區入口、威尼斯沐浴坊與泳池。每個多邊形是一間客房。',
-    note: (rooms, enumerated) =>
-      `底圖是航照圖（縮放層級 19，1 像素 0.24 公尺），所以海港、廣場與街屋都是照片本身。格子來自來源的手繪平面圖：客房外牆逐面描下，整張圖只縮放、旋轉、平移到 OpenStreetMap 的實測輪廓上，不拉伸。兩者共同指認的十個轉角平均差 2.4 公尺、最大 5.4 公尺，而建物長 210 公尺；換算後一間房面寬 3.9 到 4.3 公尺，正是 37 平方公尺客房在 9.8 公尺深時該有的寬度。兩處要打折扣：走廊內側那一排的背牆沒有描，一律畫成標準房的深度；來源圖把翼畫成 21.8 公尺寬、實測是 24.4 公尺，所以格子比照片上的屋頂略窄一圈。窗戶朝哪一邊，依該排外牆的方位判定。全圖 ${rooms} 格，其中 ${enumerated} 間對得到官方房型。手機請左右滑動。`,
     zones: { harbour: '這一側是地中海港灣', piazza: '這一側是米老鼠廣場', chapel: '教堂' },
     facing: {
       inland: '朝內側（看不到水面）',
@@ -304,8 +301,6 @@ const ja: ExplorerCopy = {
     svgTitle: '東京ディズニーシー・ホテルミラコスタ 客室配置図',
     svgDesc:
       'ホテルはメディテレーニアンハーバーを抱く馬蹄形です。外側はハーバーとミッキー広場、ハーバー側の翼の内側はパラッツォ・カナルを見下ろし、東と南東の翼はパーク入口とテルメ・ヴェネツィア・プールに面します。多角形 1 つが 1 室です。',
-    note: (rooms, enumerated) =>
-      `下地は航空写真です（ズーム 19、1 px が 0.24 m）。ハーバー・広場・街並みは描いたものではなく写真そのものです。区画は出典の手描き図から取っています。客室の外壁を一面ずつ写し取り、図全体を OpenStreetMap の実測輪郭に載せます。拡大・回転・平行移動だけで引き伸ばしはしません。両者がともに示す 10 か所の角で差は平均 2.4 m・最大 5.4 m、建物は 210 m。その縮尺で 1 室の間口は 3.9〜4.3 m となり、37 m² の客室が奥行き 9.8 m のときの寸法と合います。割り引いて読む点が 2 つ。廊下の内側の列の背面の壁は写し取らず、標準的な客室の奥行きで描いています。出典図は翼を 21.8 m 幅で描き、実測は 24.4 m なので、区画は写真の屋根よりわずかに内側です。窓の向きはその列の外壁の方位で決めています。図は ${rooms} 区画、うち ${enumerated} 室が公式の客室タイプに対応します。スマートフォンでは横にスクロールしてください。`,
     zones: { harbour: 'この側がメディテレーニアンハーバー', piazza: 'この側がミッキー広場', chapel: 'チャペル' },
     facing: {
       inland: '内側向き（水面は見えない）',
@@ -428,8 +423,6 @@ const en: ExplorerCopy = {
     svgTitle: 'Tokyo DisneySea Hotel MiraCosta room-by-room plan',
     svgDesc:
       'The hotel is a horseshoe around Mediterranean Harbor. Its outer face looks at the harbour and Piazza Topolino, the harbour arm’s inner row looks down on the Palazzo Canals, and the eastern and south-eastern wings face the park entrance, Terme Venezia and the pool. Each polygon is one guest room.',
-    note: (rooms, enumerated) =>
-      `The base is aerial photography (zoom 19, one pixel to 0.24 m), so the harbour, the square and the streets are the photograph itself. The cells come from the source’s hand-drawn plans: each wall the rooms face is traced off the sheet, and the whole drawing is then placed on the OpenStreetMap outline by one fit — scaled, turned and moved, never stretched. Over the ten corners both name, it is out by 2.4 m on average and 5.4 m at worst, on a building 210 m across; at that scale a room has 3.9 to 4.3 m of frontage, which is what a 37 m² room 9.8 m deep has. Two things to discount. The back wall of the row set behind each corridor is not traced, so it is drawn a standard room deep; and the drawing makes a wing 21.8 m across where the survey measures 24.4, so the cells sit a little inside the roofs in the photograph. Which way a window faces is read off the bearing of its own wall. ${rooms} cells, ${enumerated} of them matching an official room type. On a phone, scroll sideways.`,
     zones: { harbour: 'Mediterranean Harbor is on this side', piazza: 'Piazza Topolino is on this side', chapel: 'Chapel' },
     facing: {
       inland: 'Faces inland (no water)',
