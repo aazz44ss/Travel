@@ -50,13 +50,23 @@
  * Two things the plans show that the article's text does not:
  *
  * - The Partial View rooms it never lists individually are marked on the plan,
- *   at the far north-west end of the Toscana-facing wing and at the inside
- *   corner where the harbour arm turns. Their numbers are recorded here, tagged
- *   as coming from the plan rather than from the enumerated lists.
+ *   at the far north-west end of the north-west wing and at the inside corner
+ *   where the harbour arm turns. Their numbers are recorded here, tagged as
+ *   coming from the plan rather than from the enumerated lists.
  * - The inland side of every corridor. Those rooms are on the Venezia and
  *   Toscana sides of the building, sold without a view grade, and they are what
  *   makes the harbour-facing side legible: half of each corridor never sees the
  *   water at all.
+ *
+ * Which is not to say they see nothing, and getting that wrong is what this file
+ * most recently had to fix. Where a row's window faces is settled here by the
+ * bearing off its own wall and what the survey puts on the ground in front of it,
+ * so the Palazzo Canals row is the harbour arm's inland row, the one the gondola
+ * canal runs along the foot of; the wing east of the rotunda looks over the
+ * entrance gardens to the AquaSphere; and the south-eastern wing faces the
+ * entrance on its north-eastern row and Terme Venezia and the pool on the other.
+ * The canals had been given to the east wing, 150 m away on the wrong side of the
+ * building, and the south-eastern wing's two rows were the wrong way round.
  */
 
 import {
@@ -67,16 +77,30 @@ import {
 } from './dhm-drawing';
 import type { Point } from './dhm-site';
 
-/** Which way a room's window looks, once the building is walked. */
+/**
+ * Which way a room's window looks, once the building is walked.
+ *
+ * Each of these is a bearing off a wall the drawing traces, checked against what
+ * OpenStreetMap puts on the ground there, in the same metre frame as everything
+ * else: the Palazzo Canals 79 m south-south-west of the hotel's centre, the
+ * Venetian Gondolas' dock 85 m south, Piazza Topolino 73 m west-south-west, Terme
+ * Venezia 80 m south-south-east, the AquaSphere 97 m east-north-east. A row is
+ * named for whichever of them it looks at, not for the side it is sold as.
+ */
 export type Facing =
   /** Onto Mediterranean Harbor, the water the shows are staged on. */
   | 'harbour'
   /** Onto Piazza Topolino and the harbour-town streets in front of the hotel. */
   | 'piazza'
-  /** Onto the Palazzo Canals side. */
+  /**
+   * Onto the Palazzo Canals: the gondola canal that runs along the inland foot of
+   * the harbour arm, under the windows of that arm's inland row.
+   */
   | 'canal'
-  /** Toward the Tokyo DisneySea entrance and the AquaSphere. */
+  /** Over the entrance gardens to the Tokyo DisneySea gates and the AquaSphere. */
   | 'entrance'
+  /** Onto Terme Venezia and the hotel's own pool, which the south-east wing wraps. */
+  | 'spa'
   /** Inland: a courtyard, a roof, or the back of the building. */
   | 'inland';
 
@@ -118,8 +142,8 @@ export interface PlanRun {
  * The building is a wishbone wrapped around the harbour: a wing coming down
  * from the north-west, a short spine running east to the chapel, a longer spine
  * running south, and a wing curving away to the south-west. Two further wings —
- * east of the chapel and south-east of the south spine — face away from the
- * water entirely.
+ * east of the chapel and south-east of the south spine — see no park water at
+ * all: they face the entrance gardens, the hotel's own forecourt, and the spa.
  */
 export const PLAN_RUNS: PlanRun[] = [
   {
@@ -178,10 +202,19 @@ export const PLAN_RUNS: PlanRun[] = [
     floors: { 4: { right: '4103' }, 3: { right: '3103' } },
   },
   {
+    /**
+     * The wing east of the chapel rotunda, and the one place this figure had the
+     * building's own geography wrong: its numbered row was called Palazzo Canals.
+     * The canals are 150 m away on the far side of the hotel, behind the whole of
+     * the south spine. What this row looks over is the entrance gardens and, 86 m
+     * on, the AquaSphere — the Toscana side's own view, not Venezia's.
+     *
+     * Three floors, not four: the fifth-floor sheet draws this wing as an empty
+     * band, and the second-floor sheet does not reach it at all.
+     */
     key: 'east',
-    facing: { left: 'inland', right: 'canal' },
+    facing: { left: 'inland', right: 'entrance' },
     floors: {
-      5: { left: '5202 5204 5206 5208 5210    -', right: '5201 5203 5205 5207 5209 5211' },
       4: { left: '4202 4204 4206 4208 4210    -', right: '4201 4203 4205 4207 4209 4211' },
       3: { left: '3202 3204 3206 3208 3210    -', right: '3201 3203 3205 3207 3209 3211' },
     },
@@ -217,9 +250,12 @@ export const PLAN_RUNS: PlanRun[] = [
     /**
      * The three rooms that turn the corner out of the south spine before the harbour
      * arm's own wall begins, on the short south face the drawing gives them.
+     *
+     * They look south over the head of the gondola canal, 31 m off, which is where
+     * the Palazzo Canals begin.
      */
     key: 'sw-head',
-    facing: { left: 'inland', right: 'harbour' },
+    facing: { left: 'canal', right: 'harbour' },
     floors: {
       5: { left: '5330 5332 5334' },
       4: { left: '4330 4332 4334' },
@@ -244,9 +280,16 @@ export const PLAN_RUNS: PlanRun[] = [
      * go at, and the drawing closes it up over the bays it loses rather than leaving
      * holes — no 4346, no 4360, no 4370. Behind the two suites at the tip it holds
      * the stair the corridor turns round, which is why nothing faces them.
+     *
+     * That inland row is the Palazzo Canals row. The gondola canal runs along the
+     * foot of this arm on the side away from the water, close enough that the dock
+     * and this row's middle bays are a few metres apart in plan: it is the stretch
+     * of the building the hotel sells as Venezia, and on the fifth floor its rooms
+     * are the ones drawn two bays wide — 5348, 5352, 5356, 5362, 5366 — the
+     * terraces over the canal, opposite the harbour terraces 5349 to 5365.
      */
     key: 'sw',
-    facing: { left: 'inland', right: 'harbour' },
+    facing: { left: 'canal', right: 'harbour' },
     floors: {
       5: {
         left:  '5336 5338 5340 5342 5344    -    / 5348 5348 5352 5352 5356 5356    /    - 5362 5362 5366 5366    /    /    -    /    /    /    -    -',
@@ -271,12 +314,19 @@ export const PLAN_RUNS: PlanRun[] = [
      * Slots 0 and 1 are the head of the wing and its lift lobby, which is why the
      * plans put 4405 opposite 4406 and not opposite 4404; the last two are where the
      * tail leaves, so 4422 and 4424 have nothing across the corridor from them.
+     *
+     * The drawing puts the twelve-bay row on the wing's north-eastern face, so that
+     * is the row looking over the entrance esplanade towards the AquaSphere, 70 m
+     * off, and the ten-bay row behind it looks the other way, down onto the spa and
+     * the pool. This figure had the two the wrong way round.
+     *
+     * Only the inner row on the fifth floor: the fifth-floor sheet leaves the
+     * north-eastern row an empty band, as it does the whole of the east wing.
      */
     key: 'se',
-    facing: { left: 'inland', right: 'entrance' },
+    facing: { left: 'entrance', right: 'spa' },
     floors: {
       5: {
-        left:  '5402 5404 5406 5408 5410 5412 5414 5416 5418 5420 5422 5424',
         right: '   -    - 5405 5407 5409 5411 5413 5415 5417 5419    -    -',
       },
       4: {
@@ -294,8 +344,9 @@ export const PLAN_RUNS: PlanRun[] = [
     },
   },
   {
+    /** Ten rooms down the west face of the tail, looking onto the pool 17 m below. */
     key: 'se-tail',
-    facing: { left: 'entrance', right: 'inland' },
+    facing: { left: 'spa', right: 'inland' },
     floors: {
       5: { left: '5423 5425 5427 5429 5431 5433 5435 5437 5439 5441' },
       4: { left: '4423 4425 4427 4429 4431 4433 4435 4437 4439 4441' },

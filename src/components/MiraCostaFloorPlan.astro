@@ -68,6 +68,7 @@ const TONE: Record<string, { fill: string; text: string }> = {
   piazza: { fill: '#b4832c', text: '#ffffff' },
   canal: { fill: '#8c2f4a', text: '#ffffff' },
   entrance: { fill: '#a9b8bd', text: '#22333a' },
+  spa: { fill: '#6e8479', text: '#ffffff' },
   partial: { fill: '#cdc2ae', text: '#4f4739' },
   inland: { fill: '#e6dfd3', text: '#6b6152' },
   unknown: { fill: '#e6dfd3', text: '#6b6152' },
@@ -195,13 +196,20 @@ const enumerated = cells.filter((cell) => cell.roomId).length;
 
 /** The legend only lists what the plan actually contains. */
 const legend = (
-  ['harbour', 'piazza-grand', 'piazza', 'partial', 'canal', 'entrance', 'inland'] as const
+  ['harbour', 'piazza-grand', 'piazza', 'partial', 'canal', 'entrance', 'spa', 'inland'] as const
 ).filter((grade) => cells.some((cell) => cell.grade === grade));
 
+/**
+ * A cell says either a view grade the hotel sells or, where no room number is
+ * enumerated, which way its window faces; `copy.facing` is what the second kind is
+ * named from, and a room with no grade at all reads as facing inland.
+ */
 const gradeLabel = (grade: string): string =>
-  grade === 'inland' || grade === 'unknown' || grade === 'entrance' || grade === 'canal'
-    ? copy.facing[grade === 'unknown' ? 'inland' : (grade as 'inland' | 'entrance' | 'canal')]
-    : viewLabel('dhm', locale, grade);
+  grade === 'unknown'
+    ? copy.facing.inland
+    : grade in copy.facing
+      ? copy.facing[grade as keyof typeof copy.facing]
+      : viewLabel('dhm', locale, grade);
 
 const showAnswer = (grade: string): string =>
   grade === 'harbour' || grade === 'harbour-grand'
